@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SEEN</title>
+  <style>
+    :root { --navy: #1F3A5F; --cream: #FFF8EC; --orange: #F28C28; --red: #B42318; --ink: #1d1d1f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--cream); color: var(--ink);
+           font: 22px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    header { background: var(--navy); color: white; padding: 18px 24px; display: flex;
+             justify-content: space-between; align-items: center; }
+    header a { color: white; text-decoration: none; font-size: 34px; font-weight: 800; letter-spacing: 3px; }
+    main { max-width: 860px; margin: 0 auto; padding: 24px 16px 60px; }
+    h1 { font-size: 34px; margin: 8px 0 16px; color: var(--navy); }
+    h2 { font-size: 28px; margin: 28px 0 10px; color: var(--navy); }
+    .card { background: white; border-radius: 16px; padding: 20px 24px; margin: 16px 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+    .card a.title { font-size: 28px; font-weight: 700; color: var(--navy); text-decoration: none; }
+    .meta { color: #555; font-size: 18px; }
+    .alert { background: var(--red); color: white; }
+    .scam { border-left: 10px solid var(--red); }
+    .remember li { margin: 8px 0; }
+    .tag { display: inline-block; background: var(--orange); color: white; border-radius: 8px;
+           padding: 0 10px; font-size: 16px; font-weight: 700; margin-right: 8px; text-transform: uppercase; }
+    button, input[type=text] { font-size: 22px; padding: 12px 16px; border-radius: 12px; }
+    input[type=text] { width: 100%; border: 2px solid var(--navy); margin-bottom: 12px; }
+    button { background: var(--navy); color: white; border: 0; cursor: pointer; font-weight: 700; }
+    .alert button { background: white; color: var(--red); }
+    details { font-size: 18px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/">SEEN</a>
+    <span class="meta" style="color:#dfe7f2">{% block header_right %}{% endblock %}</span>
+  </header>
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>

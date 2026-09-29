@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block header_right %}
+  {% if battery is not none %}Battery {{ battery }}%{% endif %}
+  {% if demo_mode %} · DEMO MODE{% endif %}
+{% endblock %}
+{% block content %}
+  {% for a in alerts %}
+    <div class="card alert">
+      <strong>Check on me!</strong> The button was held down at {{ a.created_at }}.
+      <form method="post" action="/alerts/{{ a.id }}/ack" style="display:inline; float:right">
+        <button>I checked in</button>
+      </form>
+    </div>
+  {% endfor %}
+
+  <div class="card">
+    <h1 style="margin-top:0">Ask SEEN</h1>
+    <form method="post" action="/ask">
+      <input type="text" name="question" placeholder="What did the doctor say about my pills?" required>
+      <button>Ask</button>
+    </form>
+  </div>
+
+  <h2>Conversations</h2>
+  {% if not recordings %}
+    <p>No conversations yet. Press the button on SEEN to record one.</p>
+  {% endif %}
+  {% for r in recordings %}
+    <div class="card {% if r.summary and r.summary.scam_warning.suspicious %}scam{% endif %}">
+      {% if r.status == 'done' %}
+        <a class="title" href="/recording/{{ r.id }}">{{ r.summary.title }}</a>
+        <div class="meta">{{ r.recorded_at }}</div>
+        {% if r.summary.scam_warning.suspicious %}
+          <p><span class="tag" style="background:var(--red)">Possible scam</span>{{ r.summary.scam_warning.reason }}</p>
+        {% endif %}
+        <p>{{ r.summary.summary }}</p>
+        {% if r.summary.things_to_remember %}
+          <ul class="remember">
+            {% for item in r.summary.things_to_remember %}
+              <li><span class="tag">{{ item.kind }}</span>{{ item.text }}{% if item.when %} — <strong>{{ item.when }}</strong>{% endif %}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% elif r.status == 'processing' %}
+        <a class="title" href="/recording/{{ r.id }}">Working on it…</a>
+        <div class="meta">{{ r.recorded_at }} · refresh in a minute</div>
+      {% else %}
+        <a class="title" href="/recording/{{ r.id }}">Couldn't process this one</a>
+        <div class="meta">{{ r.recorded_at }}</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% endblock %}

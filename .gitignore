@@ -1,0 +1,10 @@
+# Device secrets
+firmware/seen_v1/config.h
+
+# Server data and secrets
+server/data/
+server/.env
+__pycache__/
+*.pyc
+.venv/
+venv/

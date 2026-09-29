@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+  <p><a href="/">&larr; Back</a></p>
+  <div class="meta">You asked:</div>
+  <h1>{{ question }}</h1>
+  <div class="card"><p style="margin:0">{{ answer }}</p></div>
+  <form method="post" action="/ask">
+    <input type="text" name="question" placeholder="Ask another question" required>
+    <button>Ask</button>
+  </form>
+{% endblock %}

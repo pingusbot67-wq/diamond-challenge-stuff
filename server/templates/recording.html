@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+  <p><a href="/">&larr; All conversations</a></p>
+  {% if r.status == 'done' %}
+    <h1>{{ r.summary.title }}</h1>
+    <div class="meta">{{ r.recorded_at }}{% if r.summary.people %} · {{ r.summary.people | join(", ") }}{% endif %}</div>
+
+    {% if r.summary.scam_warning.suspicious %}
+      <div class="card scam"><strong>This may have been a scam.</strong> {{ r.summary.scam_warning.reason }}
+        Don't send money or share passwords. Call a family member first.</div>
+    {% endif %}
+
+    <div class="card"><p style="margin:0">{{ r.summary.summary }}</p></div>
+
+    {% if r.summary.things_to_remember %}
+      <h2>Things to remember</h2>
+      <div class="card">
+        <ul class="remember">
+          {% for item in r.summary.things_to_remember %}
+            <li><span class="tag">{{ item.kind }}</span>{{ item.text }}{% if item.when %} — <strong>{{ item.when }}</strong>{% endif %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <details>
+      <summary>Show the full transcript</summary>
+      <p>{{ r.transcript }}</p>
+    </details>
+  {% elif r.status == 'processing' %}
+    <h1>Working on it…</h1>
+    <p>SEEN is listening to this recording. Refresh this page in a minute.</p>
+  {% else %}
+    <h1>Couldn't process this recording</h1>
+    <p class="meta">{{ r.error }}</p>
+    <form method="post" action="/recording/{{ r.id }}/retry"><button>Try again</button></form>
+  {% endif %}
+{% endblock %}

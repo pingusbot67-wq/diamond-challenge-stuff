@@ -6,6 +6,8 @@ Space bar) and ask a question. Everything shows up in the chat history.
 
 - Ears: Google free speech recognition · Voice: Google free text-to-speech · Brain: Claude Haiku
 - Only needs an `ANTHROPIC_API_KEY`. No OpenAI.
+- Looks things up (weather, news, store hours) with Claude's built-in web search, about 1 cent
+  per search. Set the person's town in Settings so weather is local.
 - Press Talk once to start listening. It stops by itself when you go quiet, or press Talk again.
 - Press Talk while Lockette is speaking to cut it off.
 

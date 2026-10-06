@@ -44,6 +44,8 @@ SETTINGS_FILE = DATA_DIR / "settings.json"
 HISTORY_FILE = DATA_DIR / "history.json"
 
 MODEL = "claude-haiku-4-5"
+# Claude's built-in web search (weather, news, store hours...). About 1 cent per search.
+WEB_SEARCH = {"type": "web_search_20250305", "name": "web_search", "max_uses": 2}
 TALK_BUTTON_PIN = 5     # Pirate Audio button A
 SWITCH_PIN = 26         # optional yellow latching switch: GPIO 26 (pin 37) + GND (pin 39)
 MAX_HISTORY = 200       # messages kept in the chat log
@@ -51,6 +53,7 @@ CONTEXT_MESSAGES = 10   # messages Claude sees each time
 
 DEFAULT_SETTINGS = {
     "user_name": "Margaret",
+    "city": "",           # their town, for weather and local questions
     "family": [
         {"relation": "son", "name": "David"},
         {"relation": "daughter", "name": "Lisa"},
@@ -74,8 +77,12 @@ def system_prompt(s):
     now = datetime.datetime.now().strftime("%A, %B %d, %I:%M %p")
     meds = "; ".join(f"{m['time']}: {m['what']}" for m in s["meds"]) or "none set"
     family = ", ".join(f"{f['relation']}: {f['name']}" for f in s["family"]) or "none set"
+    town = f"They live in {s['city']}." if s.get("city") else "You don't know their town yet; ask if you need it."
     return f"""You are Lockette, a warm, patient voice companion for {s['user_name']}, an older adult. It is {now}.
-Reply in 1-3 short, simple sentences. Everything you say is read aloud, so no lists, emojis, or symbols.
+{town}
+Reply in 1-3 short, simple sentences. Everything you say is read aloud, so no lists, emojis, symbols, or web addresses.
+You can search the web for things that change, like the weather, news, sports scores, or store hours.
+Give the answer plainly (for weather: the temperature and whether to bring a coat or umbrella), and don't mention sources.
 Medication schedule set by family: {meds}. You can say what is scheduled and when.
 Never give dosage, drug, or medical advice; tell them to ask their pharmacist or doctor.
 Family: {family}.
@@ -148,11 +155,17 @@ class Lockette:
 
     def command(self, action, data=None):
         if action == "start" and self.state == "off":
+            self.set_state("starting", "Getting ready. Please stay quiet for a moment.")
             self.jobs.put(("start", None))
         elif action == "stop":
+            # Only signal here; the worker stops its own sound (stopping audio from
+            # another thread could freeze it, which made Start stop working)
             self.cancel.set()
-            if not FAKE_AUDIO:
-                sd.stop()
+            while not self.jobs.empty():
+                try:
+                    self.jobs.get_nowait()
+                except queue.Empty:
+                    break
             self.set_state("off")
         elif action == "talk":
             if self.state == "ready":
@@ -162,8 +175,6 @@ class Lockette:
                 self.done_talking.set()
             elif self.state == "speaking":   # pressing while it speaks cuts it short
                 self.cancel.set()
-                if not FAKE_AUDIO:
-                    sd.stop()
             elif self.state == "off":
                 self.emit({"type": "notice", "text": "Lockette is off. Press Start Lockette first."})
         elif action == "ask" and data and self.state == "ready":
@@ -181,6 +192,7 @@ class Lockette:
     def save_settings(self, data):
         clean = dict(self.settings)
         clean["user_name"] = str(data.get("user_name") or "friend")[:40]
+        clean["city"] = str(data.get("city") or "")[:60]
         clean["family"] = [
             {"relation": str(f.get("relation", ""))[:30], "name": str(f.get("name", ""))[:40]}
             for f in data.get("family", []) if f.get("name")
@@ -220,18 +232,20 @@ class Lockette:
                     self.say(data, record=False)
             except Exception as e:  # never let one bad turn kill Lockette
                 print("Error:", repr(e))
-                self.emit({"type": "error", "text": f"Something went wrong: {e}"})
+                if job == "start":
+                    self.set_state("off")
+                    self.emit({"type": "error", "text": f"Lockette couldn't start: {e}"})
+                else:
+                    self.emit({"type": "error", "text": f"Something went wrong: {e}"})
             if self.state != "off":
                 self.set_state("ready")
 
     def start(self):
-        self.set_state("starting", "Getting ready. Please stay quiet for a moment.")
+        if self.state == "off":   # Turn off was pressed before we got here
+            return
         if not FAKE_AUDIO:
-            sd._terminate()   # refresh the device list, in case a mic was plugged in
-            sd._initialize()
-            self.emit({"type": "devices", "devices": self.devices()})
             self.threshold = self.calibrate()
-        if self.state == "off":   # Stop was pressed while starting
+        if self.state == "off":   # Turn off was pressed while starting
             return
         self.set_state("ready")
         self.say(f"Hi {self.settings['user_name']}, I'm ready. Press my button whenever you want to talk.")
@@ -275,9 +289,19 @@ class Lockette:
             msgs.pop(0)
         if not os.environ.get("ANTHROPIC_API_KEY"):
             return "My Claude key isn't set up yet. Please ask your family to add it."
+        search = dict(WEB_SEARCH)
+        if self.settings.get("city"):
+            search["user_location"] = {"type": "approximate", "city": self.settings["city"], "country": "US"}
         try:
-            resp = self.claude.messages.create(model=MODEL, max_tokens=300,
-                                               system=system_prompt(self.settings), messages=msgs)
+            try:
+                resp = self.call_claude(msgs, [search])
+            except anthropic.BadRequestError as e:
+                if "web_search" not in str(e) and "web search" not in str(e).lower():
+                    raise
+                # Web search is switched off for this Claude account: answer without it
+                self.emit({"type": "error", "text": "Web search is turned off for your Claude account "
+                                                    "(check the Claude Console settings). Answering without it."})
+                resp = self.call_claude(msgs, [])
         except anthropic.AuthenticationError:
             return "My Claude key isn't working. Please ask your family to check it."
         except anthropic.RateLimitError:
@@ -288,7 +312,21 @@ class Lockette:
             return f"Something went wrong on my end, error {e.status_code}. Please try again."
         if resp.stop_reason == "refusal":
             return "Sorry, I can't help with that one."
-        return "".join(b.text for b in resp.content if b.type == "text").strip() or "Sorry, could you say that again?"
+        text = "".join(b.text for b in resp.content if b.type == "text")
+        text = re.sub(r"\(\s*https?://[^)]*\)|https?://\S+", "", text)   # never read web addresses aloud
+        return re.sub(r"\s+", " ", text).strip() or "Sorry, could you say that again?"
+
+    def call_claude(self, msgs, tools):
+        resp = self.claude.messages.create(model=MODEL, max_tokens=400, system=system_prompt(self.settings),
+                                           messages=msgs, tools=tools)
+        # A long web search can pause partway; send it back and Claude picks up where it left off
+        for _ in range(3):
+            if resp.stop_reason != "pause_turn":
+                break
+            resp = self.claude.messages.create(
+                model=MODEL, max_tokens=400, system=system_prompt(self.settings), tools=tools,
+                messages=msgs + [{"role": "assistant", "content": resp.content}])
+        return resp
 
     def say(self, text, record=True):
         if record:
@@ -414,7 +452,11 @@ class Lockette:
         if info["max_output_channels"] >= 2:
             data = np.column_stack([data, data])
         sd.play(data, out_rate, device=idx)
-        sd.wait()
+        # Wait for it to finish, but stop early if Talk or Turn off is pressed
+        end = time.time() + len(data) / out_rate + 0.3
+        while time.time() < end and not self.cancel.is_set():
+            time.sleep(0.05)
+        sd.stop()
 
     def chime(self, rising):
         if FAKE_AUDIO:

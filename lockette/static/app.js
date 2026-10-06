@@ -237,6 +237,7 @@ function fillSelect(select, names, chosen) {
 function openSettings() {
   if (!settings) return;
   $("userName").value = settings.user_name;
+  $("city").value = settings.city || "";
   $("familyRows").replaceChildren();
   settings.family.forEach(addFamilyRow);
   $("medRows").replaceChildren();
@@ -260,6 +261,7 @@ function readRows(container, keys) {
 function collectSettings() {
   return {
     user_name: $("userName").value.trim(),
+    city: $("city").value.trim(),
     family: readRows($("familyRows"), ["relation", "name"]),
     meds: readRows($("medRows"), ["time", "what"]),
     volume: Number($("volume").value),

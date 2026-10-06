@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lockette</title>
+  <meta name="theme-color" content="#FBF7F1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='38' r='22' fill='%235B3A6E'/%3E%3Ccircle cx='32' cy='38' r='13' fill='none' stroke='%23E2B866' stroke-width='4'/%3E%3Cpath d='M24 16a8 8 0 0 1 16 0' fill='none' stroke='%235B3A6E' stroke-width='5'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M24 16a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="32" cy="38" r="22" fill="currentColor"/>
+        <circle cx="32" cy="38" r="13" fill="none" stroke="var(--gold)" stroke-width="4"/>
+      </svg>
+      <span class="wordmark">Lockette</span>
+    </div>
+    <div class="topbar-right">
+      <span id="conn" class="conn" role="status">Connecting…</span>
+      <button id="settingsBtn" class="icon-btn" aria-label="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm8.6-2.3-1.8-.3a7 7 0 0 1-.6 1.5l1 1.5-1.8 1.8-1.5-1a7 7 0 0 1-1.5.6l-.3 1.8h-2.6l-.3-1.8a7 7 0 0 1-1.5-.6l-1.5 1-1.8-1.8 1-1.5a7 7 0 0 1-.6-1.5l-1.8-.3v-2.6l1.8-.3a7 7 0 0 1 .6-1.5l-1-1.5 1.8-1.8 1.5 1a7 7 0 0 1 1.5-.6l.3-1.8h2.6l.3 1.8a7 7 0 0 1 1.5.6l1.5-1 1.8 1.8-1 1.5a7 7 0 0 1 .6 1.5l1.8.3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        <span>Settings</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="control card" aria-label="Lockette controls">
+      <div class="orb-wrap" data-state="off" id="orbWrap">
+        <div class="orb-ring" id="orbRing"></div>
+        <div class="orb"><span class="orb-face" aria-hidden="true"><i></i><i></i></span></div>
+      </div>
+      <p class="status-title" id="statusTitle" aria-live="polite">Lockette is off</p>
+      <p class="status-detail" id="statusDetail">Press Start Lockette to wake it up.</p>
+
+      <button id="powerBtn" class="btn btn-power">Start Lockette</button>
+      <button id="talkBtn" class="btn btn-talk" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span id="talkLabel">Talk</span>
+      </button>
+      <p class="hint">You can also press <strong>button A</strong> on Lockette, or the <kbd>Space</kbd> bar.</p>
+
+      <form id="askForm" class="ask" autocomplete="off">
+        <label for="askInput">Or type a question</label>
+        <div class="ask-row">
+          <input id="askInput" type="text" placeholder="What's the weather like for a walk?" disabled>
+          <button class="btn btn-send" id="askBtn" disabled>Send</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="chat card" aria-label="Conversation">
+      <div class="chat-head">
+        <h2>Conversation</h2>
+        <button id="clearBtn" class="btn-text">Clear</button>
+      </div>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <ol id="log" class="log" aria-live="polite"></ol>
+      <div id="empty" class="empty">
+        <p class="empty-title">No conversation yet</p>
+        <p>Start Lockette, press Talk, and ask anything, like <em>"What day is it?"</em> or <em>"When is my next pill?"</em></p>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="settings" class="settings" aria-labelledby="settingsTitle">
+    <form method="dialog" id="settingsForm">
+      <div class="settings-head">
+        <h2 id="settingsTitle">Settings</h2>
+        <button type="button" class="icon-btn" id="closeSettings" aria-label="Close settings">✕</button>
+      </div>
+
+      <div class="field">
+        <label for="userName">Their first name</label>
+        <input id="userName" type="text" maxlength="40">
+      </div>
+
+      <fieldset>
+        <legend>Family</legend>
+        <div id="familyRows" class="rows"></div>
+        <button type="button" class="btn-text" id="addFamily">+ Add family member</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Medication reminders</legend>
+        <p class="field-help">Lockette says these out loud at the time. It never gives medical advice.</p>
+        <div id="medRows" class="rows"></div>
+        <button type="button" class="btn-text" id="addMed">+ Add reminder</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sound</legend>
+        <div class="field">
+          <label for="volume">Volume <span id="volumeValue"></span></label>
+          <input id="volume" type="range" min="0" max="100" step="5">
+        </div>
+        <div class="field">
+          <label for="accent">Voice</label>
+          <select id="accent">
+            <option value="com">American</option>
+            <option value="co.uk">British</option>
+            <option value="com.au">Australian</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="mic">Microphone</label>
+          <select id="mic"></select>
+        </div>
+        <div class="field">
+          <label for="speaker">Speaker</label>
+          <select id="speaker"></select>
+        </div>
+        <button type="button" class="btn btn-secondary" id="testSpeaker">Play a test sentence</button>
+      </fieldset>
+
+      <label class="check">
+        <input type="checkbox" id="autoStart">
+        <span>Start Lockette automatically when the Pi turns on</span>
+      </label>
+
+      <div class="settings-foot">
+        <button type="button" class="btn btn-secondary" id="cancelSettings">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveSettings">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

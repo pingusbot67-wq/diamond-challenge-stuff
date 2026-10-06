@@ -11,6 +11,7 @@ Run:  python hub.py   then open http://localhost:8080
 import asyncio
 import json
 import os
+import urllib.error
 import urllib.request
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -37,8 +38,10 @@ def pi_request(path, method="GET", timeout=1.5):
 
 async def pi_is_online():
     try:
-        await asyncio.to_thread(pi_request, "/api/ping")
+        await asyncio.to_thread(pi_request, "/api/ping", "GET", 3)
         return True
+    except urllib.error.HTTPError:
+        return True   # it answered, just an older Lockette without /api/ping
     except Exception:
         return False
 

@@ -180,8 +180,10 @@ function PowerCard({ lk, onSetup }: { lk: Lockette; onSetup: () => void }) {
     else if (!hs.pi_online) {
       [power, title, label, go] = ["off", "Raspberry Pi is off", "Power on", true];
       if (!hs.has_plug) {
-        disabled = true;
-        msg = msg || "To power on from here, add a smart plug in Power setup. Or just plug the Pi in.";
+        [title, disabled] = ["Can't reach the Raspberry Pi", true];
+        msg =
+          msg ||
+          `Looking for it at ${lk.hub.pi}. If its green light is on, give it a minute, or fix the Pi address in Power setup.`;
       }
     } else label = "Power off";
   } else if (lk.shuttingDown) {

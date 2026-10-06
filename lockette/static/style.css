@@ -353,6 +353,17 @@ input:disabled { background: var(--surface-2); }
 .msg-bubble { padding: 14px 18px; border-radius: 20px; font-size: 21px; line-height: 1.5; }
 .msg-meta { margin-top: 4px; font-size: 15px; color: var(--muted); }
 
+.msg-sources {
+  margin-top: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--plum-soft);
+  font-size: 15px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.msg-sources a { color: var(--plum); font-weight: 700; text-underline-offset: 3px; }
+
 .msg.user { align-self: flex-end; align-items: flex-end; }
 .msg.user .msg-bubble { background: var(--plum); color: var(--on-plum); border-bottom-right-radius: 6px; }
 

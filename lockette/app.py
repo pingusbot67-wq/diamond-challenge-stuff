@@ -12,6 +12,7 @@ Brain: Claude Haiku. Only needs an ANTHROPIC_API_KEY.
 """
 
 import asyncio
+import collections
 import datetime
 import io
 import json
@@ -32,6 +33,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 import languages
+import weather
 
 # Set LOCKETTE_FAKE_AUDIO=1 to run the web app on a laptop with no mic or speaker
 FAKE_AUDIO = os.environ.get("LOCKETTE_FAKE_AUDIO") == "1"
@@ -56,6 +58,7 @@ CONTEXT_MESSAGES = 10   # messages Claude sees each time
 DEFAULT_SETTINGS = {
     "user_name": "Margaret",
     "city": "",           # their town, for weather and local questions
+    "units": "F",         # temperatures: "F" or "C"
     "family": [
         {"relation": "son", "name": "David"},
         {"relation": "daughter", "name": "Lisa"},
@@ -82,12 +85,16 @@ def system_prompt(s):
     family = ", ".join(f"{f['relation']}: {f['name']}" for f in s["family"]) or "none set"
     town = f"They live in {s['city']}." if s.get("city") else "You don't know their town yet; ask if you need it."
     lang = languages.get(s.get("language"))
+    unit = "Celsius" if s.get("units") == "C" else "Fahrenheit"
     return f"""You are Lockette, a warm, patient voice companion for {s['user_name']}, an older adult. It is {now}.
 {town}
 Always reply in {lang['claude']}, using simple everyday words, even if the instructions or tool results are in English.
 Reply in 1-3 short, simple sentences. Everything you say is read aloud, so no lists, emojis, symbols, or web addresses.
-You can search the web for things that change, like the weather, news, sports scores, or store hours.
-Give the answer plainly (for weather: the temperature and whether to bring a coat or umbrella), and don't mention sources.
+For any weather question, use the get_weather tool; never guess the weather. For other things that change,
+like news, sports scores, or store hours, use web search.
+When your answer uses something you looked up, say in a few words where it came from, for example
+"according to the Open-Meteo weather service" or the name of the news site. Never read out web addresses.
+For weather, give temperatures in {unit}, the sky, the chance of rain, and whether to bring a jacket or umbrella.
 Medication schedule set by family: {meds}. You can say what is scheduled and when.
 Never give dosage, drug, or medical advice; tell them to ask their pharmacist or doctor.
 Family: {family}.
@@ -97,6 +104,21 @@ If they sound hurt, have fallen, or mention an emergency, start with [EMERGENCY]
 from their phone or press their alert button. Do not say you are contacting anyone, because you can't yet.
 If someone is asking them for gift cards, bank info, passwords, or money for a grandchild in trouble,
 warn them gently that it may be a scam and suggest they check with family first."""
+
+
+def find_sources(content):
+    """Websites Claude actually quoted (citations), or else the top web search results."""
+    cited, found = [], []
+    for b in content:
+        if b.type == "text":
+            for c in getattr(b, "citations", None) or []:
+                if getattr(c, "url", None):
+                    cited.append({"title": getattr(c, "title", None) or c.url, "url": c.url})
+        elif b.type == "web_search_tool_result" and isinstance(b.content, list):
+            for r in b.content[:3]:
+                if getattr(r, "url", None):
+                    found.append({"title": getattr(r, "title", None) or r.url, "url": r.url})
+    return cited or found
 
 
 # ---------------- storage ----------------
@@ -115,6 +137,66 @@ def save_json(path, data):
     tmp.replace(path)
 
 
+# ---------------- microphone ----------------
+
+class Mic:
+    """Keeps the microphone open while Lockette is on, so listening starts the instant
+    Talk is pressed (opening a mic on a Pi takes a second or two, which cut off first words)."""
+
+    def __init__(self):
+        self.stream = None
+        self.rate = 16000
+        self.chunks = queue.Queue()
+        self.recent = collections.deque(maxlen=5)   # the last half second, kept while not capturing
+        self.capturing = False
+
+    def open(self, idx, info):
+        self.close()
+        rate = int(info["default_samplerate"])
+        for ch in (1, min(2, info["max_input_channels"])):   # mono if the mic allows, else stereo
+            try:
+                stream = sd.InputStream(samplerate=rate, channels=ch, device=idx, dtype="float32",
+                                        blocksize=int(rate * 0.1), callback=self._callback)
+                stream.start()
+            except sd.PortAudioError:
+                continue
+            self.stream, self.rate = stream, rate
+            return
+        raise RuntimeError(f"Couldn't open the microphone: {info['name']}")
+
+    def _callback(self, indata, frames, time_info, status):
+        mono = indata.mean(axis=1).copy()
+        if self.capturing:
+            self.chunks.put(mono)
+        else:
+            self.recent.append(mono)
+
+    def begin(self):
+        """Start capturing, including the half second before this moment."""
+        self.chunks = queue.Queue()
+        for c in list(self.recent):
+            self.chunks.put(c)
+        self.capturing = True
+
+    def read(self):
+        try:
+            return self.chunks.get(timeout=1.5)
+        except queue.Empty:
+            raise RuntimeError("The microphone stopped sending sound. Is it still plugged in?")
+
+    def end(self):
+        self.capturing = False
+
+    def close(self):
+        self.capturing = False
+        if self.stream is not None:
+            try:
+                self.stream.stop()
+                self.stream.close()
+            finally:
+                self.stream = None
+
+
 # ---------------- the assistant ----------------
 
 class Lockette:
@@ -128,6 +210,7 @@ class Lockette:
         self.threshold = 0.02
         self.cancel = threading.Event()
         self.done_talking = threading.Event()
+        self.mic = None if FAKE_AUDIO else Mic()
         self.claude = anthropic.Anthropic(timeout=30.0, max_retries=2)
         if not FAKE_AUDIO:
             self.recognizer = sr.Recognizer()
@@ -145,9 +228,11 @@ class Lockette:
         self.state = state
         self.emit({"type": "state", "state": state, "detail": detail})
 
-    def add_message(self, role, text, kind="chat"):
+    def add_message(self, role, text, kind="chat", sources=None):
         msg = {"role": role, "text": text, "kind": kind,
                "time": datetime.datetime.now().isoformat(timespec="seconds")}
+        if sources:
+            msg["sources"] = sources
         self.history = (self.history + [msg])[-MAX_HISTORY:]
         save_json(HISTORY_FILE, self.history)
         self.emit({"type": "message", "message": msg})
@@ -181,6 +266,7 @@ class Lockette:
                 except queue.Empty:
                     break
             self.set_state("off")
+            self.jobs.put(("mic_off", None))
         elif action == "talk":
             if self.state == "ready":
                 self.set_state("listening", "Listening...")
@@ -207,6 +293,7 @@ class Lockette:
         clean = dict(self.settings)
         clean["user_name"] = str(data.get("user_name") or "friend")[:40]
         clean["city"] = str(data.get("city") or "")[:60]
+        clean["units"] = "C" if data.get("units") == "C" else "F"
         clean["family"] = [
             {"relation": str(f.get("relation", ""))[:30], "name": str(f.get("name", ""))[:40]}
             for f in data.get("family", []) if f.get("name")
@@ -243,6 +330,8 @@ class Lockette:
                     self.answer(data)
                 elif job == "say":
                     self.say(data)
+                elif job == "mic_off" and self.mic and self.state == "off":
+                    self.mic.close()
                 elif job == "remind" and self.state != "off":
                     self.say(data, record=False)
             except Exception as e:  # never let one bad turn kill Lockette
@@ -259,13 +348,17 @@ class Lockette:
         if self.state == "off":   # Turn off was pressed before we got here
             return
         if not FAKE_AUDIO:
+            self.mic.open(*self.pick("input", self.settings["mic"], MIC_WORDS))
             self.threshold = self.calibrate()
         if self.state == "off":   # Turn off was pressed while starting
+            self.mic and self.mic.close()
             return
         self.set_state("ready")
         self.say(self.phrase("greeting"))
 
     def listen_and_answer(self):
+        if self.mic:
+            self.mic.begin()   # capture starts now, so talking during the chime still counts
         self.chime(rising=True)
         audio = self.record()
         if self.cancel.is_set() or self.state == "off":
@@ -285,7 +378,7 @@ class Lockette:
 
     def answer(self, text):
         self.set_state("thinking", "Thinking...")
-        reply = self.ask_claude()
+        reply, sources = self.ask_claude()
         call = re.match(r"\s*\[CALL:\s*(.+?)\]", reply)
         if call:
             self.add_message("system", f"Asked to call {call.group(1)}. Calling isn't connected yet.", "call")
@@ -293,56 +386,75 @@ class Lockette:
             self.add_message("system", "Emergency words heard. Lockette told them to call 911 from their phone.",
                              "emergency")
         spoken = re.sub(r"\[.*?\]\s*", "", reply).strip()
-        self.add_message("assistant", spoken)
+        self.add_message("assistant", spoken, sources=sources)
         self.say(spoken, record=False)
 
     def ask_claude(self):
+        """Returns (what to say, list of sources it looked things up in)."""
         msgs = [{"role": m["role"], "content": m["text"]}
                 for m in self.history if m["kind"] == "chat" and m["role"] in ("user", "assistant")]
         msgs = msgs[-CONTEXT_MESSAGES:]
         while msgs and msgs[0]["role"] != "user":
             msgs.pop(0)
         if not os.environ.get("ANTHROPIC_API_KEY"):
-            return self.phrase("no_key")
+            return self.phrase("no_key"), []
         search = dict(WEB_SEARCH)
         if self.settings.get("city"):
             search["user_location"] = {"type": "approximate", "city": self.settings["city"], "country": "US"}
         try:
             try:
-                resp = self.call_claude(msgs, [search])
+                resp, sources = self.call_claude(msgs, [weather.TOOL, search])
             except anthropic.BadRequestError as e:
                 if "web_search" not in str(e) and "web search" not in str(e).lower():
                     raise
                 # Web search is switched off for this Claude account: answer without it
                 self.emit({"type": "error", "text": "Web search is turned off for your Claude account "
                                                     "(check the Claude Console settings). Answering without it."})
-                resp = self.call_claude(msgs, [])
+                resp, sources = self.call_claude(msgs, [weather.TOOL])
         except anthropic.AuthenticationError:
-            return self.phrase("bad_key")
+            return self.phrase("bad_key"), []
         except anthropic.RateLimitError:
-            return self.phrase("busy")
+            return self.phrase("busy"), []
         except anthropic.APIConnectionError:
-            return self.phrase("offline")
+            return self.phrase("offline"), []
         except anthropic.APIStatusError as e:
             print("Claude error:", e.status_code, e.message)
-            return self.phrase("error")
+            return self.phrase("error"), []
         if resp.stop_reason == "refusal":
-            return self.phrase("refusal")
+            return self.phrase("refusal"), []
         text = "".join(b.text for b in resp.content if b.type == "text")
         text = re.sub(r"\(\s*https?://[^)]*\)|https?://\S+", "", text)   # never read web addresses aloud
-        return re.sub(r"\s+", " ", text).strip() or self.phrase("again")
+        return re.sub(r"\s+", " ", text).strip() or self.phrase("again"), sources
 
     def call_claude(self, msgs, tools):
-        resp = self.claude.messages.create(model=MODEL, max_tokens=400, system=system_prompt(self.settings),
-                                           messages=msgs, tools=tools)
-        # A long web search can pause partway; send it back and Claude picks up where it left off
-        for _ in range(3):
-            if resp.stop_reason != "pause_turn":
+        """Ask Claude, running any lookups it asks for (weather, web search) until it has an answer."""
+        convo, sources = list(msgs), []
+        for _ in range(6):
+            resp = self.claude.messages.create(model=MODEL, max_tokens=500, system=system_prompt(self.settings),
+                                               messages=convo, tools=tools)
+            sources += find_sources(resp.content)
+            if resp.stop_reason == "pause_turn":   # a long web search paused; send it back to continue
+                convo.append({"role": "assistant", "content": resp.content})
+            elif resp.stop_reason == "tool_use":   # Claude wants the weather
+                convo.append({"role": "assistant", "content": resp.content})
+                convo.append({"role": "user", "content": [self.run_tool(b, sources)
+                                                          for b in resp.content if b.type == "tool_use"]})
+            else:
                 break
-            resp = self.claude.messages.create(
-                model=MODEL, max_tokens=400, system=system_prompt(self.settings), tools=tools,
-                messages=msgs + [{"role": "assistant", "content": resp.content}])
-        return resp
+        unique = {s["url"]: s for s in sources if s.get("url")}
+        return resp, list(unique.values())[:4]
+
+    def run_tool(self, block, sources):
+        if block.name != "get_weather":
+            return {"type": "tool_result", "tool_use_id": block.id, "content": "Unknown tool.", "is_error": True}
+        place = block.input.get("place") or self.settings.get("city") or ""
+        try:
+            data = weather.get_weather(place, self.settings.get("units", "F"))
+            if "error" not in data:
+                sources.append(weather.SOURCE)
+        except Exception as e:
+            data = {"error": f"The weather service isn't answering right now ({e})."}
+        return {"type": "tool_result", "tool_use_id": block.id, "content": json.dumps(data, ensure_ascii=False)}
 
     def say(self, text, record=True):
         if record:
@@ -394,47 +506,34 @@ class Lockette:
             return ok[0]
         raise RuntimeError(f"No {'microphone' if kind == 'input' else 'speaker'} found. Is it plugged in?")
 
-    def open_mic(self):
-        """Open the mic as mono if it allows it, otherwise as stereo (we mix it down)."""
-        idx, info = self.pick("input", self.settings["mic"], MIC_WORDS)
-        rate = int(info["default_samplerate"])
-        block = int(rate * 0.1)  # 0.1 second chunks
-        for ch in (1, min(2, info["max_input_channels"])):
-            try:
-                stream = sd.InputStream(samplerate=rate, channels=ch, device=idx,
-                                        dtype="float32", blocksize=block)
-                return stream, rate, block
-            except sd.PortAudioError:
-                continue
-        raise RuntimeError(f"Couldn't open the microphone: {info['name']}")
-
     def calibrate(self):
-        stream, rate, block = self.open_mic()
-        with stream:
-            chunks = [stream.read(block)[0].mean(axis=1) for _ in range(15)]
+        """Measure the room's background noise for 1.5 seconds."""
+        self.mic.begin()
+        try:
+            chunks = [self.mic.read() for _ in range(15)]
+        finally:
+            self.mic.end()
         noise = float(np.sqrt(np.mean(np.concatenate(chunks) ** 2)))
-        return max(0.01, noise * 3)
+        return max(0.006, noise * 2.5)
 
     def record(self):
-        """Wait up to 8 seconds for speech, then record until 1.2 seconds of quiet (15 seconds max)."""
+        """Wait up to 8 seconds for speech, then record until 1.4 seconds of quiet (15 seconds max)."""
         if FAKE_AUDIO:
             self.done_talking.wait(1.5)
             return None
-        stream, rate, block = self.open_mic()
-        self.rate = rate
         pre, voiced, silence, waited = [], [], 0, 0
-        with stream:
+        try:
             while not self.cancel.is_set():
                 if self.done_talking.is_set():   # Talk pressed again: stop now
                     return np.concatenate(voiced) if len(voiced) > 4 else None
-                chunk = stream.read(block)[0].mean(axis=1)
+                chunk = self.mic.read()
                 level = float(np.sqrt(np.mean(chunk ** 2)))
                 if waited % 2 == 0:
                     self.emit({"type": "level", "level": min(1.0, level / (self.threshold * 4))})
                 waited += 1
                 loud = level > self.threshold
                 if not voiced:
-                    pre = (pre + [chunk])[-3:]
+                    pre = (pre + [chunk])[-5:]   # keep half a second before the first loud sound
                     if loud:
                         voiced = pre[:]
                     elif waited > 80:
@@ -442,17 +541,23 @@ class Lockette:
                     continue
                 voiced.append(chunk)
                 silence = 0 if loud else silence + 1
-                if silence >= 12 or len(voiced) > 150:
-                    if len(voiced) - silence < 4:   # just a bump or click
+                if silence >= 14 or len(voiced) > 150:
+                    if len(voiced) - silence < 4:   # just a bump, click, or the chime
                         pre, voiced, silence = [], [], 0
                         continue
                     return np.concatenate(voiced)
-        return None
+            return None
+        finally:
+            self.mic.end()
 
     def transcribe(self, audio):
+        # Google listens best to 16 kHz audio at a healthy volume
+        audio = np.interp(np.arange(0, len(audio), self.mic.rate / 16000), np.arange(len(audio)), audio)
+        peak = float(np.max(np.abs(audio))) or 1.0
+        audio = audio * min(8.0, 0.9 / peak)
         pcm = (np.clip(audio, -1, 1) * 32767).astype(np.int16).tobytes()
         try:
-            return self.recognizer.recognize_google(sr.AudioData(pcm, self.rate, 2),
+            return self.recognizer.recognize_google(sr.AudioData(pcm, 16000, 2),
                                                    language=self.lang()["stt"]).strip()
         except sr.UnknownValueError:
             return ""
@@ -470,7 +575,7 @@ class Lockette:
             data = np.column_stack([data, data])
         sd.play(data, out_rate, device=idx)
         # Wait for it to finish, but stop early if Talk or Turn off is pressed
-        end = time.time() + len(data) / out_rate + 0.3
+        end = time.time() + len(data) / out_rate + 0.15
         while time.time() < end and not self.cancel.is_set():
             time.sleep(0.05)
         sd.stop()

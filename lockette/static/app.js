@@ -138,8 +138,26 @@ function addMessage(m, scroll = true) {
     meta.textContent = `${m.role === "user" ? (settings?.user_name || "You") : "Lockette"} · ${formatTime(m.time)}`;
   }
   li.append(bubble, meta);
+  if (m.sources?.length) li.append(renderSources(m.sources));
   $("log").append(li);
   if (scroll) scrollToNewest(li, "smooth");
+}
+
+function renderSources(sources) {
+  const box = document.createElement("div");
+  box.className = "msg-sources";
+  box.append(document.createTextNode("Sources: "));
+  sources.forEach((s, i) => {
+    if (!/^https?:\/\//.test(s.url)) return;
+    const a = document.createElement("a");
+    a.href = s.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = s.title || new URL(s.url).hostname;
+    if (i) box.append(document.createTextNode(" · "));
+    box.append(a);
+  });
+  return box;
 }
 
 // On a laptop the chat box scrolls by itself; on a phone the whole page scrolls.
@@ -240,6 +258,7 @@ function openSettings() {
   if (!settings) return;
   $("userName").value = settings.user_name;
   $("city").value = settings.city || "";
+  $("units").value = settings.units || "F";
   $("familyRows").replaceChildren();
   settings.family.forEach(addFamilyRow);
   $("medRows").replaceChildren();
@@ -267,6 +286,7 @@ function collectSettings() {
   return {
     user_name: $("userName").value.trim(),
     city: $("city").value.trim(),
+    units: $("units").value,
     family: readRows($("familyRows"), ["relation", "name"]),
     meds: readRows($("medRows"), ["time", "what"]),
     volume: Number($("volume").value),

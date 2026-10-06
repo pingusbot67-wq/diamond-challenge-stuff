@@ -6,7 +6,8 @@ Space bar) and ask a question. Everything shows up in the chat history.
 
 - Ears: Google free speech recognition · Voice: Google free text-to-speech · Brain: Claude Haiku
 - Only needs an `ANTHROPIC_API_KEY`. No OpenAI.
-- Looks things up (weather, news, store hours) with Claude's built-in web search, about 1 cent
+- Weather comes from the free Open-Meteo weather service (exact numbers, no key needed).
+- Other lookups (news, store hours) use Claude's built-in web search, about 1 cent
   per search. Set the person's town in Settings so weather is local.
 - Press Talk once to start listening. It stops by itself when you go quiet, or press Talk again.
 - Press Talk while Lockette is speaking to cut it off.
@@ -58,6 +59,7 @@ cd ~/diamond-challenge-stuff && git pull && sudo systemctl restart lockette
 |---|---|
 | `app.py` | The whole Lockette brain + web server |
 | `languages.py` | Every language Lockette speaks, and the phrases it says on its own |
+| `weather.py` | Real weather from Open-Meteo (free, no key) |
 | `static/` | The web page (HTML, CSS, JS) |
 | `setup.sh` | One-time installer |
 | `~/.lockette/settings.json` | Name, family, med reminders, volume (edited from the web page) |

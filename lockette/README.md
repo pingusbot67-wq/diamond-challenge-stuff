@@ -11,6 +11,12 @@ Space bar) and ask a question. Everything shows up in the chat history.
 - Press Talk once to start listening. It stops by itself when you go quiet, or press Talk again.
 - Press Talk while Lockette is speaking to cut it off.
 
+## Languages
+
+Pick one in **Settings → Language**: English, Mandarin (simplified), Mandarin (traditional / Taiwan),
+Cantonese, or Spanish. Lockette listens, thinks, and speaks in that language. To add another
+language, copy a block in `languages.py` (instructions at the top of that file).
+
 ## Install (one time, on the Pi)
 
 ```
@@ -51,6 +57,7 @@ cd ~/diamond-challenge-stuff && git pull && sudo systemctl restart lockette
 | File | What it is |
 |---|---|
 | `app.py` | The whole Lockette brain + web server |
+| `languages.py` | Every language Lockette speaks, and the phrases it says on its own |
 | `static/` | The web page (HTML, CSS, JS) |
 | `setup.sh` | One-time installer |
 | `~/.lockette/settings.json` | Name, family, med reminders, volume (edited from the web page) |

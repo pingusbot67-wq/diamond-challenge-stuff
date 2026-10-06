@@ -31,6 +31,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+import languages
+
 # Set LOCKETTE_FAKE_AUDIO=1 to run the web app on a laptop with no mic or speaker
 FAKE_AUDIO = os.environ.get("LOCKETTE_FAKE_AUDIO") == "1"
 if not FAKE_AUDIO:
@@ -62,7 +64,8 @@ DEFAULT_SETTINGS = {
         {"time": "08:00", "what": "the small white blood pressure pill"},
         {"time": "20:00", "what": "the blue cholesterol pill"},
     ],
-    "accent": "com",      # "com" American, "co.uk" British, "com.au" Australian
+    "language": "en",     # see languages.py
+    "accent": "com",      # English only: "com" American, "co.uk" British, "com.au" Australian
     "volume": 80,         # 0-100
     "mic": "",            # device name, "" = pick automatically
     "speaker": "",
@@ -78,8 +81,10 @@ def system_prompt(s):
     meds = "; ".join(f"{m['time']}: {m['what']}" for m in s["meds"]) or "none set"
     family = ", ".join(f"{f['relation']}: {f['name']}" for f in s["family"]) or "none set"
     town = f"They live in {s['city']}." if s.get("city") else "You don't know their town yet; ask if you need it."
+    lang = languages.get(s.get("language"))
     return f"""You are Lockette, a warm, patient voice companion for {s['user_name']}, an older adult. It is {now}.
 {town}
+Always reply in {lang['claude']}, using simple everyday words, even if the instructions or tool results are in English.
 Reply in 1-3 short, simple sentences. Everything you say is read aloud, so no lists, emojis, symbols, or web addresses.
 You can search the web for things that change, like the weather, news, sports scores, or store hours.
 Give the answer plainly (for weather: the temperature and whether to bring a coat or umbrella), and don't mention sources.
@@ -149,7 +154,16 @@ class Lockette:
 
     def snapshot(self):
         return {"type": "snapshot", "state": self.state, "history": self.history,
-                "settings": self.settings, "devices": self.devices(), "fake_audio": FAKE_AUDIO}
+                "settings": self.settings, "devices": self.devices(), "fake_audio": FAKE_AUDIO,
+                "languages": {code: l["label"] for code, l in languages.LANGUAGES.items()}}
+
+    # ---- language ----
+
+    def lang(self):
+        return languages.get(self.settings.get("language"))
+
+    def phrase(self, key, **extra):
+        return self.lang()[key].format(name=self.settings["user_name"], **extra)
 
     # ---- commands from the web page and the buttons ----
 
@@ -187,7 +201,7 @@ class Lockette:
             save_json(HISTORY_FILE, self.history)
             self.emit({"type": "history_cleared"})
         elif action == "test_speaker":
-            self.jobs.put(("say", f"Hi {self.settings['user_name']}, this is Lockette. Can you hear me?"))
+            self.jobs.put(("say", self.phrase("test")))
 
     def save_settings(self, data):
         clean = dict(self.settings)
@@ -203,6 +217,7 @@ class Lockette:
             if re.fullmatch(r"\d\d:\d\d", str(m.get("time", ""))) and m.get("what")
         ][:10]
         clean["accent"] = data.get("accent") if data.get("accent") in ("com", "co.uk", "com.au") else "com"
+        clean["language"] = data.get("language") if data.get("language") in languages.LANGUAGES else languages.DEFAULT
         clean["volume"] = max(0, min(100, int(data.get("volume", 80))))
         clean["mic"] = str(data.get("mic", ""))
         clean["speaker"] = str(data.get("speaker", ""))
@@ -248,7 +263,7 @@ class Lockette:
         if self.state == "off":   # Turn off was pressed while starting
             return
         self.set_state("ready")
-        self.say(f"Hi {self.settings['user_name']}, I'm ready. Press my button whenever you want to talk.")
+        self.say(self.phrase("greeting"))
 
     def listen_and_answer(self):
         self.chime(rising=True)
@@ -263,7 +278,7 @@ class Lockette:
         self.set_state("thinking", "Thinking...")
         text = self.transcribe(audio)
         if not text:
-            self.say("Sorry, I didn't catch that. Could you press my button and say it again?")
+            self.say(self.phrase("not_caught"))
             return
         self.add_message("user", text)
         self.answer(text)
@@ -288,7 +303,7 @@ class Lockette:
         while msgs and msgs[0]["role"] != "user":
             msgs.pop(0)
         if not os.environ.get("ANTHROPIC_API_KEY"):
-            return "My Claude key isn't set up yet. Please ask your family to add it."
+            return self.phrase("no_key")
         search = dict(WEB_SEARCH)
         if self.settings.get("city"):
             search["user_location"] = {"type": "approximate", "city": self.settings["city"], "country": "US"}
@@ -303,18 +318,19 @@ class Lockette:
                                                     "(check the Claude Console settings). Answering without it."})
                 resp = self.call_claude(msgs, [])
         except anthropic.AuthenticationError:
-            return "My Claude key isn't working. Please ask your family to check it."
+            return self.phrase("bad_key")
         except anthropic.RateLimitError:
-            return "I'm a little busy right now. Please try again in a minute."
+            return self.phrase("busy")
         except anthropic.APIConnectionError:
-            return "I can't reach the internet right now. Please check the Wi-Fi."
+            return self.phrase("offline")
         except anthropic.APIStatusError as e:
-            return f"Something went wrong on my end, error {e.status_code}. Please try again."
+            print("Claude error:", e.status_code, e.message)
+            return self.phrase("error")
         if resp.stop_reason == "refusal":
-            return "Sorry, I can't help with that one."
+            return self.phrase("refusal")
         text = "".join(b.text for b in resp.content if b.type == "text")
         text = re.sub(r"\(\s*https?://[^)]*\)|https?://\S+", "", text)   # never read web addresses aloud
-        return re.sub(r"\s+", " ", text).strip() or "Sorry, could you say that again?"
+        return re.sub(r"\s+", " ", text).strip() or self.phrase("again")
 
     def call_claude(self, msgs, tools):
         resp = self.claude.messages.create(model=MODEL, max_tokens=400, system=system_prompt(self.settings),
@@ -348,7 +364,7 @@ class Lockette:
                 if now.strftime("%H:%M") == m["time"] and key not in said:
                     said.add(key)
                     if self.state != "off":
-                        text = f"{self.settings['user_name']}, it's time for {m['what']}."
+                        text = self.phrase("reminder", what=m["what"])
                         self.add_message("assistant", text, "reminder")
                         self.jobs.put(("remind", text))
             time.sleep(15)
@@ -436,7 +452,8 @@ class Lockette:
     def transcribe(self, audio):
         pcm = (np.clip(audio, -1, 1) * 32767).astype(np.int16).tobytes()
         try:
-            return self.recognizer.recognize_google(sr.AudioData(pcm, self.rate, 2), language="en-US").strip()
+            return self.recognizer.recognize_google(sr.AudioData(pcm, self.rate, 2),
+                                                   language=self.lang()["stt"]).strip()
         except sr.UnknownValueError:
             return ""
         except sr.RequestError:
@@ -473,7 +490,9 @@ class Lockette:
             time.sleep(min(4, 0.06 * len(text)))
             return
         mp3 = io.BytesIO()
-        gTTS(text=text, lang="en", tld=self.settings["accent"], timeout=15).write_to_fp(mp3)
+        lang = self.lang()
+        tld = self.settings["accent"] if lang["tts"] == "en" else "com"
+        gTTS(text=text, lang=lang["tts"], tld=tld, timeout=15).write_to_fp(mp3)
         pcm = subprocess.run(["mpg123", "-q", "-s", "-m", "-r", "24000", "-"],
                              input=mp3.getvalue(), capture_output=True, timeout=30).stdout
         pcm = pcm[:len(pcm) // 2 * 2]

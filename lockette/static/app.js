@@ -15,6 +15,7 @@ let ws;
 let state = "off";
 let settings = null;
 let devices = { inputs: [], outputs: [] };
+let languages = { en: "English" };
 let noticeTimer;
 
 // ---------- connection ----------
@@ -46,6 +47,7 @@ function handle(msg) {
     case "snapshot":
       settings = msg.settings;
       devices = msg.devices;
+      languages = msg.languages || languages;
       renderHistory(msg.history);
       setState(msg.state);
       if (msg.fake_audio) showNotice("Test mode: no mic or speaker connected.");
@@ -244,6 +246,9 @@ function openSettings() {
   settings.meds.forEach(addMedRow);
   $("volume").value = settings.volume;
   $("volumeValue").textContent = `${settings.volume}%`;
+  $("language").replaceChildren(...Object.entries(languages).map(([code, label]) => new Option(label, code)));
+  $("language").value = settings.language || "en";
+  $("accentField").hidden = $("language").value !== "en";
   $("accent").value = settings.accent;
   fillSelect($("mic"), devices.inputs, settings.mic);
   fillSelect($("speaker"), devices.outputs, settings.speaker);
@@ -265,6 +270,7 @@ function collectSettings() {
     family: readRows($("familyRows"), ["relation", "name"]),
     meds: readRows($("medRows"), ["time", "what"]),
     volume: Number($("volume").value),
+    language: $("language").value,
     accent: $("accent").value,
     mic: $("mic").value,
     speaker: $("speaker").value,
@@ -277,6 +283,7 @@ $("closeSettings").addEventListener("click", () => $("settings").close());
 $("cancelSettings").addEventListener("click", () => $("settings").close());
 $("addFamily").addEventListener("click", () => addFamilyRow());
 $("addMed").addEventListener("click", () => addMedRow());
+$("language").addEventListener("change", (e) => ($("accentField").hidden = e.target.value !== "en"));
 $("volume").addEventListener("input", (e) => ($("volumeValue").textContent = `${e.target.value}%`));
 $("testSpeaker").addEventListener("click", () => {
   send("save_settings", collectSettings());

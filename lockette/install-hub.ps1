@@ -31,6 +31,15 @@ function Find-Python {
     return $null
 }
 
+function Stop-OldHub {
+    # A running hub (and its black window) locks the folder, so close them before replacing it
+    Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+        Where-Object { ($_.Name -like "python*" -or $_.Name -eq "py.exe" -or $_.Name -eq "cmd.exe") -and
+                       ($_.CommandLine -like "*hub.py*" -or $_.CommandLine -like "*start-hub.bat*") } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+    Start-Sleep -Seconds 1
+}
+
 Write-Host "=== Lockette Hub setup (about 5 minutes) ===" -ForegroundColor Magenta
 
 # 1. Python
@@ -60,6 +69,7 @@ $zipFile = Join-Path $tmp "lockette.zip"
 Invoke-WebRequest -Uri $Zip -OutFile $zipFile -UseBasicParsing
 Expand-Archive -Path $zipFile -DestinationPath $tmp -Force
 $src = Get-ChildItem $tmp -Directory | Select-Object -First 1
+Stop-OldHub
 if (Test-Path $HubDir) { Remove-Item $HubDir -Recurse -Force }
 Copy-Item (Join-Path $src.FullName "lockette") $HubDir -Recurse
 Remove-Item $tmp -Recurse -Force
@@ -85,11 +95,9 @@ $desktop = [Environment]::GetFolderPath("Desktop")
 Set-Content -Path (Join-Path $desktop "Lockette.url") -Value "[InternetShortcut]`r`nURL=http://localhost:8080/"
 Write-Host "The hub will start by itself when you log in. There's also a 'Lockette' link on your desktop."
 
-# Start it now (stop an older copy first)
-Get-CimInstance Win32_Process -Filter "Name like 'python%' or Name = 'py.exe'" -ErrorAction SilentlyContinue |
-    Where-Object { $_.CommandLine -like "*hub.py*" } |
-    ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+# Start it now
 Start-Process -FilePath (Join-Path $HubDir "start-hub.bat") -WorkingDirectory $HubDir -WindowStyle Minimized
 
 Write-Host "`n=== All set! Opening http://localhost:8080 ===" -ForegroundColor Green
 Write-Host "If Windows Firewall asks about Python, click Allow."
+Write-Host "Seeing the old page? Press Ctrl+F5 in the browser to skip its saved copy."

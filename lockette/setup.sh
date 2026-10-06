@@ -73,6 +73,10 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 sudo usermod -aG audio,gpio "$USER"
+# Let Lockette's "Shut down" button power the Pi off safely (only the shutdown command, nothing else)
+echo "$USER ALL=(root) NOPASSWD: /usr/sbin/shutdown" | sudo tee /etc/sudoers.d/lockette >/dev/null
+sudo chmod 440 /etc/sudoers.d/lockette
+sudo visudo -cf /etc/sudoers.d/lockette >/dev/null || sudo rm -f /etc/sudoers.d/lockette
 sudo systemctl daemon-reload
 sudo systemctl enable lockette >/dev/null 2>&1
 echo "Done."

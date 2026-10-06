@@ -12,6 +12,21 @@ Space bar) and ask a question. Everything shows up in the chat history.
 - Press Talk once to start listening. It stops by itself when you go quiet, or press Talk again.
 - Press Talk while Lockette is speaking to cut it off.
 
+## Lockette Hub (control page on your PC, with Power on / off)
+
+The Pi's own page can't turn the Pi on, because it lives on the Pi. **Lockette Hub** runs on
+your PC instead, so it works even when the Pi is off. It shows the same Lockette page plus
+**Power on / Power off**.
+
+- **Power off** works right away: it shuts the Pi down safely.
+- **Power on** needs a **TP-Link Kasa or Tapo Wi-Fi smart plug** with the Pi's charger plugged
+  into it. Enter the plug's address in **Power setup** on the hub page. Power off then also
+  cuts the plug's power after the Pi finishes shutting down.
+
+Windows: double-click **`start-hub.bat`** (needs Python from python.org), then use
+http://localhost:8080. Close the black window to stop the hub. Hub settings are saved in
+`.lockette-hub.json` in your user folder (that includes the TP-Link password if you enter one).
+
 ## Languages
 
 Pick one in **Settings → Language**: English, Mandarin (simplified), Mandarin (traditional / Taiwan),
@@ -60,6 +75,7 @@ cd ~/diamond-challenge-stuff && git pull && sudo systemctl restart lockette
 | `app.py` | The whole Lockette brain + web server |
 | `languages.py` | Every language Lockette speaks, and the phrases it says on its own |
 | `weather.py` | Real weather from Open-Meteo (free, no key) |
+| `hub.py`, `start-hub.bat` | Lockette Hub for your PC (power on/off) |
 | `static/` | The web page (HTML, CSS, JS) |
 | `setup.sh` | One-time installer |
 | `~/.lockette/settings.json` | Name, family, med reminders, volume (edited from the web page) |

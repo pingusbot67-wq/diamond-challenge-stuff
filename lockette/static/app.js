@@ -17,17 +17,32 @@ let settings = null;
 let devices = { inputs: [], outputs: [] };
 let languages = { en: "English" };
 let noticeTimer;
+let hub = null;        // set when this page runs on the PC hub (power controls live there)
+let hubStatus = null;
+let piConnected = false;
+let piShuttingDown = false;
 
 // ---------- connection ----------
 
 function connect() {
   const proto = location.protocol === "https:" ? "wss" : "ws";
-  ws = new WebSocket(`${proto}://${location.host}/ws`);
-  ws.onopen = () => setConn("Connected", "ok");
+  const host = hub ? hub.pi : location.host;
+  ws = new WebSocket(`${proto}://${host}/ws`);
+  ws.onopen = () => {
+    piConnected = true;
+    piShuttingDown = false;
+    setConn("Connected", "ok");
+    renderPower();
+  };
   ws.onclose = () => {
-    setConn("Reconnecting…", "bad");
-    setState("off", "Can't reach Lockette. Is the Pi plugged in?");
-    setTimeout(connect, 2000);
+    piConnected = false;
+    const piOff = piShuttingDown || (hub && hubStatus && !hubStatus.pi_online);
+    setConn(piOff ? "Pi is off" : "Reconnecting…", "bad");
+    setState("off", piShuttingDown
+      ? "The Pi is shutting down. Unplug it once the green light stops."
+      : piOff ? "The Raspberry Pi is powered off." : "Can't reach Lockette. Is the Pi plugged in?");
+    renderPower();
+    setTimeout(connect, hub ? 3000 : 2000);
   };
   ws.onmessage = (e) => handle(JSON.parse(e.data));
 }
@@ -73,6 +88,10 @@ function handle(msg) {
     case "devices":
       devices = msg.devices;
       break;
+    case "pi_shutdown":
+      piShuttingDown = true;
+      renderPower();
+      break;
     case "history_cleared":
       renderHistory([]);
       break;
@@ -87,13 +106,13 @@ function setState(next, detail) {
   $("orbWrap").dataset.state = next;
   $("orbWrap").style.setProperty("--level", 0);
   $("statusTitle").textContent = info.title;
-  $("statusDetail").textContent = info.detail;
+  $("statusDetail").textContent = next === "off" && detail ? detail : info.detail;
 
   const on = next !== "off";
   const power = $("powerBtn");
   power.textContent = on ? "Turn off" : "Start Lockette";
   power.classList.toggle("is-off", !on);
-  power.disabled = next === "starting";
+  power.disabled = next === "starting" || !piConnected;
 
   const talk = $("talkBtn");
   talk.disabled = !["ready", "listening", "speaking"].includes(next);
@@ -255,7 +274,10 @@ function fillSelect(select, names, chosen) {
 }
 
 function openSettings() {
-  if (!settings) return;
+  if (!piConnected || !settings) {
+    showNotice("Turn the Raspberry Pi on to change Lockette's settings.");
+    return;
+  }
   $("userName").value = settings.user_name;
   $("city").value = settings.city || "";
   $("units").value = settings.units || "F";
@@ -314,4 +336,116 @@ $("settingsForm").addEventListener("submit", () => {
   showNotice("Settings saved.");
 });
 
-connect();
+// ---------- Pi power ----------
+
+function renderPower() {
+  const card = $("powerCard");
+  const btn = $("piPowerBtn");
+  let power = "on", title = "Raspberry Pi is on", msg = "", label = "Shut down", go = false, disabled = false;
+
+  if (hub && hubStatus) {
+    msg = hubStatus.message || "";
+    if (hubStatus.phase === "powering_on") {
+      [power, title, label, disabled] = ["busy", "Starting up…", "Please wait", true];
+    } else if (hubStatus.phase === "powering_off") {
+      [power, title, label, disabled] = ["busy", "Shutting down…", "Please wait", true];
+    } else if (!hubStatus.pi_online) {
+      [power, title, label, go] = ["off", "Raspberry Pi is off", "Power on", true];
+      if (!hubStatus.has_plug) {
+        disabled = true;
+        msg = msg || "To power on from here, add a smart plug in Power setup.";
+      }
+    } else {
+      label = "Power off";
+    }
+  } else if (piShuttingDown) {
+    [power, title, label, disabled] = ["busy", "Shutting down…", "Shut down", true];
+    msg = "Safe to unplug once the green light stops (about 20 seconds).";
+  } else if (!piConnected) {
+    [power, title, disabled] = ["off", "Can't reach the Pi", true];
+  }
+
+  card.dataset.power = power;
+  $("powerTitle").textContent = title;
+  $("powerMsg").textContent = msg;
+  btn.textContent = label;
+  btn.disabled = disabled;
+  btn.classList.toggle("is-go", go);
+}
+
+async function pollHub() {
+  try {
+    hubStatus = await (await fetch("/hub/status")).json();
+  } catch {
+    hubStatus = null;
+  }
+  renderPower();
+}
+
+async function hubPost(path, body) {
+  const r = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  return r.json();
+}
+
+$("piPowerBtn").addEventListener("click", async () => {
+  const on = hub ? hubStatus?.pi_online : piConnected;
+  if (on) {
+    const sure = confirm("Shut the Raspberry Pi down? Lockette will stop until it's powered on again.");
+    if (!sure) return;
+    if (hub) hubStatus = await hubPost("/hub/power_off");
+    else send("shutdown_pi");
+  } else if (hub) {
+    hubStatus = await hubPost("/hub/power_on");
+  }
+  renderPower();
+});
+
+function openPowerSetup() {
+  $("piAddress").value = hub.pi;
+  $("plugHost").value = hub.plug_host || "";
+  $("plugUser").value = hub.plug_user || "";
+  $("plugPass").value = "";
+  $("plugPass").placeholder = hub.has_password ? "Saved (leave blank to keep it)" : "";
+  $("powerDialog").showModal();
+}
+
+$("powerSetupBtn").addEventListener("click", openPowerSetup);
+$("closePower").addEventListener("click", () => $("powerDialog").close());
+$("cancelPower").addEventListener("click", () => $("powerDialog").close());
+$("powerForm").addEventListener("submit", async () => {
+  const oldPi = hub.pi;
+  hub = { ...hub, ...(await hubPost("/hub/settings", {
+    pi: $("piAddress").value.trim(),
+    plug_host: $("plugHost").value.trim(),
+    plug_user: $("plugUser").value.trim(),
+    plug_pass: $("plugPass").value,
+  })) };
+  await pollHub();
+  showNotice(hubStatus?.message || "Power settings saved.", /couldn't/i.test(hubStatus?.message || ""));
+  if (hub.pi !== oldPi && ws) ws.close();   // reconnect to the new address
+});
+
+// ---------- start ----------
+
+async function init() {
+  try {
+    const r = await fetch("/hub/config");
+    if (r.ok) hub = await r.json();
+  } catch {
+    hub = null;
+  }
+  if (hub) {
+    $("powerSetupBtn").hidden = false;
+    document.title = "Lockette Hub";
+    await pollHub();
+    setInterval(pollHub, 2500);
+  }
+  renderPower();
+  connect();
+}
+
+init();

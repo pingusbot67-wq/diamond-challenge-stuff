@@ -286,8 +286,19 @@ class Lockette:
             self.history = []
             save_json(HISTORY_FILE, self.history)
             self.emit({"type": "history_cleared"})
+        elif action == "shutdown_pi":
+            self.shutdown_pi()
         elif action == "test_speaker":
             self.jobs.put(("say", self.phrase("test")))
+
+    def shutdown_pi(self):
+        """Turn Lockette off, then shut the whole Pi down safely (unplugging is safe ~20 seconds later)."""
+        self.command("stop")
+        self.emit({"type": "pi_shutdown"})
+        if FAKE_AUDIO:
+            print("(test mode) Would shut down the Pi now")
+            return
+        threading.Timer(1.5, lambda: subprocess.run(["sudo", "-n", "/usr/sbin/shutdown", "-h", "now"])).start()
 
     def save_settings(self, data):
         clean = dict(self.settings)
@@ -647,6 +658,17 @@ async def lifespan(app):
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
+
+
+@app.get("/api/ping")
+def ping():
+    return {"ok": True, "state": lockette.state}
+
+
+@app.post("/api/shutdown")
+def api_shutdown():
+    lockette.shutdown_pi()
+    return {"ok": True}
 
 
 @app.get("/")

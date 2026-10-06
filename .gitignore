@@ -8,3 +8,9 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# Lockette web build
+lockette/web/node_modules/
+lockette/web/.next/
+lockette/web/out/
+lockette/web/next-env.d.ts

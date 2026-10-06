@@ -1,0 +1,312 @@
+@import "tailwindcss";
+
+/*
+ * Lockette. Pingus's skeleton and motion (square corners, hairlines, mono
+ * captions, condensing text) with eugeniagrab's warmth (cream ground, a serif
+ * display face, one soft object in the middle). Light "paper" is the default;
+ * "night" is the alternate. Every text/ground pair here passes WCAG AA.
+ */
+
+@theme {
+  --font-serif: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-sans: "Inter Variable", "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-alt: var(--bg-alt);
+  --color-ink: var(--text);
+  --color-dim: var(--text-dim);
+  --color-faint: var(--text-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-glow: var(--glow);
+  --color-ok: var(--ok);
+  --color-danger: var(--danger);
+}
+
+:root,
+[data-theme="paper"] {
+  --bg: #faf5ee;
+  --bg-alt: #f3ece2;
+  --text: #142022;
+  --text-dim: rgba(20, 32, 34, 0.78);
+  --text-faint: rgba(20, 32, 34, 0.66);
+  --line: rgba(20, 32, 34, 0.18);
+  --line-strong: rgba(20, 32, 34, 0.5);
+  --accent: #8a5e5a;
+  --accent-ink: #faf5ee;
+  --glow: #ffb869;
+  --ok: #2d6a4f;
+  --danger: #a1302b;
+  --scrim: rgba(20, 32, 34, 0.45);
+  color-scheme: light;
+}
+
+[data-theme="night"] {
+  --bg: #0b0d0d;
+  --bg-alt: #141818;
+  --text: #f6f1ea;
+  --text-dim: rgba(246, 241, 234, 0.8);
+  --text-faint: rgba(246, 241, 234, 0.6);
+  --line: rgba(246, 241, 234, 0.2);
+  --line-strong: rgba(246, 241, 234, 0.55);
+  --accent: #e8b8a8;
+  --accent-ink: #0b0d0d;
+  --glow: #ffb869;
+  --ok: #8fd3a8;
+  --danger: #ff9a8f;
+  --scrim: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+/* The A A A control scales everything sized in rem (all body text and buttons). */
+html {
+  font-size: calc(100% * var(--text-scale, 1));
+  background: var(--bg);
+  color: var(--text);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1.125rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* --- type ----------------------------------------------------------------- */
+
+/* Serif only at display sizes (>= 40px); thin serifs are hard to read small. */
+.display {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+.display-caps {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+/* Decorative small print. Never the only place information lives. */
+.caption {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Lenis ------------------------------------------------------------------ */
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+html.lk-site {
+  scrollbar-width: none;
+}
+html.lk-site::-webkit-scrollbar {
+  display: none;
+}
+
+/* --- ported from Pingus ------------------------------------------------------ */
+
+/* Letters that roll up on hover, a second copy rolling in behind them. */
+.pc-roll-ch {
+  display: inline-block;
+  transition: transform 0.45s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.pc-roll-b .pc-roll-ch {
+  transform: translateY(105%);
+}
+.group:hover .pc-roll-a .pc-roll-ch,
+.group:focus-visible .pc-roll-a .pc-roll-ch {
+  transform: translateY(-105%);
+}
+.group:hover .pc-roll-b .pc-roll-ch,
+.group:focus-visible .pc-roll-b .pc-roll-ch {
+  transform: translateY(0);
+}
+
+/* Press feedback shared by every button. */
+.pc-press {
+  transition:
+    transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    color 0.22s ease;
+}
+.pc-press:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Corner ticks, like crop marks on a plate. */
+.pc-frame::before,
+.pc-frame::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  pointer-events: none;
+  color: var(--accent);
+  z-index: 1;
+}
+.pc-frame::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid currentColor;
+  border-left: 1px solid currentColor;
+}
+.pc-frame::after {
+  right: -1px;
+  bottom: -1px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+}
+
+/* Film grain, as an inline SVG so it costs nothing to fetch. */
+.pc-noise {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 160px 160px;
+}
+
+/* Theme switch: the new ground wipes in as a circle from the click. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* --- Lockette bits ------------------------------------------------------------ */
+
+/* A hairline that draws itself (leader lines, the dimension callout). */
+.lk-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+@keyframes lk-breathe {
+  50% {
+    opacity: 0.35;
+  }
+}
+.lk-breathe {
+  animation: lk-breathe 1.6s ease-in-out infinite;
+}
+
+@keyframes lk-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(var(--dx, 40px), var(--dy, -120px), 0);
+  }
+}
+
+@keyframes lk-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.lk-pop {
+  animation: lk-pop 0.35s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+dialog.lk-dialog {
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  color: var(--text);
+  width: min(40rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+}
+dialog.lk-dialog::backdrop {
+  background: var(--scrim);
+}
+dialog.lk-dialog[open] {
+  animation: lk-pop 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.lk-input {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0 1rem;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1.125rem;
+  border-radius: 0;
+}
+.lk-input:hover {
+  border-color: var(--text);
+}
+.lk-input::placeholder {
+  color: var(--text-faint);
+}
+.lk-input:disabled {
+  opacity: 0.55;
+}
+select.lk-input {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 22px) 52%, calc(100% - 16px) 52%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2.75rem;
+}
+input[type="range"].lk-range {
+  width: 100%;
+  height: 2.5rem;
+  accent-color: var(--text);
+}
+input[type="checkbox"].lk-check {
+  width: 1.5rem;
+  height: 1.5rem;
+  accent-color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

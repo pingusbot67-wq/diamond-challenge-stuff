@@ -1,5 +1,9 @@
 # Lockette — web app version
 
+**The website:** `/` is the product page (3D Lockette, scroll story), **Log in** goes to `/login`, and
+`/app` is the dashboard (talk, conversation, settings, power). Built from `web/` into `site/`; the
+built files are committed, so the Pi and the hub never need Node.
+
 Plug in the Pi, open **http://lockette.local** on a laptop or phone (same Wi-Fi), press
 **Start Lockette**, then press **Talk** (on the page, button A on the Pirate Audio board, or the
 Space bar) and ask a question. Everything shows up in the chat history.
@@ -76,7 +80,8 @@ cd ~/diamond-challenge-stuff && git pull && sudo systemctl restart lockette
 | `languages.py` | Every language Lockette speaks, and the phrases it says on its own |
 | `weather.py` | Real weather from Open-Meteo (free, no key) |
 | `hub.py`, `start-hub.bat` | Lockette Hub for your PC (power on/off) |
-| `static/` | The web page (HTML, CSS, JS) |
+| `site/` | The built website (landing page, `/login`, `/app` dashboard). Served by `app.py` and `hub.py` |
+| `web/` | The website's source (Next.js + three.js). Rebuild with `cd web && npm install && npm run build` |
 | `setup.sh` | One-time installer |
 | `~/.lockette/settings.json` | Name, family, med reminders, volume (edited from the web page) |
 | `~/.lockette/history.json` | Chat history |

@@ -29,7 +29,6 @@ import anthropic
 import numpy as np
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 import languages
@@ -657,7 +656,6 @@ async def lifespan(app):
 
 
 app = FastAPI(lifespan=lifespan)
-app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
 
 
 @app.get("/api/ping")
@@ -669,11 +667,6 @@ def ping():
 def api_shutdown():
     lockette.shutdown_pi()
     return {"ok": True}
-
-
-@app.get("/")
-def index():
-    return FileResponse(HERE / "static" / "index.html")
 
 
 @app.websocket("/ws")
@@ -700,6 +693,11 @@ async def ws(websocket: WebSocket):
     finally:
         send_task.cancel()
         lockette.clients.discard(q)
+
+
+# The website (landing page, /login, /app dashboard), built from web/ into site/.
+# Mounted last so the routes above win.
+app.mount("/", StaticFiles(directory=HERE / "site", html=True), name="site")
 
 
 if __name__ == "__main__":

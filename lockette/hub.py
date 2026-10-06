@@ -17,7 +17,6 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 HERE = Path(__file__).parent
@@ -139,12 +138,6 @@ async def lifespan(app):
 
 
 app = FastAPI(lifespan=lifespan)
-app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
-
-
-@app.get("/")
-def index():
-    return FileResponse(HERE / "static" / "index.html")
 
 
 @app.get("/hub/config")
@@ -190,6 +183,11 @@ async def post_settings(data: dict):
         status["plug_on"] = None
         status["message"] = f"Saved, but couldn't reach the smart plug: {e}"
     return get_config()
+
+
+# The website (landing page, /login, /app dashboard), built from web/ into site/.
+# Mounted last so the routes above win.
+app.mount("/", StaticFiles(directory=HERE / "site", html=True), name="site")
 
 
 if __name__ == "__main__":

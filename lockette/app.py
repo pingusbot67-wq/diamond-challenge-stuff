@@ -22,6 +22,7 @@ import re
 import subprocess
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -118,6 +119,26 @@ def find_sources(content):
                 if getattr(r, "url", None):
                     found.append({"title": getattr(r, "title", None) or r.url, "url": r.url})
     return cited or found
+
+
+SENTENCE_END = re.compile(r"(?<=[.!?])\s+|(?<=[。！？])")
+
+
+def split_sentences(buf):
+    """Pull finished sentences off the front of text that's still arriving. Returns (sentences, the rest)."""
+    done = []
+    while (m := SENTENCE_END.search(buf, 8)):   # skip tiny bits like "Dr." so they join the next part
+        done.append(buf[:m.end()])
+        buf = buf[m.end():]
+    return done, buf
+
+
+def speakable(text):
+    """What's actually read aloud: no [TAGS], web addresses, or markdown stars."""
+    text = re.sub(r"\[[^\]]*\]", "", text)
+    text = re.sub(r"\(\s*https?://[^)]*\)|https?://\S+", "", text)
+    text = re.sub(r"[*#]", "", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 # ---------------- storage ----------------
@@ -387,61 +408,91 @@ class Lockette:
         self.answer(text)
 
     def answer(self, text):
+        """Speak Claude's answer while it's still being written, a sentence at a time."""
         self.set_state("thinking", "Thinking...")
-        reply, sources = self.ask_claude()
-        call = re.match(r"\s*\[CALL:\s*(.+?)\]", reply)
-        if call:
-            self.add_message("system", f"Asked to call {call.group(1)}. Calling isn't connected yet.", "call")
-        if "[EMERGENCY]" in reply:
-            self.add_message("system", "Emergency words heard. Lockette told them to call 911 from their phone.",
-                             "emergency")
-        spoken = re.sub(r"\[.*?\]\s*", "", reply).strip()
-        self.add_message("assistant", spoken, sources=sources)
-        self.say(spoken, record=False)
+        pieces = queue.Queue()   # sentences to say, in order; None means that's all
+        threading.Thread(target=self.ask_claude, args=(pieces,), daemon=True).start()
+        self.speak_pieces(pieces)
 
-    def ask_claude(self):
-        """Returns (what to say, list of sources it looked things up in)."""
+    def ask_claude(self, pieces):
+        """Runs in its own thread: streams Claude's answer into `pieces`, then adds it to the chat."""
+        spoken, tags = [], []
+
+        def say_part(text):
+            tags.extend(re.findall(r"\[[^\]]*\]", text))
+            text = speakable(text)
+            if text:
+                spoken.append(text)
+                pieces.put(text)
+
+        sources = []
+        try:
+            sources = self.ask_claude_streaming(say_part)
+        except anthropic.AuthenticationError:
+            say_part(self.phrase("bad_key"))
+        except anthropic.RateLimitError:
+            say_part(self.phrase("busy"))
+        except anthropic.APIConnectionError:
+            say_part(self.phrase("offline"))
+        except anthropic.APIStatusError as e:
+            print("Claude error:", e.status_code, e.message)
+            say_part(self.phrase("error"))
+        except Exception as e:   # never leave Lockette stuck "thinking"
+            print("Claude error:", repr(e))
+            say_part(self.phrase("error"))
+        try:
+            if not spoken:
+                say_part(self.phrase("again"))
+            call = next((re.match(r"\[CALL:\s*(.+?)\]", t) for t in tags if t.startswith("[CALL")), None)
+            if call:
+                self.add_message("system", f"Asked to call {call.group(1)}. Calling isn't connected yet.", "call")
+            if "[EMERGENCY]" in tags:
+                self.add_message("system", "Emergency words heard. Lockette told them to call 911 from their phone.",
+                                 "emergency")
+            self.add_message("assistant", " ".join(spoken), sources=sources)
+        finally:
+            pieces.put(None)
+
+    def ask_claude_streaming(self, say_part):
+        """Sends each finished sentence to say_part as Claude writes it. Returns the sources it used."""
         msgs = [{"role": m["role"], "content": m["text"]}
                 for m in self.history if m["kind"] == "chat" and m["role"] in ("user", "assistant")]
         msgs = msgs[-CONTEXT_MESSAGES:]
         while msgs and msgs[0]["role"] != "user":
             msgs.pop(0)
         if not os.environ.get("ANTHROPIC_API_KEY"):
-            return self.phrase("no_key"), []
+            say_part(self.phrase("no_key"))
+            return []
         search = dict(WEB_SEARCH)
         if self.settings.get("city"):
             search["user_location"] = {"type": "approximate", "city": self.settings["city"], "country": "US"}
         try:
-            try:
-                resp, sources = self.call_claude(msgs, [weather.TOOL, search])
-            except anthropic.BadRequestError as e:
-                if "web_search" not in str(e) and "web search" not in str(e).lower():
-                    raise
-                # Web search is switched off for this Claude account: answer without it
-                self.emit({"type": "error", "text": "Web search is turned off for your Claude account "
-                                                    "(check the Claude Console settings). Answering without it."})
-                resp, sources = self.call_claude(msgs, [weather.TOOL])
-        except anthropic.AuthenticationError:
-            return self.phrase("bad_key"), []
-        except anthropic.RateLimitError:
-            return self.phrase("busy"), []
-        except anthropic.APIConnectionError:
-            return self.phrase("offline"), []
-        except anthropic.APIStatusError as e:
-            print("Claude error:", e.status_code, e.message)
-            return self.phrase("error"), []
-        if resp.stop_reason == "refusal":
-            return self.phrase("refusal"), []
-        text = "".join(b.text for b in resp.content if b.type == "text")
-        text = re.sub(r"\(\s*https?://[^)]*\)|https?://\S+", "", text)   # never read web addresses aloud
-        return re.sub(r"\s+", " ", text).strip() or self.phrase("again"), sources
+            return self.call_claude(msgs, [weather.TOOL, search], say_part)
+        except anthropic.BadRequestError as e:
+            if "web_search" not in str(e) and "web search" not in str(e).lower():
+                raise
+            # Web search is switched off for this Claude account: answer without it
+            self.emit({"type": "error", "text": "Web search is turned off for your Claude account "
+                                                "(check the Claude Console settings). Answering without it."})
+            return self.call_claude(msgs, [weather.TOOL], say_part)
 
-    def call_claude(self, msgs, tools):
+    def call_claude(self, msgs, tools, say_part):
         """Ask Claude, running any lookups it asks for (weather, web search) until it has an answer."""
         convo, sources = list(msgs), []
         for _ in range(6):
-            resp = self.claude.messages.create(model=MODEL, max_tokens=500, system=system_prompt(self.settings),
-                                               messages=convo, tools=tools)
+            buf = ""
+            with self.claude.messages.stream(model=MODEL, max_tokens=500, system=system_prompt(self.settings),
+                                             messages=convo, tools=tools) as stream:
+                for delta in stream.text_stream:
+                    done, buf = split_sentences(buf + delta)
+                    for sentence in done:
+                        say_part(sentence)
+                resp = stream.get_final_message()
+            if buf.strip():
+                say_part(buf)
+            if resp.stop_reason == "refusal":
+                say_part(self.phrase("refusal"))
+                break
             sources += find_sources(resp.content)
             if resp.stop_reason == "pause_turn":   # a long web search paused; send it back to continue
                 convo.append({"role": "assistant", "content": resp.content})
@@ -452,7 +503,7 @@ class Lockette:
             else:
                 break
         unique = {s["url"]: s for s in sources if s.get("url")}
-        return resp, list(unique.values())[:4]
+        return list(unique.values())[:4]
 
     def run_tool(self, block, sources):
         if block.name != "get_weather":
@@ -527,7 +578,7 @@ class Lockette:
         return max(0.006, noise * 2.5)
 
     def record(self):
-        """Wait up to 8 seconds for speech, then record until 1.4 seconds of quiet (15 seconds max)."""
+        """Wait up to 8 seconds for speech, then record until 1 second of quiet (15 seconds max)."""
         if FAKE_AUDIO:
             self.done_talking.wait(1.5)
             return None
@@ -551,7 +602,7 @@ class Lockette:
                     continue
                 voiced.append(chunk)
                 silence = 0 if loud else silence + 1
-                if silence >= 14 or len(voiced) > 150:
+                if silence >= 10 or len(voiced) > 150:
                     if len(voiced) - silence < 4:   # just a bump, click, or the chime
                         pre, voiced, silence = [], [], 0
                         continue
@@ -575,7 +626,12 @@ class Lockette:
             self.emit({"type": "error", "text": "Speech recognition couldn't reach the internet."})
             return ""
 
-    def play(self, data, rate):
+    def play(self, data, rate, wait=True):
+        if FAKE_AUDIO:   # data is the text; pretend to say it
+            end = time.time() + min(4, 0.06 * len(data))
+            while time.time() < end and not self.cancel.is_set():
+                time.sleep(0.05)
+            return
         idx, info = self.pick("output", self.settings["speaker"], SPEAKER_WORDS)
         out_rate = int(info["default_samplerate"])
         n = int(len(data) * out_rate / rate)
@@ -584,6 +640,8 @@ class Lockette:
         if info["max_output_channels"] >= 2:
             data = np.column_stack([data, data])
         sd.play(data, out_rate, device=idx)
+        if not wait:   # keeps playing in the background; the next sound replaces it
+            return
         # Wait for it to finish, but stop early if Talk or Turn off is pressed
         end = time.time() + len(data) / out_rate + 0.15
         while time.time() < end and not self.cancel.is_set():
@@ -597,13 +655,52 @@ class Lockette:
         notes = (660, 880) if rising else (880, 660)
         t = np.arange(int(rate * 0.09)) / rate
         tone = np.concatenate([np.sin(2 * np.pi * f * t) * np.hanning(len(t)) for f in notes]) * 0.4
-        self.play(tone.astype(np.float32), rate)
+        # The "got it" chime plays while we start working out what was said, instead of waiting for it
+        self.play(tone.astype(np.float32), rate, wait=rising)
 
     def speak(self, text):
+        pieces = queue.Queue()
+        pieces.put(text)
+        pieces.put(None)
+        self.speak_pieces(pieces)
+
+    def speak_pieces(self, pieces):
+        """Say each piece as it arrives. The next piece's voice is made while this one plays,
+        so there's no wait between sentences."""
+        pool = ThreadPoolExecutor(max_workers=2)
+        voices = queue.Queue()   # each piece's voice being made, in order; None at the end
+
+        def make_voices():   # starts each piece's voice the moment the piece arrives
+            while (piece := pieces.get()) is not None:
+                try:
+                    voices.put(pool.submit(self.synth, piece))
+                except RuntimeError:   # Talk or Turn off cut the answer short; drop the rest
+                    pass
+            voices.put(None)
+
+        threading.Thread(target=make_voices, daemon=True).start()
+        try:
+            while not self.cancel.is_set():
+                try:
+                    voice = voices.get(timeout=0.1)
+                except queue.Empty:
+                    continue
+                if voice is None:
+                    break
+                audio = voice.result()
+                if self.cancel.is_set():
+                    break
+                if self.state not in ("speaking", "off"):
+                    self.set_state("speaking", "Speaking...")
+                self.play(audio, 24000)
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
+
+    def synth(self, text):
+        """Turn text into sound (Google's free voice). Returns the audio, ready to play."""
         print("Lockette:", text)
         if FAKE_AUDIO:
-            time.sleep(min(4, 0.06 * len(text)))
-            return
+            return text
         mp3 = io.BytesIO()
         lang = self.lang()
         tld = self.settings["accent"] if lang["tts"] == "en" else "com"
@@ -611,9 +708,7 @@ class Lockette:
         pcm = subprocess.run(["mpg123", "-q", "-s", "-m", "-r", "24000", "-"],
                              input=mp3.getvalue(), capture_output=True, timeout=30).stdout
         pcm = pcm[:len(pcm) // 2 * 2]
-        if self.cancel.is_set():
-            return
-        self.play(np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768, 24000)
+        return np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768
 
 
 lockette = Lockette()

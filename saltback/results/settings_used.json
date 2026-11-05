@@ -1,0 +1,14 @@
+{
+  "pavement_temp_F": 22,
+  "ice_film_mm": 0.2,
+  "scatter_loss": 0.2,
+  "later_water_mm": 5.0,
+  "unsalted_share": 0.3,
+  "baseline_cl_mg_L": 50,
+  "water_temp_C": 1.0,
+  "probe_max_mS_cm": 20.0,
+  "probe_noise": 0.03,
+  "temp_probe_error_C": 0.5,
+  "salt_price_per_ton": 90,
+  "seed": 1
+}

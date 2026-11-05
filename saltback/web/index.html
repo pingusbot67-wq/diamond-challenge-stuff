@@ -1,0 +1,980 @@
+<title>Saltback Storm Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Watch road salt travel from the truck to the storm drain, then read what the drain sensor says about it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Michroma&display=swap">
+<style>
+/* Layout: instrument console. Control rail beside a live cross-section of road and drain, storm report below.
+   Color: ice blue = water and brine, sodium amber = salt (the 589 nm glow of sodium streetlights). */
+:root {
+  --bg: #eef3f6; --panel: #ffffff; --panel-2: #e6edf2; --line: #d3dde5; --line-2: #bccad5;
+  --fg: #0b1621; --fg-2: #435363; --fg-3: #758595;
+  --ice: #1a74c4; --sodium: #bb6400; --alert: #c8372a; --ok: #0d8458;
+  --sky-1: #dfe9f0; --sky-2: #f5f8fa; --asphalt: #34404c; --soil: #cfc4b2; --snow: #ffffff;
+  --glow: source-over;
+  --f-display: "Michroma", "Eurostile", "Microgramma", "Arial Black", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #070b10; --panel: #0d141b; --panel-2: #121b24; --line: #1c2834; --line-2: #2a3846;
+    --fg: #e3ebf1; --fg-2: #9aa9b6; --fg-3: #5f6e7b;
+    --ice: #74c2ff; --sodium: #ffac40; --alert: #ff6a5b; --ok: #46d19e;
+    --sky-1: #0a1219; --sky-2: #06090d; --asphalt: #19222b; --soil: #26221c; --snow: #e9f1f7;
+    --glow: lighter; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #070b10; --panel: #0d141b; --panel-2: #121b24; --line: #1c2834; --line-2: #2a3846;
+  --fg: #e3ebf1; --fg-2: #9aa9b6; --fg-3: #5f6e7b;
+  --ice: #74c2ff; --sodium: #ffac40; --alert: #ff6a5b; --ok: #46d19e;
+  --sky-1: #0a1219; --sky-2: #06090d; --asphalt: #19222b; --soil: #26221c; --snow: #e9f1f7;
+  --glow: lighter; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 56px; -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1280px; margin: 0 auto; }
+.mono { font-family: var(--f-mono); }
+.eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-3); }
+h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 600; }
+:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- top bar ---------- */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-block: 22px 18px; }
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.wordmark { font-family: var(--f-display); font-size: 20px; letter-spacing: .32em; }
+.wordmark b { color: var(--sodium); font-weight: 400; }
+.top .tag { font-size: 13px; color: var(--fg-2); }
+.steps { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px;
+  border: 1px solid var(--line-2); border-radius: 999px; color: var(--fg-2); white-space: nowrap; }
+.chip.on { border-color: var(--ice); color: var(--ice); }
+
+/* ---------- console ---------- */
+.console { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+.controls { padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 22px; }
+.group { display: flex; flex-direction: column; gap: 14px; }
+.group > .eyebrow { display: flex; align-items: center; gap: 10px; }
+.group > .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.ctl { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: baseline; }
+.ctl label { font-size: 13px; color: var(--fg-2); }
+.ctl output { font-family: var(--f-mono); font-size: 12.5px; color: var(--fg); font-variant-numeric: tabular-nums; }
+.ctl input { grid-column: 1 / -1; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 18px; background: transparent; margin: 0; cursor: pointer; }
+input[type=range]::-webkit-slider-runnable-track { height: 2px; background: linear-gradient(to right, var(--sodium) var(--p, 50%), var(--line-2) var(--p, 50%)); border-radius: 2px; }
+input[type=range]::-moz-range-track { height: 2px; background: var(--line-2); border-radius: 2px; }
+input[type=range]::-moz-range-progress { height: 2px; background: var(--sodium); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -6px; border-radius: 50%;
+  background: var(--panel); border: 2px solid var(--sodium); }
+input[type=range]::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: var(--panel); border: 2px solid var(--sodium); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { text-align: center; padding: 7px 6px; font-size: 12px; color: var(--fg-2); cursor: pointer; line-height: 1.3; }
+.seg label small { display: block; font-family: var(--f-mono); font-size: 10.5px; color: var(--fg-3); }
+.seg input:checked + label { background: var(--panel-2); color: var(--fg); box-shadow: inset 0 -2px 0 var(--ice); }
+.seg input:focus-visible + label { outline: 2px solid var(--ice); outline-offset: -2px; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--fg-2); cursor: pointer; }
+.switch input { appearance: none; -webkit-appearance: none; width: 34px; height: 18px; border-radius: 999px; background: var(--line-2); position: relative; cursor: pointer; flex: none; margin: 0; }
+.switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--panel); transition: transform .2s; }
+.switch input:checked { background: var(--ice); }
+.switch input:checked::after { transform: translateX(16px); }
+details.adv summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; }
+details.adv summary::-webkit-details-marker { display: none; }
+details.adv summary::after { content: "+"; font-family: var(--f-mono); color: var(--fg-3); margin-left: auto; }
+details.adv[open] summary::after { content: "−"; }
+details.adv .group { margin-top: 14px; }
+.run { display: flex; flex-direction: column; gap: 8px; }
+button { font: inherit; cursor: pointer; }
+.btn-run { background: var(--sodium); color: #120a00; border: 0; border-radius: 10px; padding: 12px 14px; font-weight: 600;
+  letter-spacing: .02em; display: flex; justify-content: space-between; align-items: center; }
+.btn-run:disabled { opacity: .55; cursor: default; }
+.btn-run .k { font-family: var(--f-mono); font-size: 11px; font-weight: 500; opacity: .75; }
+.btn-run.nudge { animation: nudge 1.6s ease-in-out infinite; }
+@keyframes nudge { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--sodium) 25%, transparent); } }
+.hint { font-size: 12px; color: var(--fg-3); min-height: 1.4em; }
+
+/* ---------- stage ---------- */
+.stage { overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.scene-wrap { position: relative; height: clamp(300px, 40vw, 440px); }
+#scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.hud { position: absolute; font-family: var(--f-mono); pointer-events: none; }
+.hud.tl { top: 14px; left: 16px; }
+.hud.tr { top: 14px; right: 16px; text-align: right; }
+.clock { font-family: var(--f-display); font-size: clamp(18px, 2.4vw, 26px); letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.hud .sub { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-2); margin-top: 4px; display: flex; gap: 8px; align-items: center; }
+.hud.tr .sub { justify-content: flex-end; }
+.state { font-size: 11px; letter-spacing: .1em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.probe-box { position: absolute; right: 16px; bottom: 30px; text-align: right; font-family: var(--f-mono); pointer-events: none; }
+.probe-box .v { font-size: 20px; font-variant-numeric: tabular-nums; }
+.probe-box .u { font-size: 11px; color: var(--fg-3); }
+.probe-box .s { font-size: 11px; letter-spacing: .08em; color: var(--fg-2); }
+.probe-box .max { color: var(--alert); }
+.trace-wrap { border-top: 1px solid var(--line); padding: 10px 16px 6px; }
+.trace-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.legend-inline { display: flex; gap: 14px; font-size: 12px; color: var(--fg-2); flex-wrap: wrap; }
+.legend-inline i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; }
+#trace { width: 100%; height: 96px; display: block; }
+.transport { border-top: 1px solid var(--line); display: flex; align-items: center; gap: 14px; padding: 10px 16px; flex-wrap: wrap; }
+.progress { flex: 1 1 160px; height: 2px; background: var(--line); position: relative; border-radius: 2px; }
+.progress span { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--ice); }
+.progress em { position: absolute; top: -3px; height: 8px; width: 1px; background: var(--fg-3); }
+.speed { display: flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; }
+.speed button { background: none; border: 0; color: var(--fg-2); font-family: var(--f-mono); font-size: 12px; padding: 4px 10px; }
+.speed button[aria-pressed="true"] { background: var(--panel-2); color: var(--fg); }
+.ghost { background: none; border: 1px solid var(--line-2); color: var(--fg-2); border-radius: 8px; padding: 4px 12px; font-size: 12.5px; }
+.ghost:hover, .speed button:hover { color: var(--fg); }
+
+/* verdict overlay: the run resolves into the storm card */
+.verdict { position: absolute; inset: 0; display: grid; place-items: center; padding: 16px;
+  background: color-mix(in srgb, var(--bg) 62%, transparent); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.verdict-card { width: min(520px, 100%); background: var(--panel); border: 1px solid var(--line-2); border-radius: 14px; padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 14px; animation: rise .5s cubic-bezier(.2,.7,.2,1) both; }
+.verdict-card .big { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.verdict-card .big strong { font-family: var(--f-mono); font-weight: 500; font-size: clamp(34px, 6vw, 48px); letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.verdict-card .big span { color: var(--fg-2); font-size: 14px; max-width: 22ch; }
+.verdict-card dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; border-top: 1px solid var(--line); padding-top: 14px; }
+.verdict-card dt { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-3); }
+.verdict-card dd { margin: 2px 0 0; font-family: var(--f-mono); font-size: 16px; font-variant-numeric: tabular-nums; }
+.verdict-card .acts { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-solid { background: var(--fg); color: var(--bg); border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 500; font-size: 13.5px; }
+@keyframes rise { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+
+/* ---------- report ---------- */
+.report { margin-top: 40px; display: flex; flex-direction: column; gap: 22px; }
+.report-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.report-head h2 { font-family: var(--f-display); font-weight: 400; font-size: clamp(18px, 2.2vw, 22px); letter-spacing: .14em; text-transform: uppercase; }
+.status { font-size: 13px; color: var(--fg-2); margin: 0; display: flex; align-items: center; gap: 8px; }
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.status.stale::before { background: var(--sodium); }
+.status.busy::before { background: var(--ice); animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.report.dim .live { opacity: .35; filter: saturate(.4); transition: opacity .3s; }
+.live { transition: opacity .4s, transform .5s cubic-bezier(.2,.7,.2,1); }
+.live.pre { opacity: .2; transform: translateY(10px); }
+
+.card { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr 1.3fr; }
+.card > div { padding: 16px 18px; border-left: 1px solid var(--line); min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.card > div:first-child { border-left: 0; }
+.card .val { font-family: var(--f-mono); font-size: clamp(20px, 2.4vw, 28px); font-variant-numeric: tabular-nums; line-height: 1.15; }
+.card .val small { font-size: 13px; color: var(--fg-2); }
+.card .rec { background: var(--panel-2); border-radius: 0 12px 12px 0; }
+.card .rec .val { font-weight: 500; font-size: clamp(24px, 3vw, 34px); color: var(--ice); }
+.card .note { font-size: 12.5px; color: var(--fg-2); }
+.lvl { align-self: flex-start; font-family: var(--f-mono); font-size: 14px; letter-spacing: .1em; padding: 3px 10px; border-radius: 6px; border: 1px solid currentColor; }
+.lvl.HIGH { color: var(--alert); } .lvl.MODERATE { color: var(--sodium); } .lvl.LOW { color: var(--ok); }
+.card-foot { grid-column: 1 / -1; border-top: 1px solid var(--line); padding: 8px 18px; font-size: 12px; color: var(--fg-3); }
+
+.findings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 28px; margin: 0; padding: 0; list-style: none; }
+.findings li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.findings .eyebrow { padding-top: 3px; }
+.findings p { margin: 0; max-width: 62ch; }
+.findings b { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+figure { margin: 0; padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+figure h3 { font-size: 15px; }
+figcaption { font-size: 12.5px; color: var(--fg-2); }
+.plot { position: relative; min-height: 230px; }
+.plot svg { display: block; width: 100%; overflow: visible; }
+.plot text { font-family: var(--f-mono); font-size: 10.5px; fill: var(--fg-3); }
+.plot .lbl { fill: var(--fg); font-size: 11px; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px;
+  padding: 6px 9px; font-family: var(--f-mono); font-size: 11.5px; white-space: nowrap; color: var(--fg); transform: translate(-50%, -100%); }
+.tip span { color: var(--fg-2); }
+.split { display: flex; gap: 2px; height: 22px; margin-top: 18px; }
+.split span { display: block; border-radius: 3px; min-width: 2px; }
+.split-legend { display: grid; gap: 10px; margin-top: 16px; }
+.split-legend div { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; font-size: 13.5px; }
+.split-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.split-legend b { font-family: var(--f-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+.split-legend.facts { border-top: 1px solid var(--line); padding-top: 14px; color: var(--fg-2); }
+.method { padding: 16px 18px; }
+.method summary { cursor: pointer; font-weight: 600; }
+.method-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 32px; margin-top: 14px; font-size: 13.5px; color: var(--fg-2); }
+.method-body p { margin: 0 0 8px; max-width: 64ch; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; font-family: var(--f-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; width: 100%; }
+th, td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--fg-3); font-weight: 400; }
+footer { margin-top: 32px; font-size: 12px; color: var(--fg-3); }
+
+@media (max-width: 960px) {
+  .console { grid-template-columns: minmax(0, 1fr); }
+  .stage { order: -1; }
+  .card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .card > div { border-left: 0; border-top: 1px solid var(--line); }
+  .card > div:first-child { border-top: 0; }
+  .card .rec { grid-column: 1 / -1; border-radius: 0; }
+  .findings, .charts, .method-body { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .verdict-card dl { grid-template-columns: 1fr 1fr; }
+  .findings li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .probe-box .v { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="wordmark">SALT<b>BACK</b></span>
+      <span class="tag">Storm simulator: from the salt truck to the storm drain</span>
+    </div>
+    <div class="steps" aria-label="Model steps included">
+      <span class="chip on">Step 1 · melt physics</span>
+      <span class="chip on">Step 2 · storm timeline</span>
+      <span class="chip">Step 3 · a winter</span>
+    </div>
+  </header>
+
+  <main class="console">
+    <aside class="panel controls" aria-label="Storm settings">
+      <div id="groups"></div>
+      <div class="group">
+        <div class="eyebrow">Drain sensor</div>
+        <div class="seg" role="radiogroup" aria-label="Conductivity probe">
+          <input type="radio" name="probe" id="probe20" value="20" checked><label for="probe20">DFR0300<small>K=1 · max 20 mS/cm</small></label>
+          <input type="radio" name="probe" id="probe200" value="200"><label for="probe200">High-range<small>K=10 · max 200 mS/cm</small></label>
+        </div>
+        <label class="switch" for="tprobe">Temperature correction (DS18B20)<input type="checkbox" id="tprobe" checked></label>
+      </div>
+      <details class="adv">
+        <summary class="eyebrow">Advanced assumptions</summary>
+        <div class="group" id="advgroup"></div>
+      </details>
+      <div class="run">
+        <button class="btn-run" id="run" type="button"><span>Run storm</span><span class="k">↵</span></button>
+        <div class="hint" id="hint" aria-live="polite"></div>
+      </div>
+    </aside>
+
+    <section class="panel stage" aria-label="Live storm simulation">
+      <div class="scene-wrap">
+        <canvas id="scene" role="img" aria-label="Cross-section of a road and storm drain during the simulated storm"></canvas>
+        <div class="hud tl"><div class="clock" id="clock">T+00:00</div><div class="sub"><span id="phase">Ready</span></div></div>
+        <div class="hud tr"><div class="sub">Pavement <span class="mono" id="ptemp">22°F</span></div><div class="sub"><span class="state" id="road">Bare</span></div></div>
+        <div class="probe-box" aria-live="off">
+          <div class="s">Drain probe</div>
+          <div><span class="v" id="pread">—</span> <span class="u">mS/cm</span></div>
+          <div class="s" id="pcl">no flow</div>
+        </div>
+        <div class="verdict" id="verdict" hidden>
+          <div class="verdict-card">
+            <div class="eyebrow" id="vhead">Storm report</div>
+            <div class="big"><strong id="vchange">−40%</strong><span id="vsub">salt for the next comparable storm</span></div>
+            <dl>
+              <div><dt>Salt applied</dt><dd id="vsalt">—</dd></div>
+              <div><dt>Excess</dt><dd id="vexcess">—</dd></div>
+              <div><dt>Chloride runoff</dt><dd id="vcl">—</dd></div>
+            </dl>
+            <div class="acts">
+              <button class="btn-solid" id="vread" type="button">Read the full report</button>
+              <button class="ghost" id="vreplay" type="button">Replay storm</button>
+              <button class="ghost" id="vclose" type="button">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="trace-wrap">
+        <div class="trace-head">
+          <span class="eyebrow">Probe log · conductivity over time</span>
+          <span class="legend-inline">
+            <span><i style="background:var(--ice)"></i>Probe reading</span>
+            <span><i style="background:var(--fg-3)"></i>True value</span>
+            <span><i style="background:var(--alert)"></i>Probe limit</span>
+          </span>
+        </div>
+        <canvas id="trace" aria-label="Probe conductivity over time"></canvas>
+      </div>
+      <div class="transport">
+        <div class="progress" aria-hidden="true"><span id="prog"></span><em id="stormEnd"></em></div>
+        <div class="speed" role="group" aria-label="Playback speed">
+          <button type="button" data-speed="1" aria-pressed="true">1×</button>
+          <button type="button" data-speed="2" aria-pressed="false">2×</button>
+          <button type="button" data-speed="4" aria-pressed="false">4×</button>
+        </div>
+        <button class="ghost" id="skip" type="button">Skip to results</button>
+      </div>
+    </section>
+  </main>
+
+  <section class="report" id="report" aria-labelledby="reportTitle">
+    <div class="report-head">
+      <h2 id="reportTitle">Storm report</h2>
+      <p class="status" id="status" aria-live="polite">Results for the default storm</p>
+    </div>
+
+    <div class="panel card live" id="card"></div>
+    <ul class="findings live" id="findings"></ul>
+
+    <div class="charts">
+      <figure class="panel live">
+        <h3>More salt per pass, less icy time, until it stops helping</h3>
+        <div class="plot" id="chartDose"></div>
+        <figcaption>Hours the road was icy for each salt amount, same storm. Past the "needed" point, extra salt buys almost nothing.</figcaption>
+      </figure>
+      <figure class="panel live">
+        <h3>Chloride in the storm drain</h3>
+        <div class="plot" id="chartCl"></div>
+        <figcaption>True chloride vs. what Saltback reads from the probe (log scale). Flat stretches mean the probe is maxed out.</figcaption>
+      </figure>
+      <figure class="panel live">
+        <h3>Where the salt went</h3>
+        <div id="split"></div>
+        <figcaption style="margin-top:auto">Salt never disappears. Drain salt reaches streams; shoulder salt soaks into soil and groundwater.</figcaption>
+      </figure>
+      <figure class="panel live">
+        <h3>Why road temperature matters</h3>
+        <div class="plot" id="chartMelt"></div>
+        <figcaption>Pounds of ice 1 lb of salt can melt. Line: Saltback's freezing-point physics. Dots: the widely published chart, which the model never reads.</figcaption>
+      </figure>
+    </div>
+
+    <details class="panel method">
+      <summary>How the model works, and what it assumes</summary>
+      <div class="method-body">
+        <div>
+          <p><b>Road.</b> Every 5 minutes, snow falls, trucks plow and spread salt, and salt crystals dissolve into the snow (slower when it is colder). The brine then melts ice, or refreezes into black ice, until it is exactly as salty as the road temperature requires. That rule comes from the NaCl freezing-point table in the CRC Handbook.</p>
+          <p><b>Ice.</b> Traffic packs snow into ice bonded to the pavement unless a brine film protects it. A plow lifts loose snow but not bonded ice. The road counts as icy when bonded ice is thicker than 0.05 mm.</p>
+          <p><b>Drain and sensor.</b> Brine runs off into the drain, mixed with water from unsalted ground. Chloride is converted to the conductivity the probe would read at that water temperature, with ±3% noise, a ±0.5°C temperature-probe error, and the probe's maximum.</p>
+          <p><b>Needed salt.</b> The smallest salt amount per pass that keeps the road within 30 minutes of the safest result any amount can achieve. Saltback recommends that amount plus 10%.</p>
+        </div>
+        <div>
+          <p>All inputs are typical published values, <b>not data from a real town</b>. The least certain ones are how fast traffic packs snow into ice and how fast brine runs off. Experiments 1 and 2 can measure both.</p>
+          <div class="tbl"><table id="checkTable" aria-label="Model check against the published chart"></table></div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <footer>Saltback · Diamond Challenge 2027 · Social Innovation. The model code is in the saltback/ folder of the project repository, in Python and JavaScript versions that give identical results.</footer>
+</div>
+
+<script src="model.js"></script>
+<script>
+(() => {
+'use strict';
+const S = window.Saltback;
+const $ = id => document.getElementById(id);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- formatting ---------- */
+const int = v => Math.round(v).toLocaleString('en-US');
+const dur = h => h < 1 ? `${Math.round(h * 60)} min` : `${h.toFixed(1)} h`;
+const pct = v => `${Math.round(v * 100)}%`;
+const signed = v => (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(Math.round(v)) + '%';
+const clock = h => `T+${String(Math.floor(h)).padStart(2, '0')}:${String(Math.floor((h % 1) * 60 + 1e-6)).padStart(2, '0')}`;
+const PUBLISHED = { 30: 46.3, 25: 14.4, 20: 8.6, 15: 6.3, 10: 4.9, 5: 4.1, 0: 3.7 };
+
+/* ---------- controls ---------- */
+const GROUPS = [
+  ['Storm', [
+    ['pavement_temp_F', 'Road surface temperature', -5, 34, 1, v => `${v}°F`],
+    ['snowfall_in', 'Snowfall', 0, 18, 0.5, v => `${v} in`],
+    ['storm_hours', 'Storm length', 4, 24, 1, v => `${v} h`],
+    ['temp_after_F', 'Road temperature afterwards', 10, 50, 1, v => `${v}°F`]]],
+  ['Salt crew', [
+    ['salt_per_pass_lb', 'Salt per pass', 0, 500, 10, v => `${v} lb/lane-mi`],
+    ['first_pass_h', 'First truck arrives after', 0, 3, 0.25, v => dur(v)],
+    ['plow_every_h', 'Truck returns every', 1, 4, 0.5, v => `${v} h`],
+    ['route_lane_miles', 'Route size', 1, 50, 1, v => `${v} lane-mi`]]],
+];
+const ADV = [
+  ['scatter_loss', 'Salt that bounces off the road', 0, 0.4, 0.05, pct],
+  ['drain_per_h', 'Brine running off, per hour', 0.1, 0.8, 0.05, pct],
+  ['traffic_loss_per_h', 'Brine thrown off by tires, per hour', 0.02, 0.15, 0.01, pct],
+  ['bond_per_h', 'Snow packed into ice by traffic, per hour', 0.2, 1, 0.05, pct],
+  ['unsalted_share', 'Drain water from unsalted ground', 0, 0.7, 0.05, pct],
+  ['water_temp_C', 'Runoff temperature at the probe', 0, 5, 0.5, v => `${v}°C`],
+  ['salt_price_per_ton', 'Salt price', 60, 130, 5, v => `$${v}/ton`],
+];
+const settings = { ...S.SETTINGS };
+function ctlHTML([key, label, min, max, step]) {
+  return `<div class="ctl"><label for="c_${key}">${label}</label><output id="o_${key}" for="c_${key}"></output>
+    <input type="range" id="c_${key}" min="${min}" max="${max}" step="${step}" value="${settings[key]}"></div>`;
+}
+$('groups').innerHTML = GROUPS.map(([name, items]) =>
+  `<div class="group" style="margin-bottom:22px"><div class="eyebrow">${name}</div>${items.map(ctlHTML).join('')}</div>`).join('');
+$('advgroup').innerHTML = ADV.map(ctlHTML).join('');
+const ALL = [...GROUPS.flatMap(g => g[1]), ...ADV];
+function paintCtl([key, , min, max, , fmt]) {
+  const el = $('c_' + key);
+  $('o_' + key).textContent = fmt(+el.value);
+  el.style.setProperty('--p', `${(100 * (el.value - min)) / (max - min)}%`);
+}
+ALL.forEach(c => {
+  paintCtl(c);
+  $('c_' + c[0]).addEventListener('input', e => { settings[c[0]] = +e.target.value; paintCtl(c); markStale(); });
+});
+document.querySelectorAll('input[name=probe]').forEach(r => r.addEventListener('change', e => { settings.probe_max_mS_cm = +e.target.value; markStale(); }));
+$('tprobe').addEventListener('change', e => { settings.use_temp_probe = e.target.checked; markStale(); });
+
+/* ---------- run the model ---------- */
+function compute(s) {
+  const { rows, summary } = S.stormTimeline(s);
+  const { needed, sweep } = S.findNeeded(s);
+  const card = S.stormCard(s, summary, needed);
+  const atNeed = sweep.find(r => r.salt_per_pass_lb === needed);
+  const late = s.first_pass_h + 1 < s.storm_hours ? S.findNeeded({ ...s, first_pass_h: s.first_pass_h + 1 }).needed : null;
+  const hiProbe = s.probe_max_mS_cm < 200 && summary.hours_probe_maxed > 0.5
+    ? S.stormTimeline({ ...s, probe_max_mS_cm: 200 }).summary.salt_seen_vs_true_pct : null;
+  rows.forEach(r => {
+    r.ec_true = Number.isNaN(r.cl_true_mg_L) ? NaN : S.chlorideToConductivity(r.cl_true_mg_L, s.water_temp_C);
+  });
+  return { s: { ...s }, rows, summary, needed, sweep, card, atNeed, late, hiProbe, noSalt: sweep[0].icy_hours };
+}
+
+/* ---------- theme colors for canvas ---------- */
+let C = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  ['bg', 'panel', 'line', 'line-2', 'fg', 'fg-2', 'fg-3', 'ice', 'sodium', 'alert', 'ok', 'sky-1', 'sky-2', 'asphalt', 'soil', 'snow', 'glow']
+    .forEach(k => { C[k] = cs.getPropertyValue('--' + k).trim(); });
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); if (current) renderReport(current, false); });
+new MutationObserver(() => { readColors(); if (current) renderReport(current, false); })
+  .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+const hex = h => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const mixColor = (a, b, t) => { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * t)).join(',')})`; };
+const alpha = (h, a) => { const [r, g, b] = hex(h); return `rgba(${r},${g},${b},${a})`; };
+const clColor = cl => mixColor(C.ice, C.sodium, Math.max(0, Math.min(1, (Math.log10(Math.max(cl, 50)) - 2) / 2.6)));
+
+/* ================= the scene ================= */
+const cv = $('scene'), ctx = cv.getContext('2d');
+let W = 0, H = 0, G = {};
+const P = { flakes: [], grains: [], soil: [], runoff: [], fx: [] };
+let trucks = [];
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+function sizeCanvas(el, c) {
+  const r = el.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1);
+  el.width = Math.round(r.width * d); el.height = Math.round(r.height * d);
+  c.setTransform(d, 0, 0, d, 0, 0);
+  return [r.width, r.height];
+}
+function layout() {
+  [W, H] = sizeCanvas(cv, ctx);
+  const narrow = W < 560;
+  G.ground = H * (narrow ? 0.6 : 0.58);
+  G.roadL = W * (narrow ? 0.12 : 0.14);
+  G.drainL = W * (narrow ? 0.72 : 0.76);
+  G.drainW = Math.max(24, W * 0.045);
+  G.drainR = G.drainL + G.drainW;
+  G.chamberT = G.ground + Math.min(70, H * 0.17);
+  G.chamberB = H - 10;
+  G.chamberL = G.drainL - 18;
+  G.chamberR = Math.min(W - 8, G.drainR + (narrow ? 34 : 60));
+  G.probeX = G.drainR + (G.chamberR - G.drainR) * 0.55;
+  P.soil.forEach(d => { d.x = Math.min(d.x, G.roadL - 4); });
+  const pb = document.querySelector('.probe-box');      // keep the readout beside the chamber, never on top of it
+  if (narrow) { pb.style.right = 'auto'; pb.style.left = `${G.roadL + 6}px`; pb.style.textAlign = 'left'; }
+  else { pb.style.left = 'auto'; pb.style.right = `${W - G.chamberL + 14}px`; pb.style.textAlign = 'right'; }
+  G.narrow = narrow;
+}
+
+let current = null, play = { on: false, idx: 0, speed: 1 };
+const rowAt = i => current.rows[Math.max(0, Math.min(current.rows.length - 1, i))];
+function stateAt(f) {
+  const a = rowAt(Math.floor(f)), b = rowAt(Math.ceil(f)), t = f - Math.floor(f), L = k => a[k] + (b[k] - a[k]) * t;
+  return { r: a, ice: L('bonded_ice_mm'), brine: L('brine_mm'), snow: L('loose_snow_mm'), crystals: L('salt_crystals_g_m2'), flow: L('drain_flow_L_h') };
+}
+function layers(st) {
+  const ice = Math.min(16, st.ice * 160), brine = Math.min(5, st.brine * 22), snow = Math.min(34, st.snow * 15);
+  return { ice, brine, snow, top: G.ground - ice - brine - snow };
+}
+
+function spawnTruck() {
+  const s = current.s, stepsPerSec = 18 * play.speed;
+  const realGap = (s.plow_every_h / S.DT_H) / stepsPerSec;
+  trucks.push({ x: -90, dur: Math.max(0.45, Math.min(1.3, realGap * 0.8)), t: 0, emitted: 0 });
+}
+function syncGrains(st) {
+  const rest = P.grains.filter(g => g.mode === 'rest');
+  const target = Math.round(Math.min(220, st.crystals * 9));
+  if (rest.length > target) {
+    for (let k = rest.length - target; k > 0; k--) {
+      const g = rest[Math.floor(Math.random() * rest.length)];
+      if (g.mode === 'rest') { g.mode = 'dissolve'; g.t = 0; }
+    }
+  } else if (target - rest.length > 12 && !trucks.length) {
+    for (let k = 0; k < target - rest.length; k++) P.grains.push({ mode: 'rest', x: rnd(G.roadL + 4, G.drainL - 4), a: 0, r: rnd(1, 1.9) });
+  }
+}
+
+function update(dt) {
+  if (!current) return;
+  const st = stateAt(play.idx), r = st.r, s = current.s, L = layers(st);
+  // snow or rain
+  if (r.storming && s.snowfall_in > 0 && !reduce) {
+    const rate = 70 * Math.min(2.2, (s.snowfall_in / s.storm_hours) / 0.45) * (play.on ? 1 : 0.35);
+    let n = rate * dt;
+    while (n > 0) { if (Math.random() < n) P.flakes.push({ x: rnd(-20, W), y: -6, vx: rnd(8, 26), vy: r.temp_F >= 32 ? rnd(420, 560) : rnd(38, 70), r: rnd(0.8, 2.1), ph: rnd(0, 6), rain: r.temp_F >= 32 }); n -= 1; }
+  }
+  for (const f of P.flakes) { f.ph += dt * 2; f.x += (f.vx + (f.rain ? 0 : Math.sin(f.ph) * 10)) * dt; f.y += f.vy * dt; }
+  P.flakes = P.flakes.filter(f => f.y < ((f.x > G.roadL && f.x < G.drainL) ? L.top : G.ground + 4) && f.x < W + 20).slice(-900);
+  // trucks: plow and spread salt from the spinner
+  for (const t of trucks) {
+    t.t += dt / t.dur; t.x = -90 + t.t * (W + 180);
+    const spinner = t.x - 30;
+    if (spinner > G.roadL && spinner < G.drainL) {
+      const want = Math.min(140, 26 + s.salt_per_pass_lb * 0.32) * (dt / t.dur);
+      for (let k = 0; k < want + Math.random() - 0.5; k++) {
+        const scatter = Math.random() < s.scatter_loss;
+        P.grains.push(scatter
+          ? { mode: 'arc', x0: spinner, y0: G.ground - 16, x1: rnd(6, G.roadL - 6), y1: G.ground + rnd(3, 14), t: 0, d: rnd(0.45, 0.8), r: rnd(1, 1.8) }
+          : { mode: 'fall', x: spinner + rnd(-6, 6), y: G.ground - 16, vx: rnd(-70, 40), vy: rnd(-60, 10), r: rnd(1, 1.9), a: 1 });
+      }
+    }
+  }
+  trucks = trucks.filter(t => t.t < 1);
+  for (const g of P.grains) {
+    if (g.mode === 'fall') {
+      g.vy += 900 * dt; g.x += g.vx * dt; g.y += g.vy * dt;
+      if (g.y >= L.top + Math.min(4, L.snow)) { g.mode = 'rest'; g.x = Math.max(G.roadL + 3, Math.min(G.drainL - 3, g.x)); }
+    } else if (g.mode === 'arc') {
+      g.t += dt / g.d;
+      if (g.t >= 1) { g.mode = 'gone'; if (P.soil.length < 420) P.soil.push({ x: g.x1, y: g.y1, r: g.r }); }
+    } else if (g.mode === 'dissolve') {
+      g.t += dt / 0.7; if (g.t >= 1) g.mode = 'gone';
+    } else if (g.mode === 'rest' && g.a < 1) g.a = Math.min(1, g.a + dt * 3);
+  }
+  P.grains = P.grains.filter(g => g.mode !== 'gone');
+  syncGrains(st);
+  // runoff toward the drain, then down to the probe
+  if (st.flow > 0.05 && !reduce) {
+    let n = Math.min(60, Math.sqrt(st.flow) * 5.5) * dt;
+    const col = clColor(Number.isNaN(r.cl_true_mg_L) ? 50 : r.cl_true_mg_L);
+    while (n > 0) { if (Math.random() < n) P.runoff.push({ x: rnd(G.roadL, G.drainL - 4), y: 0, v: rnd(70, 150), stage: 0, col, a: 1, r: rnd(1, 1.8) }); n -= 1; }
+  }
+  for (const d of P.runoff) {
+    if (d.stage === 0) { d.x += d.v * dt; d.y = G.ground - L.ice - L.brine * 0.5 - 1; if (d.x >= G.drainL + 3) { d.stage = 1; d.x = rnd(G.drainL + 4, G.drainR - 4); } }
+    else if (d.stage === 1) { d.y += 220 * dt; if (d.y > G.chamberB - 22) { d.stage = 2; } }
+    else { d.a -= dt * 2.2; d.x += (G.probeX - d.x) * dt * 1.5; }
+  }
+  P.runoff = P.runoff.filter(d => d.a > 0).slice(-500);
+}
+
+function draw() {
+  if (!current) return;
+  const st = stateAt(play.idx), r = st.r, s = current.s, L = layers(st);
+  ctx.clearRect(0, 0, W, H);
+  // sky + blueprint grid
+  const sky = ctx.createLinearGradient(0, 0, 0, G.ground);
+  sky.addColorStop(0, C['sky-2']); sky.addColorStop(1, C['sky-1']);
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, G.ground);
+  ctx.strokeStyle = alpha(C.line, 0.55); ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = 48; x < W; x += 48) { ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, G.ground); }
+  for (let y = 48; y < G.ground; y += 48) { ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); }
+  ctx.stroke();
+  // ground below
+  ctx.fillStyle = C.panel; ctx.fillRect(0, G.ground, W, H - G.ground);
+  // shoulder soil with the salt it has collected
+  ctx.fillStyle = C.soil; ctx.fillRect(0, G.ground + 2, G.roadL, H - G.ground);
+  ctx.globalCompositeOperation = C.glow;
+  for (const d of P.soil) { ctx.fillStyle = alpha(C.sodium, 0.55); ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 7); ctx.fill(); }
+  ctx.globalCompositeOperation = 'source-over';
+  // road slab and the drain gap
+  ctx.fillStyle = C.asphalt;
+  ctx.fillRect(G.roadL, G.ground, G.drainL - G.roadL, 16);
+  ctx.fillRect(G.drainR, G.ground, W - G.drainR, 16);
+  ctx.strokeStyle = C['line-2']; ctx.beginPath(); ctx.moveTo(0, G.ground + 16.5); ctx.lineTo(W, G.ground + 16.5); ctx.stroke();
+  // grate bars
+  ctx.strokeStyle = C['fg-3']; ctx.lineWidth = 2;
+  for (let x = G.drainL + 4; x < G.drainR - 2; x += 6) { ctx.beginPath(); ctx.moveTo(x, G.ground); ctx.lineTo(x, G.ground + 6); ctx.stroke(); }
+  // pipe + chamber
+  ctx.lineWidth = 1; ctx.strokeStyle = C['line-2'];
+  ctx.strokeRect(G.drainL + 0.5, G.ground + 16.5, G.drainW, G.chamberT - G.ground - 16);
+  const latest = Number.isNaN(r.cl_true_mg_L) ? null : r.cl_true_mg_L;
+  ctx.beginPath(); ctx.roundRect(G.chamberL + 0.5, G.chamberT + 0.5, G.chamberR - G.chamberL, G.chamberB - G.chamberT, 8); ctx.stroke();
+  const poolH = Math.min(26, 6 + Math.sqrt(st.flow) * 1.6);
+  ctx.fillStyle = alpha(latest ? hex2(clColor(latest)) : C.ice, latest ? 0.28 : 0.08);
+  ctx.fillRect(G.chamberL + 2, G.chamberB - poolH, G.chamberR - G.chamberL - 3, poolH - 1);
+  // probe rod + ring (glows with the reading, red when maxed)
+  const read = r.reading_mS_cm, maxed = r.probe_maxed;
+  ctx.strokeStyle = C['fg-2']; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(G.probeX, G.chamberT - 4); ctx.lineTo(G.probeX, G.chamberB - 8); ctx.stroke();
+  const level = Number.isNaN(read) ? 0 : Math.min(1, read / s.probe_max_mS_cm);
+  const ringCol = maxed ? C.alert : C.ice;
+  ctx.globalCompositeOperation = C.glow;
+  ctx.fillStyle = alpha(ringCol, 0.12 + 0.35 * level); ctx.beginPath(); ctx.arc(G.probeX, G.chamberB - 10, 7 + 9 * level, 0, 7); ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = ringCol; ctx.beginPath(); ctx.arc(G.probeX, G.chamberB - 10, 3.5, 0, 7); ctx.fill();
+
+  // road surface layers: bonded ice, brine film, loose snow
+  const x0 = G.roadL, x1 = G.drainL;
+  if (L.ice > 0.3) { ctx.fillStyle = alpha(C.ice, 0.55); ctx.fillRect(x0, G.ground - L.ice, x1 - x0, L.ice); }
+  if (L.brine > 0.2) {
+    ctx.globalCompositeOperation = C.glow;
+    ctx.fillStyle = alpha(C.ice, 0.35); ctx.fillRect(x0, G.ground - L.ice - L.brine, x1 - x0, L.brine);
+    ctx.fillStyle = alpha(C.ice, 0.9); ctx.fillRect(x0, G.ground - L.ice - L.brine, x1 - x0, 1);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  if (L.snow > 0.3) {
+    ctx.fillStyle = alpha(C.snow, 0.92);
+    ctx.beginPath(); ctx.moveTo(x0, G.ground - L.ice - L.brine);
+    for (let x = x0; x <= x1; x += 8) ctx.lineTo(x, L.top + Math.sin(x * 0.045) * Math.min(2.5, L.snow * 0.12));
+    ctx.lineTo(x1, G.ground - L.ice - L.brine); ctx.closePath(); ctx.fill();
+  }
+  // icy warning stripe
+  if (r.icy) { ctx.fillStyle = alpha(C.alert, 0.85); ctx.fillRect(x0, G.ground + 16, x1 - x0, 2); }
+
+  // salt grains
+  ctx.globalCompositeOperation = C.glow;
+  for (const g of P.grains) {
+    if (g.mode === 'arc') {
+      const t = g.t, x = g.x0 + (g.x1 - g.x0) * t, y = g.y0 + (g.y1 - g.y0) * t - Math.sin(Math.PI * t) * 46;
+      ctx.fillStyle = alpha(C.sodium, 0.8); ctx.beginPath(); ctx.arc(x, y, g.r, 0, 7); ctx.fill();
+    } else if (g.mode === 'dissolve') {
+      ctx.strokeStyle = alpha(C.ice, 0.6 * (1 - g.t)); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(g.x, L.top + Math.min(4, L.snow) - 1, 1.5 + g.t * 7, 0, 7); ctx.stroke();
+    } else {
+      const y = g.mode === 'rest' ? L.top + Math.min(4, L.snow) - g.r : g.y;
+      ctx.fillStyle = alpha(C.sodium, g.mode === 'rest' ? 0.95 * (g.a ?? 1) : 1); ctx.beginPath(); ctx.arc(g.x, y, g.r, 0, 7); ctx.fill();
+    }
+  }
+  for (const d of P.runoff) { ctx.fillStyle = d.col.replace('rgb', 'rgba').replace(')', `,${0.85 * d.a})`); ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 7); ctx.fill(); }
+  ctx.globalCompositeOperation = 'source-over';
+
+  // snowflakes / rain
+  for (const f of P.flakes) {
+    if (f.rain) { ctx.strokeStyle = alpha(C.ice, 0.5); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x - 2, f.y - 9); ctx.stroke(); }
+    else { ctx.fillStyle = alpha(C.snow, 0.85); ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill(); }
+  }
+  // trucks
+  for (const t of trucks) drawTruck(t.x, G.ground - L.ice - L.brine);
+
+  // labels
+  ctx.font = '500 10px "IBM Plex Mono", monospace'; ctx.fillStyle = C['fg-3']; ctx.textBaseline = 'alphabetic';
+  const lab = (txt, x, y, align = 'left') => { ctx.textAlign = align; ctx.fillText(txt, x, y); };
+  lab(G.narrow ? 'SOIL' : 'SHOULDER · SOIL', 6, H - 12);
+  if (!G.narrow) lab('ROAD · 1 LANE', G.roadL + 6, G.ground + 32);
+  lab('STORM DRAIN', G.drainL - 6, G.ground + 32, 'right');
+  if (W > 420) lab('PROBE', G.chamberL - 8, G.chamberB - 6, 'right');
+}
+function hex2(rgb) { const m = rgb.match(/\d+/g).map(Number); return '#' + m.map(v => v.toString(16).padStart(2, '0')).join(''); }
+function drawTruck(x, y) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.fillStyle = C.panel; ctx.strokeStyle = C['fg-2']; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.roundRect(-46, -26, 40, 18, 3); ctx.fill(); ctx.stroke();          // hopper
+  ctx.beginPath(); ctx.roundRect(-4, -30, 20, 22, 4); ctx.fill(); ctx.stroke();           // cab
+  ctx.fillStyle = alpha(C.ice, 0.5); ctx.fillRect(4, -26, 9, 7);                            // window
+  ctx.strokeStyle = C.fg; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(18, -14); ctx.lineTo(28, -1); ctx.stroke();  // plow blade
+  ctx.fillStyle = C['fg-2']; [-36, -16, 6].forEach(wx => { ctx.beginPath(); ctx.arc(wx, -5, 4, 0, 7); ctx.fill(); });
+  ctx.fillStyle = C.sodium; ctx.fillRect(-2, -33, 14, 2.5);                                 // amber light bar
+  ctx.beginPath(); ctx.arc(-46, -9, 2.5, 0, 7); ctx.fill();                                 // spinner
+  ctx.restore();
+}
+
+/* ---------- probe log strip ---------- */
+const tv = $('trace'), tctx = tv.getContext('2d');
+let TW = 0, TH = 0;
+function drawTrace() {
+  if (!current) return;
+  tctx.clearRect(0, 0, TW, TH);
+  const rows = current.rows, n = rows.length, s = current.s;
+  const top = Math.max(s.probe_max_mS_cm * 1.15, ...rows.map(r => Number.isNaN(r.ec_true) ? 0 : r.ec_true)) * 1.05;
+  const X = i => 4 + (i / (n - 1)) * (TW - 8), Y = v => TH - 6 - (v / top) * (TH - 14);
+  tctx.strokeStyle = C.line; tctx.lineWidth = 1; tctx.beginPath(); tctx.moveTo(0, TH - 5.5); tctx.lineTo(TW, TH - 5.5); tctx.stroke();
+  const se = rows.findIndex(r => !r.storming);
+  if (se > 0) { tctx.fillStyle = alpha(C.ice, 0.06); tctx.fillRect(X(0), 0, X(se) - X(0), TH - 6); }
+  tctx.setLineDash([4, 4]); tctx.strokeStyle = C.alert; tctx.beginPath(); tctx.moveTo(0, Y(s.probe_max_mS_cm) + 0.5); tctx.lineTo(TW, Y(s.probe_max_mS_cm) + 0.5); tctx.stroke(); tctx.setLineDash([]);
+  const upto = Math.floor(play.idx);
+  const path = (key, col, w) => {
+    tctx.strokeStyle = col; tctx.lineWidth = w; tctx.beginPath(); let pen = false;
+    for (let i = 0; i <= upto; i++) { const v = rows[i][key]; if (Number.isNaN(v)) { pen = false; continue; } pen ? tctx.lineTo(X(i), Y(v)) : tctx.moveTo(X(i), Y(v)); pen = true; }
+    tctx.stroke();
+  };
+  path('ec_true', C['fg-3'], 1.2); path('reading_mS_cm', C.ice, 2);
+  tctx.fillStyle = C['fg-3']; tctx.font = '10px "IBM Plex Mono", monospace'; tctx.textAlign = 'left';
+  tctx.fillText(`${s.probe_max_mS_cm} mS/cm`, 6, Y(s.probe_max_mS_cm) - 4);
+  if (play.on) { tctx.fillStyle = C.fg; tctx.fillRect(X(upto) - 0.5, 0, 1, TH - 6); }
+}
+
+/* ---------- HUD ---------- */
+let lastHud = -1;
+function hud(force) {
+  if (!current) return;
+  const i = Math.floor(play.idx); if (i === lastHud && !force) return; lastHud = i;
+  const r = rowAt(i), s = current.s;
+  $('clock').textContent = clock(r.hour);
+  const truckNow = trucks.length > 0;
+  $('phase').textContent = r.storming ? (truckNow ? 'Plowing + salting' : r.temp_F >= 32 ? 'Raining' : 'Snowing')
+    : (r.temp_F > 32 ? 'Thaw · draining' : r.drain_flow_L_h > 0.05 ? 'After storm · draining' : 'After storm');
+  $('ptemp').textContent = `${Math.round(r.temp_F)}°F`;
+  const road = $('road');
+  const [txt, col] = r.icy ? ['Icy', C.alert] : r.loose_snow_mm > 0.3 ? ['Snow cover', C['fg-2']] : r.brine_mm > 0.02 ? ['Wet · brine', C.ice] : ['Bare', C.ok];
+  road.textContent = txt; road.style.color = col;
+  const pr = $('pread'), pc = $('pcl');
+  if (Number.isNaN(r.reading_mS_cm)) { pr.textContent = '—'; pr.className = 'v'; pc.textContent = 'no flow'; pc.className = 's'; }
+  else {
+    pr.textContent = r.reading_mS_cm.toFixed(1); pr.className = 'v' + (r.probe_maxed ? ' max' : '');
+    pc.textContent = r.probe_maxed ? (G.narrow ? 'Maxed out' : 'Maxed out · reading capped') : `Cl⁻ ≈ ${int(r.cl_measured_mg_L)} mg/L`;
+    pc.className = 's' + (r.probe_maxed ? ' max' : '');
+  }
+  $('prog').style.width = `${100 * i / (current.rows.length - 1)}%`;
+}
+
+/* ---------- main loop ---------- */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (play.on && current) {
+    const rows = current.rows, prev = Math.floor(play.idx);
+    const sps = (rowAt(prev).storming ? 18 : 54) * play.speed;
+    play.idx = Math.min(rows.length - 1, play.idx + dt * sps);
+    for (let i = prev + 1; i <= Math.floor(play.idx); i++) if (rows[i].truck_pass) spawnTruck();
+    if (play.idx >= rows.length - 1) finish();
+  }
+  update(dt); draw(); drawTrace(); hud();
+  requestAnimationFrame(frame);
+}
+
+/* ---------- run / finish ---------- */
+let pending = null, dirty = false;
+function markStale() {
+  dirty = true;
+  const st = $('status'); st.textContent = 'Settings changed · run the storm to update this report'; st.className = 'status stale';
+  $('run').classList.add('nudge');
+  $('hint').textContent = 'Settings changed. Press Run storm.';
+}
+let userRun = false;
+function run(boot) {
+  if (play.on) return;
+  userRun = boot !== true;
+  pending = compute(settings);
+  current = pending; dirty = false;
+  P.flakes = []; P.grains = []; P.soil = []; P.runoff = []; trucks = [];
+  play.idx = 0; lastHud = -1;
+  $('verdict').hidden = true;
+  $('run').classList.remove('nudge');
+  $('run').disabled = true; $('hint').textContent = 'Simulating the storm in 5-minute steps…';
+  $('stormEnd').style.left = `${100 * current.rows.findIndex(r => !r.storming) / (current.rows.length - 1)}%`;
+  if (boot !== true) {
+    const st = $('status'); st.textContent = 'Storm running…'; st.className = 'status busy';
+    $('report').classList.add('dim');
+  }
+  if (reduce) { play.idx = current.rows.length - 1; finish(); return; }
+  play.on = true;
+  if (current.rows[0].truck_pass) spawnTruck();
+}
+function finish() {
+  play.on = false;
+  $('run').disabled = false; $('hint').textContent = '';
+  $('report').classList.remove('dim');
+  renderReport(current, !reduce && userRun);
+  showVerdict(current);
+}
+$('run').addEventListener('click', () => run());
+$('skip').addEventListener('click', () => { if (play.on) { play.idx = current.rows.length - 1; trucks = []; finish(); } });
+document.querySelectorAll('.speed button').forEach(b => b.addEventListener('click', () => {
+  play.speed = +b.dataset.speed;
+  document.querySelectorAll('.speed button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+}));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.target.closest('button, a, summary, details')) { e.preventDefault(); run(); }
+});
+$('vreplay').addEventListener('click', () => run());
+$('vclose').addEventListener('click', () => { $('verdict').hidden = true; });
+$('vread').addEventListener('click', () => $('report').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }));
+
+function showVerdict(res) {
+  const { card, s, summary } = res;
+  $('vhead').textContent = `Storm report · Route of ${s.route_lane_miles} lane-mi`;
+  const ch = card.recommended_change_pct;
+  $('vchange').textContent = signed(ch);
+  $('vchange').style.color = ch < 0 ? C.ice : ch > 0 ? C.sodium : C.fg;
+  $('vsub').textContent = summary.salt_applied_lb_per_lane_mile === 0 ? 'no salt was spread this storm'
+    : ch < 0 ? 'less salt for the next comparable storm' : ch > 0 ? 'more salt needed next time to keep the road safe' : 'keep the same amount next storm';
+  $('vsalt').textContent = `${int(card.route_salt_lb)} lb`;
+  $('vexcess').textContent = `${Math.round(card.excess_pct)}%`;
+  $('vcl').textContent = card.chloride_level;
+  $('vcl').style.color = card.chloride_level === 'HIGH' ? C.alert : card.chloride_level === 'MODERATE' ? C.sodium : C.ok;
+  $('verdict').hidden = false;
+}
+
+/* ================= the report ================= */
+function countUp(el, to, fmt, ms = 700) {
+  if (reduce) { el.textContent = fmt(to); return; }
+  const t0 = performance.now();
+  const step = now => { const t = Math.min(1, (now - t0) / ms), e = 1 - (1 - t) ** 3; el.textContent = fmt(to * e); if (t < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function findings(res) {
+  const { s, summary: sm, card, atNeed, late, hiProbe, noSalt } = res;
+  const out = [];
+  const extraMin = Math.max(0, (atNeed.icy_hours - sm.icy_hours) * 60);
+  if (sm.salt_applied_lb_per_lane_mile === 0) out.push(['Safety', `With no salt the road stayed icy for <b>${dur(sm.icy_hours)}</b>. Spreading <b>${card.needed_per_pass_lb} lb</b> per pass would cut that to <b>${dur(atNeed.icy_hours)}</b>.`]);
+  else if (card.excess_pct > 0) out.push(['Safety', `The road was icy for <b>${dur(sm.icy_hours)}</b> (with no salt: ${dur(noSalt)}). Just <b>${card.needed_per_pass_lb} lb per pass</b> would have kept it icy ${dur(atNeed.icy_hours)}. The other <b>${Math.round(card.excess_pct)}%</b> of the salt bought ${Math.round(extraMin)} more minutes of bare road.`]);
+  else out.push(['Safety', `The road was icy for <b>${dur(sm.icy_hours)}</b>. The crew used about what this storm needed or less; <b>${card.needed_per_pass_lb} lb per pass</b> would keep it icy only ${dur(atNeed.icy_hours)}.`]);
+  if (late != null) out.push(['Timing', late > card.needed_per_pass_lb
+    ? `If the first truck had come <b>one hour later</b>, the storm would need <b>${late} lb per pass</b> instead of ${card.needed_per_pass_lb}. Salt is most efficient before traffic packs snow into ice.`
+    : `Truck timing barely matters for this storm: one hour later would still need about ${late} lb per pass.`]);
+  out.push(['Runoff', `<b>${Math.round(sm.salt_to_drain_pct)}%</b> of the salt washed into the storm drain and <b>${Math.round(sm.salt_to_roadside_pct)}%</b> landed on the shoulder. Drain water peaked at <b>${int(sm.peak_cl_mg_L)} mg/L</b> chloride, ${sm.peak_cl_mg_L >= 860 ? `${Math.round(sm.peak_cl_mg_L / 860)}× the EPA short-term limit for streams (860 mg/L).` : 'below the EPA short-term limit for streams (860 mg/L).'}`]);
+  let sensor = sm.hours_probe_maxed > 0.5
+    ? `The probe was maxed out for <b>${dur(sm.hours_probe_maxed)}</b>, so Saltback accounted for only <b>${Math.round(sm.salt_seen_vs_true_pct)}%</b> of the salt.${hiProbe != null ? ` A high-range K=10 probe would have seen <b>${Math.round(hiProbe)}%</b>.` : ''}`
+    : `The probe stayed in range and Saltback accounted for <b>${Math.round(sm.salt_seen_vs_true_pct)}%</b> of the salt that reached the drain.`;
+  if (!s.use_temp_probe) sensor += ' The temperature correction is off, so cold runoff makes every reading look about half as salty as it is.';
+  out.push(['Sensor', sensor]);
+  const cost = card.route_salt_lb / 2000 * s.salt_price_per_ton;
+  if (card.recommended_change_pct < 0) out.push(['Money', `This storm used <b>${int(card.route_salt_lb)} lb</b> on the route, about <b>$${int(cost)}</b>. Following Saltback's recommendation would save about <b>$${int(cost * -card.recommended_change_pct / 100)}</b> per comparable storm.`]);
+  else out.push(['Money', `This storm used <b>${int(card.route_salt_lb)} lb</b> on the route, about <b>$${int(cost)}</b> of salt.`]);
+  const tc = S.fToC(s.pavement_temp_F);
+  if (s.pavement_temp_F < 15) out.push(['Note', 'Below about 15°F salt works very slowly, and real crews often add sand or switch to stronger chemicals. This model only covers plain rock salt.']);
+  else out.push(['Physics', `At ${s.pavement_temp_F}°F, 1 lb of salt can melt at most <b>${tc >= 0 ? 'any amount of' : S.iceMeltedPerSalt(tc).toFixed(1) + ' lb of'}</b> ice. Colder roads need more salt for the same storm.`]);
+  return out;
+}
+
+function renderReport(res, animate) {
+  const { card, s, summary: sm } = res;
+  const lvlNote = { HIGH: 'Above the EPA short-term limit for streams', MODERATE: 'Above the EPA long-term limit for streams', LOW: 'Below EPA limits for streams' };
+  $('card').innerHTML = `
+    <div><span class="eyebrow">Route</span><span class="val">${s.route_lane_miles} <small>lane-mi</small></span><span class="note">${s.snowfall_in} in of snow · ${s.pavement_temp_F}°F road</span></div>
+    <div><span class="eyebrow">Salt applied</span><span class="val" id="kSalt">0</span><span class="note">${int(sm.salt_per_pass_lb)} lb/lane-mi × ${Math.round(sm.salt_applied_lb_per_lane_mile / Math.max(sm.salt_per_pass_lb, 1e-9))} passes</span></div>
+    <div><span class="eyebrow">Estimated excess</span><span class="val" id="kEx">0%</span><span class="note">Salt that bought no real safety</span></div>
+    <div><span class="eyebrow">Chloride runoff</span><span class="lvl ${card.chloride_level}">${card.chloride_level}</span><span class="note">${lvlNote[card.chloride_level]} (storm average ${int(sm.avg_cl_mg_L)} mg/L)</span></div>
+    <div class="rec"><span class="eyebrow">Next comparable storm</span><span class="val" id="kRec">${signed(card.recommended_change_pct)}</span><span class="note">${card.recommended_per_pass_lb} lb per pass (the need plus a 10% safety margin)</span></div>
+    <div class="card-foot">Simulated with typical published values, not a real town's data.</div>`;
+  countUp($('kSalt'), card.route_salt_lb, v => `${int(v)} lb`);
+  countUp($('kEx'), card.excess_pct, v => `${Math.round(v)}%`);
+  $('findings').innerHTML = findings(res).map(([tag, html]) => `<li><span class="eyebrow">${tag}</span><p>${html}</p></li>`).join('');
+  drawCharts(res);
+  const st = $('status');
+  st.textContent = dirty ? 'Settings changed · run the storm to update this report' : `Results for a ${s.snowfall_in} in, ${s.storm_hours} h storm at ${s.pavement_temp_F}°F`;
+  st.className = 'status' + (dirty ? ' stale' : '');
+  if (animate) {
+    const live = [...document.querySelectorAll('.report .live')];
+    live.forEach(el => el.classList.add('pre'));
+    requestAnimationFrame(() => live.forEach((el, i) => { el.style.transitionDelay = `${i * 70}ms`; el.classList.remove('pre'); }));
+  }
+}
+
+/* ---------- small SVG charts with hover ---------- */
+function ticks(min, max, n = 5) {
+  const raw = (max - min) / n, mag = 10 ** Math.floor(Math.log10(raw)), e = raw / mag;
+  const step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag, out = [];
+  for (let v = Math.ceil(min / step) * step; v <= max + 1e-9; v += step) out.push(+v.toFixed(8));
+  return out;
+}
+function chart(host, cfg) {
+  const w = Math.max(260, host.clientWidth), h = 230, m = { l: 50, r: 18, t: 12, b: 36 };
+  const iw = w - m.l - m.r, ih = h - m.t - m.b, { x, y } = cfg;
+  const X = v => m.l + (v - x.min) / (x.max - x.min) * iw;
+  const lg = v => Math.log10(Math.max(v, y.min));
+  const Y = y.log ? v => m.t + ih - (lg(v) - Math.log10(y.min)) / (Math.log10(y.max) - Math.log10(y.min)) * ih
+    : v => m.t + ih - (v - y.min) / (y.max - y.min) * ih;
+  const yt = y.log ? [100, 1000, 10000, 100000].filter(v => v >= y.min && v <= y.max) : ticks(y.min, y.max, 4);
+  const xt = ticks(x.min, x.max, w < 420 ? 4 : 6);
+  let svg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${cfg.aria}">`;
+  svg += yt.map(v => `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${m.l - 8}" y="${Y(v) + 3.5}" text-anchor="end">${y.fmt(v)}</text>`).join('');
+  svg += xt.map(v => `<text x="${X(v)}" y="${h - m.b + 16}" text-anchor="middle">${x.fmt(v)}</text>`).join('');
+  svg += `<line x1="${m.l}" x2="${w - m.r}" y1="${m.t + ih}" y2="${m.t + ih}" stroke="var(--line-2)"/>`;
+  svg += `<text x="${m.l + iw / 2}" y="${h - 4}" text-anchor="middle">${x.label}</text>`;
+  svg += `<text transform="translate(12 ${m.t + ih / 2}) rotate(-90)" text-anchor="middle">${y.label}</text>`;
+  (cfg.refs || []).forEach(r => {
+    svg += `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(r.v)}" y2="${Y(r.v)}" stroke="var(--${r.color})" stroke-dasharray="4 4"/>`;
+    svg += `<text x="${m.l + 6}" y="${Y(r.v) - 5}">${r.label}</text>`;
+  });
+  cfg.series.forEach(s => {
+    if (s.dots) { svg += s.pts.map(([a, b]) => `<circle cx="${X(a)}" cy="${Y(b)}" r="4" fill="var(--panel)" stroke="var(--${s.color})" stroke-width="2"/>`).join(''); return; }
+    let d = '', pen = false;
+    s.pts.forEach(([a, b]) => { if (b == null || Number.isNaN(b)) { pen = false; return; } d += `${pen ? 'L' : 'M'}${X(a).toFixed(1)},${Y(b).toFixed(1)}`; pen = true; });
+    svg += `<path d="${d}" fill="none" stroke="var(--${s.color})" stroke-width="2" ${s.dash ? 'stroke-dasharray="5 4"' : ''} stroke-linejoin="round"/>`;
+  });
+  (cfg.marks || []).forEach(k => {
+    svg += `<circle cx="${X(k.x)}" cy="${Y(k.y)}" r="5" fill="var(--${k.color})" stroke="var(--panel)" stroke-width="2"/>`;
+    svg += `<text class="lbl" x="${X(k.x) + (k.dx ?? 9)}" y="${Y(k.y) + (k.dy ?? -9)}" text-anchor="${k.anchor || 'start'}">${k.label}</text>`;
+  });
+  svg += `<g class="hover" visibility="hidden"><line y1="${m.t}" y2="${m.t + ih}" stroke="var(--fg-3)"/></g>`;
+  svg += `<rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent"/></svg><div class="tip" hidden></div>`;
+  host.innerHTML = svg;
+  const svgEl = host.querySelector('svg'), hov = svgEl.querySelector('.hover'), tip = host.querySelector('.tip'), base = cfg.series[0].pts;
+  svgEl.querySelector('rect').addEventListener('pointermove', e => {
+    const bx = e.offsetX, xv = x.min + (bx - m.l) / iw * (x.max - x.min);
+    let k = 0; for (let i = 1; i < base.length; i++) if (Math.abs(base[i][0] - xv) < Math.abs(base[k][0] - xv)) k = i;
+    const px = X(base[k][0]);
+    hov.setAttribute('visibility', 'visible'); hov.querySelector('line').setAttribute('x1', px); hov.querySelector('line').setAttribute('x2', px);
+    const lines = cfg.series.filter(s => !s.dots).map(s => { const v = s.pts[k]?.[1]; return `<div><span>${s.name}:</span> ${v == null || Number.isNaN(v) ? '—' : y.fmtTip(v)}</div>`; });
+    tip.innerHTML = `<div>${x.fmtTip(base[k][0])}</div>${lines.join('')}`; tip.hidden = false;
+    const yv = cfg.series[0].pts[k][1];
+    tip.style.left = `${Math.min(w - 80, Math.max(80, px))}px`; tip.style.top = `${Number.isNaN(yv) ? m.t + 20 : Math.max(40, Y(yv) - 8)}px`;
+  });
+  svgEl.querySelector('rect').addEventListener('pointerleave', () => { hov.setAttribute('visibility', 'hidden'); tip.hidden = true; });
+}
+
+function drawCharts(res) {
+  const { sweep, card, s, rows, summary: sm } = res;
+  const yMax = Math.max(1, ...sweep.map(r => r.icy_hours)) * 1.1;
+  const used = sweep.reduce((a, r) => Math.abs(r.salt_per_pass_lb - s.salt_per_pass_lb) < Math.abs(a.salt_per_pass_lb - s.salt_per_pass_lb) ? r : a);
+  const need = res.atNeed, close = Math.abs(used.salt_per_pass_lb - need.salt_per_pass_lb) < 90;
+  chart($('chartDose'), {
+    aria: 'Icy hours versus salt per pass',
+    x: { min: 0, max: 600, label: 'Salt per pass (lb per lane-mile)', fmt: v => v, fmtTip: v => `${v} lb per pass` },
+    y: { min: 0, max: yMax, label: 'Hours icy', fmt: v => v, fmtTip: v => dur(v) },
+    series: [{ name: 'Icy', color: 'ice', pts: sweep.map(r => [r.salt_per_pass_lb, r.icy_hours]) }],
+    marks: [{ x: need.salt_per_pass_lb, y: need.icy_hours, color: 'ice', label: `needed ${need.salt_per_pass_lb} lb`, dy: close && need.salt_per_pass_lb <= used.salt_per_pass_lb ? -34 : -12 },
+            { x: used.salt_per_pass_lb, y: used.icy_hours, color: 'sodium', label: `used ${s.salt_per_pass_lb} lb`, dy: close && need.salt_per_pass_lb > used.salt_per_pass_lb ? -34 : -12 }],
+  });
+  const clMax = Math.max(1000, ...rows.map(r => Number.isNaN(r.cl_true_mg_L) ? 0 : r.cl_true_mg_L)) * 1.6;
+  chart($('chartCl'), {
+    aria: 'Chloride in the drain over time, true versus measured',
+    x: { min: 0, max: rows[rows.length - 1].hour, label: 'Hours since the snow started', fmt: v => v, fmtTip: v => clock(v) },
+    y: { min: 30, max: clMax, log: true, label: 'Chloride (mg/L)', fmt: v => v >= 1000 ? `${v / 1000}k` : v, fmtTip: v => `${int(v)} mg/L` },
+    series: [{ name: 'Sensor', color: 'ice', pts: rows.map(r => [r.hour, r.cl_measured_mg_L]) },
+             { name: 'True', color: 'fg-3', dash: true, pts: rows.map(r => [r.hour, r.cl_true_mg_L]) }],
+    refs: [{ v: 860, color: 'alert', label: 'EPA short-term 860' }, { v: 230, color: 'sodium', label: 'EPA long-term 230' }],
+  });
+  const left = Math.max(0, 100 - sm.salt_to_drain_pct - sm.salt_to_roadside_pct);
+  const segs = [['Into the storm drain', sm.salt_to_drain_pct, 'ice'], ['Onto the shoulder and soil', sm.salt_to_roadside_pct, 'sodium'], ['Still on the road', left, 'fg-3']];
+  $('split').innerHTML = sm.salt_applied_lb_per_lane_mile === 0 ? '<p class="note" style="color:var(--fg-2)">No salt was spread in this storm.</p>'
+    : `<div class="split" role="img" aria-label="Share of salt by destination">${segs.filter(x => x[1] >= 0.5).map(([n, v, c]) => `<span title="${n}: ${Math.round(v)}%" style="flex:${v};background:var(--${c})"></span>`).join('')}</div>
+       <div class="split-legend">${segs.map(([n, v, c]) => `<div><i style="background:var(--${c})"></i><span>${n}</span><b>${Math.round(v)}% · ${int(v / 100 * card.route_salt_lb)} lb</b></div>`).join('')}</div>
+       <div class="split-legend facts">
+         <div><i></i><span>Chloride released (60.7% of salt by weight)</span><b>${int(card.route_salt_lb * S.CL_SHARE)} lb</b></div>
+         <div><i></i><span>Hours the drain carried salty water</span><b>${dur(sm.hours_drain_flowing)}</b></div>
+         <div><i></i><span>Share of drain salt the probe accounted for</span><b>${Math.round(sm.salt_seen_vs_true_pct)}%</b></div>
+       </div>`;
+  const temps = []; for (let t = 0; t <= 30; t += 0.5) temps.push([t, S.iceMeltedPerSalt(S.fToC(t))]);
+  const tNow = Math.min(30, Math.max(0, s.pavement_temp_F));
+  chart($('chartMelt'), {
+    aria: 'Pounds of ice melted per pound of salt by temperature, model versus published chart',
+    x: { min: 0, max: 30, label: 'Pavement temperature (°F)', fmt: v => `${v}°`, fmtTip: v => `${v}°F` },
+    y: { min: 0, max: 60, label: 'lb of ice per lb of salt', fmt: v => v, fmtTip: v => `${v.toFixed(1)} lb` },
+    series: [{ name: 'Model', color: 'ice', pts: temps }, { name: 'Published', color: 'sodium', dots: true, pts: Object.entries(PUBLISHED).map(([t, v]) => [+t, v]) }],
+    marks: s.pavement_temp_F <= 30 && s.pavement_temp_F >= 0 ? [{ x: tNow, y: S.iceMeltedPerSalt(S.fToC(tNow)), color: 'fg', label: 'this storm', dx: -9, anchor: 'end' }] : [],
+  });
+  $('checkTable').innerHTML = `<tr><th>Road temp</th><th>Published</th><th>Model</th><th>Diff</th></tr>` +
+    Object.entries(PUBLISHED).reverse().map(([t, v]) => { const mv = S.iceMeltedPerSalt(S.fToC(+t)); return `<tr><td>${t}°F</td><td>${v}</td><td>${mv.toFixed(1)}</td><td>${signed(100 * (mv - v) / v)}</td></tr>`; }).join('');
+}
+
+/* ---------- boot ---------- */
+function resizeAll() {
+  layout(); [TW, TH] = sizeCanvas(tv, tctx);
+  if (current) drawCharts(current);
+}
+new ResizeObserver(() => resizeAll()).observe($('report'));
+window.addEventListener('resize', layout);
+current = compute(settings);
+resizeAll();
+renderReport(current, false);
+$('stormEnd').style.left = `${100 * current.rows.findIndex(r => !r.storming) / (current.rows.length - 1)}%`;
+if (reduce) { play.idx = current.rows.length - 1; showVerdict(current); }
+else { run(true); }
+requestAnimationFrame(frame);
+})();
+</script>

@@ -31,7 +31,8 @@ stuck to the road after plowing. 20% of the salt bounces off the road.
 3) CAN THE CHEAP SENSOR SEE IT?
    Storm-average runoff: the probe stayed in range 40 of 40 times, and
    Saltback's chloride estimate was off by 5% on average. It found 95% of the salt
-   that actually reached the road.  -> The DFR0300 works for this job.
+   that actually reached the road.  -> The DFR0300 works IF it measures well-mixed storm water
+   (for example, a collection bucket). Step 2 shows what happens when it logs live in the drain.
    Without the temperature probe, readings would be 52% too low (cold water conducts
    less electricity). -> The $5 DS18B20 is essential, not optional.
 
@@ -45,10 +46,40 @@ stuck to the road after plowing. 20% of the salt bounces off the road.
    5% from 0F to 25F. (Near 30F it reads higher, because tiny temperature changes
    near freezing matter a lot.) The model never reads that chart; it uses freezing-point physics.
 
+
+
+STEP 2: THE SAME KIND OF STORM, HOUR BY HOUR
+============================================================
+
+THE STORM: 4 in of snow over 8 h with the road at 22F.
+The first truck arrives after 0.5 h, then returns every 2 h:
+4 passes x 150 lb = 600 lb per lane-mile.
+Afterwards the road warms to 38F and the leftover salt washes away.
+
+SALTBACK STORM CARD
+   Route (10 lane-mi) | Salt applied: 6,000 lb | Estimated excess: 47% | Chloride runoff: HIGH | Next comparable storm: -40%
+
+6) WAS THE ROAD SAFE?
+   Icy (bonded ice on a freezing road) for 0.2 h. With no salt: 11.4 h.
+   Just 80 lb per pass would have kept it icy only 0.5 h. The other 47% of the salt bought only 15 extra minutes of bare road.
+
+7) WHERE THE SALT WENT
+   67% washed into the storm drain, 33% was thrown onto the shoulder and soil
+   (bounce, tires, wind). None of it disappears: it all ends up in streams or groundwater.
+
+8) WHAT LEFT THROUGH THE DRAIN
+   The drain ran for 32 h. Peak chloride 39,074 mg/L, storm average 7,981 mg/L.
+   For scale: the EPA's safe limit for fish and insects in streams is 860 mg/L short-term and
+   230 mg/L long-term. A stream dilutes drain water, but chloride never breaks down, so it builds up.
+
+9) DID THE SENSOR KEEP UP?
+   The probe was maxed out for 9.9 h, so Saltback only saw 48% of the salt.
+   The brine coming off a freezing road is far too salty for the DFR0300 (20 mS/cm max).
+   A high-range K=10 probe fixes this: set probe_max_mS_cm to 200 and run again.
+
 NOT IN THE MODEL YET (coming in later steps):
-   - time: how fast salt works, refreezing, new snow diluting the brine
-   - traffic, plowing, and salt carried off by tires
    - a whole winter of storms, and Saltback learning from each one
-   - uncertainty: what if our guesses (ice film, runoff water) are wrong?
+   - uncertainty: what if our guesses (ice, runoff, bonding speed) are wrong?
+   - real lab data from Experiments 1 and 2
 
 All inputs are typical published values, not real town data. See results/settings_used.json.

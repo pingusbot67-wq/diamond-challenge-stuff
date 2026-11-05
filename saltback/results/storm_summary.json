@@ -1,0 +1,23 @@
+{
+  "summary": {
+    "salt_per_pass_lb": 150.0,
+    "salt_applied_lb_per_lane_mile": 600.0,
+    "icy_hours": 0.25,
+    "salt_to_drain_pct": 66.97365368437268,
+    "salt_to_roadside_pct": 33.02079627201383,
+    "salt_left_on_road_pct": 0.005550043613481556,
+    "peak_cl_mg_L": 39074.38191000529,
+    "avg_cl_mg_L": 7981.426906811365,
+    "hours_probe_maxed": 9.916666666666666,
+    "hours_drain_flowing": 31.5,
+    "salt_seen_vs_true_pct": 47.87572479774292
+  },
+  "card": {
+    "route_salt_lb": 6000.0,
+    "excess_pct": 46.666666666666664,
+    "chloride_level": "HIGH",
+    "recommended_per_pass_lb": 90,
+    "recommended_change_pct": -40,
+    "needed_per_pass_lb": 80
+  }
+}

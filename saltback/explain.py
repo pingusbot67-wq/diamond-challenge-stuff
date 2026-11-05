@@ -1,4 +1,4 @@
-"""Turn the raw numbers in results/ into a plain-English report (report.txt) and a chart (chart.png).
+"""Turn the raw numbers in results/ into plain English (report.txt) and charts (chart.png, chart_step2.png).
 
 Run simulate.py first. This file only READS the data; it never re-runs the physics.
 """
@@ -61,7 +61,8 @@ def write_report(sweep, temps, check, s):
     L += ["3) CAN THE CHEAP SENSOR SEE IT?",
           f"   Storm-average runoff: the probe stayed in range {len(salted) - avg_maxed} of {len(salted)} times, and",
           f"   Saltback's chloride estimate was off by {avg_err:.0f}% on average. It found {seen:.0f}% of the salt",
-          "   that actually reached the road.  -> The DFR0300 works for this job.",
+          "   that actually reached the road.  -> The DFR0300 works IF it measures well-mixed storm water",
+          "   (for example, a collection bucket). Step 2 shows what happens when it logs live in the drain.",
           f"   Without the temperature probe, readings would be {no_probe:.0f}% too low (cold water conducts",
           "   less electricity). -> The $5 DS18B20 is essential, not optional.", ""]
     L += ["4) WARNING FOR THE HARDWARE PLAN",
@@ -72,15 +73,51 @@ def write_report(sweep, temps, check, s):
           f"   It was checked against the widely published 'ice melted per pound of salt' chart: within",
           f"   {worst_check:.0f}% from 0F to 25F. (Near 30F it reads higher, because tiny temperature changes",
           "   near freezing matter a lot.) The model never reads that chart; it uses freezing-point physics.", ""]
-    L += ["NOT IN THE MODEL YET (coming in later steps):",
-          "   - time: how fast salt works, refreezing, new snow diluting the brine",
-          "   - traffic, plowing, and salt carried off by tires",
+    return L
+
+
+def step2_report(tl, sw, summ, card, s):
+    n_pass = round(summ["salt_applied_lb_per_lane_mile"] / max(summ["salt_per_pass_lb"], 1e-9))
+    at_need = closest(sw, "salt_per_pass_lb", card["needed_per_pass_lb"])
+    flowing = tl.dropna(subset=["cl_true_mg_L"])
+    L = ["", "", "STEP 2: THE SAME KIND OF STORM, HOUR BY HOUR", "=" * 60, ""]
+    L += [f"THE STORM: {s['snowfall_in']} in of snow over {s['storm_hours']} h with the road at {s['pavement_temp_F']}F.",
+          f"The first truck arrives after {s['first_pass_h']} h, then returns every {s['plow_every_h']} h:",
+          f"{n_pass} passes x {summ['salt_per_pass_lb']:.0f} lb = {summ['salt_applied_lb_per_lane_mile']:.0f} lb per lane-mile.",
+          f"Afterwards the road warms to {s['temp_after_F']}F and the leftover salt washes away.", ""]
+    L += ["SALTBACK STORM CARD",
+          f"   Route ({s['route_lane_miles']} lane-mi) | Salt applied: {card['route_salt_lb']:,.0f} lb | "
+          f"Estimated excess: {card['excess_pct']:.0f}% | Chloride runoff: {card['chloride_level']} | "
+          f"Next comparable storm: {card['recommended_change_pct']:+.0f}%", ""]
+    L += ["6) WAS THE ROAD SAFE?",
+          f"   Icy (bonded ice on a freezing road) for {summ['icy_hours']:.1f} h. With no salt: "
+          f"{sw.icy_hours.iloc[0]:.1f} h.",
+          f"   Just {card['needed_per_pass_lb']:.0f} lb per pass would have kept it icy only "
+          f"{at_need.icy_hours:.1f} h. The other {card['excess_pct']:.0f}% of the salt bought only "
+          f"{max(0, at_need.icy_hours - summ['icy_hours']) * 60:.0f} extra minutes of bare road.", ""]
+    L += ["7) WHERE THE SALT WENT",
+          f"   {summ['salt_to_drain_pct']:.0f}% washed into the storm drain, {summ['salt_to_roadside_pct']:.0f}% was "
+          "thrown onto the shoulder and soil",
+          "   (bounce, tires, wind). None of it disappears: it all ends up in streams or groundwater.", ""]
+    L += ["8) WHAT LEFT THROUGH THE DRAIN",
+          f"   The drain ran for {summ['hours_drain_flowing']:.0f} h. Peak chloride {summ['peak_cl_mg_L']:,.0f} mg/L, storm average "
+          f"{summ['avg_cl_mg_L']:,.0f} mg/L.",
+          "   For scale: the EPA's safe limit for fish and insects in streams is 860 mg/L short-term and",
+          "   230 mg/L long-term. A stream dilutes drain water, but chloride never breaks down, so it builds up.", ""]
+    L += ["9) DID THE SENSOR KEEP UP?",
+          f"   The probe was maxed out for {summ['hours_probe_maxed']:.1f} h, so Saltback only saw "
+          f"{summ['salt_seen_vs_true_pct']:.0f}% of the salt."]
+    if summ["hours_probe_maxed"] > 0.5:
+        L += ["   The brine coming off a freezing road is far too salty for the DFR0300 (20 mS/cm max).",
+              "   A high-range K=10 probe fixes this: set probe_max_mS_cm to 200 and run again."]
+    else:
+        L += ["   The probe stayed in range: the drain measurement is trustworthy for this storm."]
+    L += ["", "NOT IN THE MODEL YET (coming in later steps):",
           "   - a whole winter of storms, and Saltback learning from each one",
-          "   - uncertainty: what if our guesses (ice film, runoff water) are wrong?",
+          "   - uncertainty: what if our guesses (ice, runoff, bonding speed) are wrong?",
+          "   - real lab data from Experiments 1 and 2",
           "", "All inputs are typical published values, not real town data. See results/settings_used.json."]
-    text = "\n".join(L)
-    (OUT / "report.txt").write_text(text)
-    return text
+    return L
 
 
 def style(ax, title, xlabel, ylabel):
@@ -134,14 +171,56 @@ def draw_chart(sweep, temps, s):
     plt.close(fig)
 
 
+def draw_step2_chart(tl, sw, card, s):
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4.4), facecolor=BG)
+    storm_end = s["storm_hours"]
+
+    ax = axes[0]
+    style(ax, "D. Ice bonded to the road", "Hours since snow started", "Bonded ice (mm)")
+    ax.axvspan(0, storm_end, color=BLUE, alpha=0.06, linewidth=0)
+    ax.plot(tl.hour, tl.bonded_ice_mm, color=BLUE, linewidth=2)
+    ax.axhline(0.05, color=ORANGE, linewidth=1, linestyle="--")
+    ax.text(tl.hour.max(), 0.05, "  icy above this", color=INK2, fontsize=8, va="bottom", ha="right")
+    ax.text(storm_end / 2, ax.get_ylim()[1] * 0.97, "snowing", color=INK2, fontsize=8, ha="center", va="top")
+
+    ax = axes[1]
+    style(ax, "E. Chloride in the drain (log scale)", "Hours since snow started", "Chloride (mg/L)")
+    ax.set_yscale("log")
+    ax.plot(tl.hour, tl.cl_true_mg_L, color=INK2, linewidth=2, linestyle="--", label="True")
+    ax.plot(tl.hour, tl.cl_measured_mg_L, color=BLUE, linewidth=2, label="Sensor + Saltback")
+    ax.axhline(860, color=ORANGE, linewidth=1)
+    ax.text(0.5, 860 * 0.93, "EPA short-term limit", color=INK2, fontsize=8, va="top")
+    ax.legend(frameon=False, fontsize=8, loc="upper right", labelcolor=INK)
+
+    ax = axes[2]
+    style(ax, "F. Salt per pass vs. icy hours", "Salt per pass (lb per lane-mile)", "Hours the road was icy")
+    ax.plot(sw.salt_per_pass_lb, sw.icy_hours, color=BLUE, linewidth=2)
+    for lb, label, off in [(card["needed_per_pass_lb"], "needed", (10, 22)), (s["salt_per_pass_lb"], "used", (10, -18))]:
+        r = closest(sw, "salt_per_pass_lb", lb)
+        ax.plot([r.salt_per_pass_lb], [r.icy_hours], "o", color=BLUE if label == "needed" else ORANGE,
+                markersize=8, markeredgecolor=BG, markeredgewidth=2)
+        ax.annotate(f"{label}: {r.salt_per_pass_lb:.0f} lb", (r.salt_per_pass_lb, r.icy_hours),
+                    xytext=off, textcoords="offset points", color=INK, fontsize=9)
+
+    fig.tight_layout()
+    fig.savefig(OUT / "chart_step2.png", dpi=150, facecolor=BG)
+    plt.close(fig)
+
+
 def run():
     sweep = pd.read_csv(OUT / "dose_sweep.csv")
     temps = pd.read_csv(OUT / "temperature_chart.csv")
     check = pd.read_csv(OUT / "model_check.csv")
+    tl = pd.read_csv(OUT / "timeline.csv")
+    sw = pd.read_csv(OUT / "timeline_dose_sweep.csv")
+    st = json.loads((OUT / "storm_summary.json").read_text())
     s = json.loads((OUT / "settings_used.json").read_text())
-    print(write_report(sweep, temps, check, s))
+    text = "\n".join(write_report(sweep, temps, check, s) + step2_report(tl, sw, st["summary"], st["card"], s))
+    (OUT / "report.txt").write_text(text)
+    print(text)
     draw_chart(sweep, temps, s)
-    print(f"\nChart saved to {OUT}/chart.png")
+    draw_step2_chart(tl, sw, st["card"], s)
+    print(f"\nCharts saved to {OUT}/chart.png and {OUT}/chart_step2.png")
 
 
 if __name__ == "__main__":

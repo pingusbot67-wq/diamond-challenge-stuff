@@ -1,4 +1,4 @@
-"""Run the Saltback simulation and save raw data to results/. (explain.py turns it into plain English.)
+"""Run the Saltback simulation (Steps 1 and 2) and save raw data to results/. (explain.py turns it into plain English.)
 
 Usage:  python simulate.py              uses model.SETTINGS
         python simulate.py my.json      overrides any settings listed in my.json
@@ -45,9 +45,18 @@ def run(overrides=None):
     check["difference_pct"] = (100 * (check.model - check.published) / check.published).round(0)
     check.to_csv(OUT / "model_check.csv", index=False)
 
+    # 4) Step 2: the same storm over time (5-minute steps), plus the salt dose it really needed
+    rows, summary = model.storm_timeline(s)
+    needed, sweep2 = model.find_needed(s)
+    card = model.storm_card(s, summary, needed)
+    pd.DataFrame(rows).round(4).to_csv(OUT / "timeline.csv", index=False)
+    pd.DataFrame(sweep2).round(3).to_csv(OUT / "timeline_dose_sweep.csv", index=False)
+    (OUT / "storm_summary.json").write_text(json.dumps(dict(summary=summary, card=card), indent=2, default=float))
+
     (OUT / "settings_used.json").write_text(json.dumps(s, indent=2))
     print(f"Simulated {len(sweep)} salt doses at {s['pavement_temp_F']}F -> {OUT}/dose_sweep.csv, "
-          "temperature_chart.csv, model_check.csv, settings_used.json")
+          "temperature_chart.csv, model_check.csv,\n  "
+          f"and a {len(rows) * model.DT_H:.0f}-hour storm timeline -> timeline.csv, timeline_dose_sweep.csv, storm_summary.json")
     return sweep
 
 

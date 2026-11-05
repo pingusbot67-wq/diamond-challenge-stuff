@@ -1,7 +1,16 @@
 # Saltback simulator
 
 A small physics model of road salt: **truck → road → storm drain → sensor → Saltback's report**.
-It is built in steps. **Step 1 (done): one storm, one stretch of road, one drain.**
+It is built in steps. **Step 1 (done):** one storm, all at once. **Step 2 (done):** the same storm in 5-minute steps.
+
+## Two ways to run it
+
+- **The website** (`web/`): a live animation of the storm (snow, the plow truck spreading salt, brine
+  running into the drain, the probe's reading) that turns into a plain-English storm report.
+  Open it here: <https://claude.ai/artifact/AH6wXhn5TmQdTVGgkWpHCx> (private until you share it from the page's Share menu).
+- **Google Colab** (below): the Python version, which saves raw data files and a written report.
+
+Both give identical numbers: `python web/check_parity.py` compares them on 6 storms (about 11,700 values).
 
 ## Run it (no install, works on any laptop)
 
@@ -20,8 +29,26 @@ It is built in steps. **Step 1 (done): one storm, one stretch of road, one drain
 | `simulate.py` | Runs the model and saves **raw data** to `results/` (CSV files). |
 | `explain.py` | Reads that data and writes **plain English** (`report.txt`) and a chart (`chart.png`). |
 | `build_notebook.py` | Packs the three files above into `Saltback.ipynb`. Re-run it after changing them. |
+| `web/index.html`, `web/model.js` | The website. `model.js` is the JavaScript twin of `model.py`. |
+| `web/check_parity.py` | Proves the website and the Python model give the same answers. |
 
-`results/` holds example output from the default settings (22°F road).
+`results/` holds example output from the default settings (22°F road): `report.txt`, `chart.png` (Step 1),
+`chart_step2.png` and `timeline.csv` (Step 2).
+
+## How Step 2 works (every 5 minutes of the storm)
+
+1. Snow falls (as rain if the road is above freezing).
+2. A truck plows loose snow and spreads salt, first after `first_pass_h`, then every `plow_every_h`.
+   Some salt bounces onto the shoulder.
+3. Salt crystals dissolve into the snow: about 15 min near freezing, much slower when colder.
+4. The brine melts ice until it is exactly as salty as the temperature requires. If it is too weak
+   (new snow, a cold snap), it **refreezes into black ice**.
+5. Traffic packs unprotected snow into ice bonded to the pavement. A brine film prevents this,
+   which is why salting early takes less salt.
+6. Brine runs into the drain or is thrown onto the shoulder by tires. After the storm the road thaws
+   and the rest washes away.
+7. The probe logs the drain water. Saltback finds the **smallest salt per pass that keeps the road
+   as safe as possible** and writes the storm card.
 
 ## How the model works (Step 1)
 
@@ -50,7 +77,14 @@ It is built in steps. **Step 1 (done): one storm, one stretch of road, one drain
 | Runoff water temperature | 1°C | 0–5°C | Cold water reads about 50% low without correction |
 | Salt price | $90/ton | $60–130/ton | Converts waste into dollars |
 
-## What Step 1 already shows
+## What Steps 1 and 2 show (default storm: 4 in of snow, 8 h, 22°F)
+
+- **Storm card:** 6,000 lb on a 10 lane-mile route | 47% excess | chloride runoff HIGH | next comparable storm −40%.
+- 80 lb per pass would have kept the road nearly as safe as the 150 lb used; the extra salt bought about 15 minutes of bare road.
+- **Timing matters:** if the first truck arrives one hour later, the same storm needs about 5× more salt per pass, because traffic packs the snow into ice first.
+- **Sensor:** live in the drain, the DFR0300 is maxed out for about 10 hours and sees only about half the salt. A high-range K=10 probe sees about 94%. This is a real hardware decision for the field pilot.
+
+Earlier Step 1 findings:
 
 - Past the needed amount, more salt clears no more ice; at double the dose, half the salt is wasted.
 - The needed amount depends heavily on pavement temperature (about 60 lb/lane-mile at 30°F vs. about 500 at 15°F for the same storm).
@@ -60,7 +94,7 @@ It is built in steps. **Step 1 (done): one storm, one stretch of road, one drain
 ## Roadmap
 
 - [x] **Step 1** One storm: melt physics, drain mixing, sensor realism, plain-English report
-- [ ] **Step 2** Time: hour-by-hour storm with melting speed, refreezing, new snow, and the conductivity curve the probe would log
+- [x] **Step 2** Time: 5-minute storm timeline with melting speed, refreezing, new snow, and the probe's live log, plus the website
 - [ ] **Step 3** A whole winter: 20–30 random storms; a town that over-salts vs. one following Saltback's recommendations
 - [ ] **Step 4** Uncertainty (Monte Carlo): 1,000 runs with wrong guesses, sensor fouling, and the $5 screw-electrode probe
 - [ ] **Step 5** Plug in real lab data (Experiments 1 and 2) and compare the model's predictions with what you measured

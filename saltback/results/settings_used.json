@@ -17,7 +17,7 @@
   "snow_ratio": 12,
   "first_pass_h": 0.5,
   "plow_every_h": 2,
-  "salt_per_pass_lb": 150,
+  "salt_per_pass_lb": 220,
   "temp_after_F": 38,
   "drain_per_h": 0.3,
   "traffic_loss_per_h": 0.05,

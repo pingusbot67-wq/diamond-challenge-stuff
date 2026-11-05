@@ -52,7 +52,7 @@ salt_price_per_ton = 90  # @param {type:"slider", min:60, max:130, step:5}
 # --- Step 2: the storm over time ---
 snowfall_in = 4          # @param {type:"slider", min:0, max:18, step:0.5}
 storm_hours = 8          # @param {type:"slider", min:4, max:24, step:1}
-salt_per_pass_lb = 150   # @param {type:"slider", min:0, max:500, step:10}
+salt_per_pass_lb = 220   # @param {type:"slider", min:0, max:500, step:10}
 first_pass_h = 0.5       # @param {type:"slider", min:0, max:3, step:0.25}
 plow_every_h = 2         # @param {type:"slider", min:1, max:4, step:0.5}
 temp_after_F = 38        # @param {type:"slider", min:10, max:50, step:1}

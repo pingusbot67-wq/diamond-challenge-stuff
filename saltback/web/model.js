@@ -7,7 +7,7 @@
     pavement_temp_F: 22, ice_film_mm: 0.2, scatter_loss: 0.20, later_water_mm: 5.0, unsalted_share: 0.30,
     baseline_cl_mg_L: 50, water_temp_C: 1.0, probe_max_mS_cm: 20.0, probe_noise: 0.03, temp_probe_error_C: 0.5,
     use_temp_probe: true, salt_price_per_ton: 90, seed: 1,
-    storm_hours: 8, snowfall_in: 4, snow_ratio: 12, first_pass_h: 0.5, plow_every_h: 2, salt_per_pass_lb: 150,
+    storm_hours: 8, snowfall_in: 4, snow_ratio: 12, first_pass_h: 0.5, plow_every_h: 2, salt_per_pass_lb: 220,
     temp_after_F: 38, drain_per_h: 0.3, traffic_loss_per_h: 0.05, bond_per_h: 0.5, catchment_m2: 400,
     route_lane_miles: 10,
   };
@@ -26,7 +26,7 @@
 
   // Step 2 constants
   const DT_H = 5 / 60, EUTECTIC_C = FREEZE_C[FREEZE_C.length - 1], PLOW_CLEAR = 0.95;
-  const BRINE_FILM_G = 20, ICY_G = 50, NATURAL_MELT = 300, CL_LIMITS = [230, 860];
+  const BRINE_FILM_G = 40, ICY_G = 50, NATURAL_MELT = 300, CL_LIMITS = [230, 860];
 
   function interp(x, xs, ys) {            // same as numpy.interp (clamps at both ends)
     if (x <= xs[0]) return ys[0];

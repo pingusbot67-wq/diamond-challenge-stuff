@@ -5,8 +5,12 @@ It is built in steps. **Step 1 (done):** one storm, all at once. **Step 2 (done)
 
 ## Two ways to run it
 
-- **The website** (`web/`): a live animation of the storm (snow, the plow truck spreading salt, brine
-  running into the drain, the probe's reading) that turns into a plain-English storm report.
+- **The website** (`web/`), with three tabs:
+  - **Simulator**: the storm as a field of particles (snow, bonded ice, brine, salt, runoff) and the probe's live log.
+  - **Results**: the storm report for your latest run.
+  - **System**: the Saltback product. It reads storm records (truck logs + drain-probe readings), learns
+    how much salt really stays on this route, and produces ranked recommendations, a crew rate card and
+    per-storm verdicts. Every simulator run is logged here; you can also load the example season or import a CSV.
   Open it here: <https://claude.ai/artifact/AH6wXhn5TmQdTVGgkWpHCx> (private until you share it from the page's Share menu).
 - **Google Colab** (below): the Python version, which saves raw data files and a written report.
 
@@ -31,6 +35,7 @@ Both give identical numbers: `python web/check_parity.py` compares them on 6 sto
 | `build_notebook.py` | Packs the three files above into `Saltback.ipynb`. Re-run it after changing them. |
 | `web/index.html`, `web/model.js` | The website. `model.js` is the JavaScript twin of `model.py`. |
 | `web/check_parity.py` | Proves the website and the Python model give the same answers. |
+| `web/engine.js` | The Saltback System's decision logic: calibration from probe data, per-storm verdicts, recommendations, rate card. |
 
 `results/` holds example output from the default settings (22°F road): `report.txt`, `chart.png` (Step 1),
 `chart_step2.png` and `timeline.csv` (Step 2).
@@ -79,9 +84,9 @@ Both give identical numbers: `python web/check_parity.py` compares them on 6 sto
 
 ## What Steps 1 and 2 show (default storm: 4 in of snow, 8 h, 22°F)
 
-- **Storm card:** 6,000 lb on a 10 lane-mile route | 47% excess | chloride runoff HIGH | next comparable storm −40%.
-- 80 lb per pass would have kept the road nearly as safe as the 150 lb used; the extra salt bought about 15 minutes of bare road.
-- **Timing matters:** if the first truck arrives one hour later, the same storm needs about 5× more salt per pass, because traffic packs the snow into ice first.
+- **Storm card:** 8,800 lb on a 10 lane-mile route | 45% excess | chloride runoff HIGH | next comparable storm −35%.
+- 120 lb per pass would have kept the road nearly as safe as the 220 lb used.
+- **Timing matters:** if the first truck arrives one hour later, the same storm needs about 3× more salt per pass, because traffic packs the snow into ice first.
 - **Sensor:** live in the drain, the DFR0300 is maxed out for about 10 hours and sees only about half the salt. A high-range K=10 probe sees about 94%. This is a real hardware decision for the field pilot.
 
 Earlier Step 1 findings:
@@ -91,10 +96,24 @@ Earlier Step 1 findings:
 - The DFR0300 handles **storm-average** runoff well (about 5% error), but the **temperature probe is essential**: without it, readings come out about 50% low.
 - **Hardware warning:** the first rush of brine is far above the DFR0300's 20 mS/cm limit, so it can't measure the first flush.
 
+## The Saltback System (example season, simulated data)
+
+12 storms on a 10 lane-mile route. The crew raises its rate a little on cold days, but not as much as the physics
+requires. Hidden in the data: 28% of the salt bounces off the road, not the 20% the model assumes.
+
+- The engine **finds the hidden bounce loss from the drain-probe data** (it estimates 28%) and recommends pre-wetting the salt.
+- **Saltback's plan:** 18.5% less salt over the season, about $1,200 saved, and icy-road hours down from 15.6 to 4.3.
+  It cuts salt on mild storms and **adds** salt on the two coldest, so the roads end up safer, not just cheaper.
+- Ranked actions: lower rates at 23–32°F, get the first truck out within 30 minutes, pre-wet salt,
+  upgrade the drain probe, and report chloride for the stormwater (MS4) permit.
+- **Model tuning note:** the brine film needed to stop snow bonding (0.04 mm) was set so the rate card falls inside
+  published state rate-chart ranges (about 100–170 lb/lane-mile at 23–27°F, 160–350 at 18–22°F).
+
 ## Roadmap
 
 - [x] **Step 1** One storm: melt physics, drain mixing, sensor realism, plain-English report
 - [x] **Step 2** Time: 5-minute storm timeline with melting speed, refreezing, new snow, and the probe's live log, plus the website
+- [x] **System** Decision engine: calibration from probe data, per-storm verdicts, ranked recommendations, crew rate card
 - [ ] **Step 3** A whole winter: 20–30 random storms; a town that over-salts vs. one following Saltback's recommendations
 - [ ] **Step 4** Uncertainty (Monte Carlo): 1,000 runs with wrong guesses, sensor fouling, and the $5 screw-electrode probe
 - [ ] **Step 5** Plug in real lab data (Experiments 1 and 2) and compare the model's predictions with what you measured

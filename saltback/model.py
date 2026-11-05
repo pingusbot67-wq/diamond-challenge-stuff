@@ -33,7 +33,7 @@ SETTINGS = dict(
     snow_ratio=12,            # inches of snow per inch of water (wet snow 8, fluffy 18)
     first_pass_h=0.5,         # hours of snow before the first truck arrives              (0 to 3)
     plow_every_h=2,           # then a truck plows AND salts every N hours while it snows (1 to 4)
-    salt_per_pass_lb=150,     # salt spread each pass, lb per lane-mile                   (0 to 500)
+    salt_per_pass_lb=220,     # salt spread each pass, lb per lane-mile                   (0 to 500)
     temp_after_F=38,          # road temperature once the storm is over (sun/thaw)        (10 to 50)
     drain_per_h=0.3,          # share of liquid brine that runs off the road each hour    (0.1 to 0.8)
     traffic_loss_per_h=0.05,  # share of brine/salt that tires throw onto the shoulder /h (0.02 to 0.15)
@@ -159,7 +159,7 @@ def storm(dose_g_m2, s, rng):
 DT_H = 5 / 60            # time step: 5 minutes
 EUTECTIC_C = FREEZE_C[-1]
 PLOW_CLEAR = 0.95        # a plow pass scrapes off 95% of LOOSE snow (it cannot lift ice bonded to pavement)
-BRINE_FILM_G = 20        # a brine layer of at least 0.02 mm stops snow from bonding to the pavement
+BRINE_FILM_G = 40        # a brine layer of at least 0.04 mm stops snow from bonding (tuned to published rate charts)
 ICY_G = 50               # bonded ice thicker than 0.05 mm counts as an icy, slippery road
 NATURAL_MELT = 300       # g/m^2 per hour per degree C above freezing (pavement thaw rate)
 CL_LIMITS = (230, 860)   # US EPA chloride criteria for aquatic life: long-term and short-term (mg/L)

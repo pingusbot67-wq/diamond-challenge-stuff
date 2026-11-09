@@ -5,13 +5,14 @@ It is built in steps. **Step 1 (done):** one storm, all at once. **Step 2 (done)
 
 ## Two ways to run it
 
-- **The website** (`web/`), with three tabs:
-  - **Simulator**: the storm as a field of particles (snow, bonded ice, brine, salt, runoff) and the probe's live log.
-  - **Results**: the storm report for your latest run.
-  - **System**: the Saltback product. It reads storm records (truck logs + drain-probe readings), learns
-    how much salt really stays on this route, and produces ranked recommendations, a crew rate card and
-    per-storm verdicts. Every simulator run is logged here; you can also load the example season or import a CSV.
-  Open it here: <https://claude.ai/artifact/AH6wXhn5TmQdTVGgkWpHCx> (private until you share it from the page's Share menu).
+- **The website** (`web/`): a data console with five sections:
+  - **Live simulation**: pick a scenario, run it, and watch the storm as a particle cross-section with live readouts and the probe log.
+  - **Run report**: KPIs, the storm card, findings, four charts and the full 5-minute timeline table.
+  - **Storm library**: 9 example storms (light dusting, Nor'easter, Arctic cold snap, late first truck, rain to flash freeze, and more) compared side by side.
+  - **Season analysis**: the Saltback System. It reads storm records (truck logs + drain-probe readings), learns how much salt
+    really stays on this route, and produces ranked recommendations, a crew rate card and per-storm verdicts.
+  - **Data and export**: every table as CSV or copy-paste, plus an **Excel workbook (.xlsx) with native, editable charts**
+    that also opens in Google Sheets (File → Import). A "Send to Google Sheets" button uploads it through your Google Drive connector.
 - **Google Colab** (below): the Python version, which saves raw data files and a written report.
 
 Both give identical numbers: `python web/check_parity.py` compares them on 6 storms (about 11,700 values).
@@ -36,6 +37,8 @@ Both give identical numbers: `python web/check_parity.py` compares them on 6 sto
 | `web/index.html`, `web/model.js` | The website. `model.js` is the JavaScript twin of `model.py`. |
 | `web/check_parity.py` | Proves the website and the Python model give the same answers. |
 | `web/engine.js` | The Saltback System's decision logic: calibration from probe data, per-storm verdicts, recommendations, rate card. |
+| `web/report.js` | The storm library (example storms) and every table the console shows and exports. |
+| `web/xlsx.js` | Writes .xlsx workbooks with native Excel charts (no library besides JSZip). |
 
 `results/` holds example output from the default settings (22°F road): `report.txt`, `chart.png` (Step 1),
 `chart_step2.png` and `timeline.csv` (Step 2).

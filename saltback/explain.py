@@ -84,7 +84,11 @@ def step2_report(tl, sw, summ, card, s):
           f"The first truck arrives after {s['first_pass_h']} h, then returns every {s['plow_every_h']} h:",
           f"{n_pass} passes x {summ['salt_per_pass_lb']:.0f} lb = {summ['salt_applied_lb_per_lane_mile']:.0f} lb per lane-mile.",
           f"Afterwards the road warms to {s['temp_after_F']}F and the leftover salt washes away.", ""]
-    if card["status"] == "cant_fix":
+    if card["status"] == "too_cold":
+        verdict = (f"Too cold for rock salt to work well ({s['pavement_temp_F']}F). State guides recommend sand or a stronger"
+                   " chemical such as calcium chloride below about 15F, not more rock salt.")
+        card_line = f"   Salt spread: {card['route_salt_lb']:,.0f} lb | Too cold for rock salt"
+    elif card["status"] == "cant_fix":
         verdict = ("Salt alone couldn't keep this road clear (still icy "
                    f"{card['best_icy_h']:.1f} h at the maximum rate). Pre-treat with brine, time a pass just before the freeze,"
                    " or use sand or a stronger chemical when it is very cold.")
@@ -92,7 +96,8 @@ def step2_report(tl, sw, summ, card, s):
     else:
         verdict = (f"Icy time: {card['icy_actual_h'] * 60:.0f} min as salted -> {card['icy_target_h'] * 60:.0f} min at "
                    f"Saltback's rate ({card['target_per_pass_lb']} lb per pass).")
-        card_line = (f"   Salt spread: {card['route_salt_lb']:,.0f} lb | Excess: {card['excess_pct']:.0f}% | "
+        card_line = (f"   Salt spread: {card['route_salt_lb']:,.0f} lb | "
+                     + ("About the right amount | " if card["status"] == "ok" else f"Excess: {card['excess_pct']:.0f}% | " if card["status"] == "over" else "Under-salted | ") +
                      f"Chloride released: {card['chloride_released_lb']:,.0f} lb | "
                      f"Next storm: try {card['next_per_pass_lb']} lb per pass ({card['next_change_pct']:+.0f}%)")
     L += ["SALTBACK STORM CARD", card_line, ""]
@@ -101,7 +106,8 @@ def step2_report(tl, sw, summ, card, s):
           f"{sw.icy_hours.iloc[0]:.1f} h.",
           f"   {verdict}",
           "   Saltback never recommends a rate that would leave the road more than 6 minutes icier than it was,",
-          "   and it cuts at most 25% per storm, checking the result each time.", ""]
+          "   either with its best-estimate physics or in a pessimistic case (brine runs off faster, more brine is",
+          "   needed, snow bonds faster). It cuts at most 25% per storm, checking the result each time.", ""]
     L += ["7) WHERE THE SALT WENT",
           f"   {summ['salt_to_drain_pct']:.0f}% washed into the storm drain, {summ['salt_to_roadside_pct']:.0f}% was "
           "thrown onto the shoulder and soil",

@@ -27,7 +27,9 @@
   // Step 2 constants
   const DT_H = 5 / 60, EUTECTIC_C = FREEZE_C[FREEZE_C.length - 1], PLOW_CLEAR = 0.95;
   const ICY_G = 50, NATURAL_MELT = 300, CL_LIMITS = [230, 860];
-  const NEEDED_TOLERANCE_H = 0.25, SAFETY_SLACK_H = 0.1, CANT_FIX_H = 2.0, MAX_STEP_DOWN = 0.25, MAX_LB = 600;
+  const NEEDED_TOLERANCE_H = 0.25, SAFETY_SLACK_H = 0.1, CANT_FIX_H = 2.0, MAX_STEP_DOWN = 0.25, MAX_LB = 600, TOO_COLD_F = 15;
+  const PESSIMISTIC = { brine_film_mm: 0.06, drain_per_h: 0.5, bond_per_h: 1.0 };   // top of the realistic ranges
+  const pessimistic = s => { const o = { ...s }; for (const k in PESSIMISTIC) o[k] = Math.max(s[k], PESSIMISTIC[k]); return o; };
 
   function interp(x, xs, ys) {            // same as numpy.interp (clamps at both ends)
     if (x <= xs[0]) return ys[0];
@@ -188,13 +190,18 @@
     return hit ? hit.icy_hours : stormTimeline(s, lb, false).summary.icy_hours;
   }
   /* Saltback's advice for one storm with the safety check built in (see recommend_rate in model.py). */
-  function recommendRate(s, sweep, needed, icyActual, applied) {
+  function recommendRate(s, sweep, needed, icyActual, applied, robust = true) {
     const best = sweep[sweep.length - 1].icy_hours;
     if (best > CANT_FIX_H) return { cant_fix: true, target: null, next: null, icy_target: null, icy_next: null, best_icy: best };
     const limit = icyActual + SAFETY_SLACK_H;
     let target = Math.min(MAX_LB, Math.ceil(needed * 1.1 / 10) * 10);
     while (target < MAX_LB && icyAt(s, sweep, target) > limit) target += 10;
     if (icyAt(s, sweep, target) > limit && applied > 0) target = applied;
+    if (robust && target < applied) {   // must also be no icier than the crew in the pessimistic world
+      const ps = pessimistic(s), limitP = stormTimeline(ps, applied, false).summary.icy_hours + SAFETY_SLACK_H;
+      while (target < applied && stormTimeline(ps, target, false).summary.icy_hours > limitP) target += 10;
+      target = Math.min(target, applied);
+    }
     const next = target < applied ? Math.max(target, Math.ceil(applied * (1 - MAX_STEP_DOWN) / 10) * 10) : target;
     return { cant_fix: false, target, next, icy_target: icyAt(s, sweep, target), icy_next: icyAt(s, sweep, next), best_icy: best };
   }
@@ -202,7 +209,9 @@
     const applied = summary.salt_per_pass_lb, rec = recommendRate(s, sweep, neededLb, summary.icy_hours, applied);
     const route = summary.salt_applied_lb_per_lane_mile * s.route_lane_miles;
     let excess = null, status = 'cant_fix';
-    if (!rec.cant_fix) {
+    const tooCold = s.pavement_temp_F < TOO_COLD_F && (rec.cant_fix || rec.target > applied);
+    if (tooCold) { Object.assign(rec, { target: null, next: null, icy_target: null, icy_next: null }); status = 'too_cold'; }
+    else if (!rec.cant_fix) {
       excess = applied ? Math.max(0, 100 * (applied - rec.target) / applied) : 0;
       status = rec.target > applied ? 'under' : excess >= 10 ? 'over' : 'ok';
     }
@@ -214,7 +223,7 @@
       peak_x_stream_limit: (summary.peak_cl_mg_L || 0) / CL_LIMITS[1] };
   }
 
-  const api = { SETTINGS, CL_SHARE, LB_PER_LANE_MILE, DT_H, ICY_G, CL_LIMITS, MAX_LB, CANT_FIX_H, SAFETY_SLACK_H, MAX_STEP_DOWN, fToC, brineStrengthNeeded, iceMeltedPerSalt,
+  const api = { SETTINGS, CL_SHARE, LB_PER_LANE_MILE, DT_H, ICY_G, CL_LIMITS, MAX_LB, CANT_FIX_H, SAFETY_SLACK_H, MAX_STEP_DOWN, TOO_COLD_F, PESSIMISTIC, pessimistic, fToC, brineStrengthNeeded, iceMeltedPerSalt,
     chlorideToConductivity, recommendRate, icyAt,
     equilibrium, stormTimeline, findNeeded, stormCard };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

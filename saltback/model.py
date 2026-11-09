@@ -277,6 +277,13 @@ SAFETY_SLACK_H = 0.1        # a recommendation may never add more than 6 minutes
 CANT_FIX_H = 2.0            # still icy this long at the maximum rate: salt alone can't fix this storm
 MAX_STEP_DOWN = 0.25        # next-storm advice cuts at most 25% at a time (no cap on safety increases)
 MAX_LB = 600                # highest salt rate the search tries, lb per lane-mile per pass
+TOO_COLD_F = 15             # state guides advise against more dry rock salt below about 15F
+PESSIMISTIC = dict(brine_film_mm=0.06, drain_per_h=0.5, bond_per_h=1.0)   # top of the realistic ranges
+
+
+def pessimistic(s):
+    """The same storm in a worse-than-expected world: brine runs off faster, more is needed, snow bonds faster."""
+    return {**s, **{k: max(s[k], v) for k, v in PESSIMISTIC.items()}}
 
 
 def find_needed(s, max_lb=MAX_LB, step=10):
@@ -299,7 +306,7 @@ def icy_at(s, sweep, lb):
     return hit["icy_hours"] if hit else storm_timeline(s, lb, with_sensor=False)[1]["icy_hours"]
 
 
-def recommend_rate(s, sweep, needed, icy_actual, applied):
+def recommend_rate(s, sweep, needed, icy_actual, applied, robust=True):
     """Saltback's advice for one storm, with the safety check built in.
     target = the rate Saltback would have used (need + 10%, raised until it is no icier than the crew's result + 6 min)
     next   = the step to try next storm (cuts capped at 25%; safety increases are not capped)
@@ -313,6 +320,12 @@ def recommend_rate(s, sweep, needed, icy_actual, applied):
         target += 10
     if icy_at(s, sweep, target) > limit and applied > 0:
         target = applied                                   # nothing safer found: keep the crew's rate
+    if robust and target < applied:                        # must also be no icier than the crew in the pessimistic world
+        ps = pessimistic(s)
+        limit_p = storm_timeline(ps, applied, with_sensor=False)[1]["icy_hours"] + SAFETY_SLACK_H
+        while target < applied and storm_timeline(ps, target, with_sensor=False)[1]["icy_hours"] > limit_p:
+            target += 10
+        target = min(target, applied)
     nxt = max(target, math.ceil(applied * (1 - MAX_STEP_DOWN) / 10) * 10) if target < applied else target
     return dict(cant_fix=False, target=target, next=nxt, icy_target=icy_at(s, sweep, target),
                 icy_next=icy_at(s, sweep, nxt), best_icy=best)
@@ -323,7 +336,11 @@ def storm_card(s, summary, needed_lb, sweep):
     applied = summary["salt_per_pass_lb"]
     rec = recommend_rate(s, sweep, needed_lb, summary["icy_hours"], applied)
     route = summary["salt_applied_lb_per_lane_mile"] * s["route_lane_miles"]
-    if rec["cant_fix"]:
+    too_cold = s["pavement_temp_F"] < TOO_COLD_F and (rec["cant_fix"] or rec["target"] > applied)
+    if too_cold:                                           # more rock salt is the wrong tool here
+        rec.update(target=None, next=None, icy_target=None, icy_next=None)
+        excess, status = None, "too_cold"
+    elif rec["cant_fix"]:
         excess, status = None, "cant_fix"
     else:
         excess = max(0.0, 100 * (applied - rec["target"]) / applied) if applied else 0.0

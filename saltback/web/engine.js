@@ -32,9 +32,7 @@
   /* Robust safety check. Saltback's rate must be no icier than the crew's both under its best-estimate physics and
      in a pessimistic world: brine runs off faster, more brine is needed to stop bonding, traffic packs snow faster.
      These are the top of the realistic ranges tested in uncertainty.js. */
-  const PESSIMISTIC = { brine_film_mm: 0.06, drain_per_h: 0.5, bond_per_h: 1.0 };
-  const pessimistic = s => ({ ...s, brine_film_mm: Math.max(s.brine_film_mm, PESSIMISTIC.brine_film_mm),
-    drain_per_h: Math.max(s.drain_per_h, PESSIMISTIC.drain_per_h), bond_per_h: Math.max(s.bond_per_h, PESSIMISTIC.bond_per_h) });
+  const PESSIMISTIC = S.PESSIMISTIC, pessimistic = S.pessimistic;
   const icyOf = (s, rate) => S.stormTimeline(s, rate, false).summary.icy_hours;
   function robustRate(s, rate, crewS, crewRate) {   // raise `rate` until it is no icier than the crew in the pessimistic world
     const ps = pessimistic(s), limit = icyOf(pessimistic(crewS), crewRate) + S.SAFETY_SLACK_H;
@@ -77,23 +75,14 @@
   }
 
   /* ---- 2) Judge each storm. Saltback's plan never leaves the road more than 6 minutes icier than it was. ---- */
-  const TOO_COLD_F = 15;          // state guides advise against dry salt below about 15°F
+  const TOO_COLD_F = S.TOO_COLD_F;   // state guides advise against more dry salt below about 15°F
   function analyzeStorm(r, cal, model = {}, i = 0, robust = true) {
     const s = settingsFor(r, { ...model, scatter_loss: cal.scatter });
     const perPass = s.salt_per_pass_lb, lm = s.route_lane_miles;
     const sm = S.stormTimeline(s).summary;
     const { needed, sweep } = S.findNeeded(s, MAX_LB);
     const passes = passesFor(s), applied = perPass * passes * lm;
-    const rec = S.recommendRate(s, sweep, needed, sm.icy_hours, perPass);
-    if (!rec.cant_fix && robust) {
-      const robust = robustRate(s, rec.target, s, perPass);
-      if (robust > rec.target) {
-        rec.physicsTarget = rec.target; rec.target = Math.min(robust, Math.max(rec.target, perPass));
-        rec.icy_target = S.icyAt(s, sweep, rec.target);
-        rec.next = rec.target < perPass ? Math.max(rec.target, Math.ceil(perPass * (1 - S.MAX_STEP_DOWN) / 10) * 10) : rec.target;
-        rec.icy_next = S.icyAt(s, sweep, rec.next);
-      }
-    }
+    const rec = S.recommendRate(s, sweep, needed, sm.icy_hours, perPass, robust);
     const x = {
       i, record: r, settings: s, sweep, needed, passes, applied, perPass, summary: sm, band: bandOf(s.pavement_temp_F),
       icy: sm.icy_hours, icyNoSalt: sweep[0].icy_hours, bestIcy: rec.best_icy, maxedH: num(r.probe_maxed_h) ?? sm.hours_probe_maxed,
@@ -110,7 +99,7 @@
     if (s.first_pass_h > ON_TIME_H + 0.25 && s.storm_hours > ON_TIME_H + 1) {
       x.late = true;
       const s2 = { ...s, first_pass_h: ON_TIME_H }, f2 = S.findNeeded(s2, MAX_LB);
-      const r2 = S.recommendRate(s2, f2.sweep, f2.needed, sm.icy_hours, perPass);
+      const r2 = S.recommendRate(s2, f2.sweep, f2.needed, sm.icy_hours, perPass, robust);
       if (!r2.cant_fix) {
         if (robust) { r2.target = robustRate(s2, r2.target, s, perPass); r2.icy_target = icyOf(s2, r2.target); }
         const tot2 = r2.target * passesFor(s2) * lm;

@@ -1,122 +1,113 @@
-# Saltback simulator
+# Saltback
 
-A small physics model of road salt: **truck → road → storm drain → sensor → Saltback's report**.
-It is built in steps. **Step 1 (done):** one storm, all at once. **Step 2 (done):** the same storm in 5-minute steps.
+Saltback helps towns use less road salt without making roads less safe. A low-cost conductivity and temperature
+sensor in a storm drain measures the salt washing off the road after each storm. Saltback combines that with the
+truck logs and the weather, runs a physics model of how salt melts ice, works out how much salt each storm needed,
+and sends the town a simple report: salt spread, how much was excess, how salty the runoff was, and how much to
+use next time. Over a season it learns the route and produces a crew rate card and ranked recommendations.
+
+**Everything here is simulated with typical published values. None of it is real town data.**
+
+## The result (example season: 12 storms, Route 4, 10 lane-miles)
+
+| | Value |
+|---|---|
+| Salt saved | **12.6%** (9 of 71 tons), likely range **9–14%** across 200 test seasons with uncertain inputs |
+| Dollars saved | about **$810** at $90 per ton |
+| Icy-road time | **15.6 h → 5.6 h** for the season; no storm more than 6 minutes icier than the crew's result |
+| Chloride kept out of streams and soil | about **5.5 tons** |
+| Split by lever | lower rates where the crew over-salted: −8.7 tons · first truck within 30 min: −0.3 tons · more salt where under-salted: 0 |
+| Against a crew following a published state rate chart | Saltback uses **4% more** salt, but cuts icy time from **18.2 h to 5.6 h** |
+| Next season's first step (cuts capped at 25% per storm) | **6% less** salt (4–8% across the test seasons) |
+| Test seasons that got icier | **0%**; every storm stayed within 6 minutes in **91%** of them (97% for the first step) |
+
+These replace the earlier "18% less salt, 15.6 → 4.3 h" claim. What changed and why:
+
+1. **"Just as safe" is now enforced.** Needed salt is the smallest rate within 15 minutes of the best possible
+   icy time (was 30), and Saltback's rate is raised until the road is no more than 6 minutes icier than the crew's
+   result. Before, some recommendations were 20–25 minutes icier than what the crew achieved.
+2. **The safety check also has to pass in a pessimistic world** (brine runs off faster, more brine is needed to
+   stop snow sticking, traffic packs snow faster). Without this, the uncertainty test showed single storms getting
+   much icier in 74% of plausible worlds, even though the best-estimate plan claimed 25% savings.
+3. **Below 15°F Saltback recommends sand or a stronger chemical instead of more rock salt** (as state guides do),
+   and it no longer counts that extra salt or claims safety gains it can't model.
+4. **Storms salt can't fix** (still icy over 2 hours at the maximum rate: rain to flash freeze, arctic cold) are
+   labeled as such, with no "excess" or cut.
+5. **Late first trucks** are counted as their own lever, not as under-salting.
 
 ## Two ways to run it
 
-- **The website** (`web/`): a data console with five sections:
-  - **Live simulation**: pick a scenario, run it, and watch the storm as a particle cross-section with live readouts and the probe log.
-  - **Run report**: KPIs, the storm card, findings, four charts and the full 5-minute timeline table.
-  - **Storm library**: 9 example storms (light dusting, Nor'easter, Arctic cold snap, late first truck, rain to flash freeze, and more) compared side by side.
-  - **Season analysis**: the Saltback System. It reads storm records (truck logs + drain-probe readings), learns how much salt
-    really stays on this route, and produces ranked recommendations, a crew rate card and per-storm verdicts.
-  - **Data and export**: every table as CSV or copy-paste, plus an **Excel workbook (.xlsx) with native, editable charts**
-    that also opens in Google Sheets (File → Import). A "Send to Google Sheets" button uploads it through your Google Drive connector.
-- **Google Colab** (below): the Python version, which saves raw data files and a written report.
+**The website** (`web/index.html`, also published as a private claude.ai artifact): open the file in a browser; no build step.
 
-Both give identical numbers: `python web/check_parity.py` compares them on 6 storms (about 11,700 values).
+| Page | What it shows |
+|---|---|
+| Overview | The season headline, four numbers, the savings waterfall, the top 3 recommendations, the running total |
+| Storm reports | The one-page report a town receives after each storm (season storms, example storms, your own runs); downloadable as a printable HTML file |
+| Recommendations | Ranked actions, each with what to do, why, impact in tons / dollars / icy minutes, how sure we are, and its own chart |
+| Crew rate card | A printable card by road temperature and snowfall, checked against published state rate charts |
+| Try a storm | The particle simulation with 5 main settings, then "Run again with Saltback's rate" for a side-by-side comparison |
+| How it works | Method, safety rules, every assumption with source and range, the uncertainty and out-of-sample tests, model check |
+| Data | Every table as CSV or copy-paste, the raw 5-minute timeline, CSV import, and the Excel workbook |
 
-## Run it (no install, works on any laptop)
+The **Export** menu builds an Excel workbook (15 sheets, native editable charts) that also opens in Google Sheets
+(File → Import → Upload), a PNG of the charts on the current page, and the printable storm report. Inside claude.ai
+there is also "Send to Google Sheets" through the Google Drive connector.
 
-1. Open the notebook in Google Colab:
-   [Saltback.ipynb in Colab](https://colab.research.google.com/github/pingusbot67-wq/diamond-challenge-stuff/blob/claude/blissful-wright-uey5ta/saltback/Saltback.ipynb)
-   *(If that link doesn't open, download `Saltback.ipynb` from GitHub, go to colab.research.google.com,
-   and use **File → Upload notebook**.)*
-2. Click **Runtime → Run all**.
-3. Drag the sliders in step 2, then re-run steps 2–4.
+**Google Colab** (the Python version, raw data files and a written report):
 
-## The three pieces
+1. Open [Saltback.ipynb in Colab](https://colab.research.google.com/github/pingusbot67-wq/diamond-challenge-stuff/blob/claude/blissful-wright-uey5ta/saltback/Saltback.ipynb)
+   (or download `Saltback.ipynb` and use File → Upload notebook).
+2. Runtime → Run all. Move the sliders in step 2 and re-run steps 2–4.
+
+## Files
 
 | File | Job |
 |---|---|
-| `model.py` | The physics. All settings (with realistic ranges) sit at the top. |
-| `simulate.py` | Runs the model and saves **raw data** to `results/` (CSV files). |
-| `explain.py` | Reads that data and writes **plain English** (`report.txt`) and a chart (`chart.png`). |
-| `build_notebook.py` | Packs the three files above into `Saltback.ipynb`. Re-run it after changing them. |
-| `web/index.html`, `web/model.js` | The website. `model.js` is the JavaScript twin of `model.py`. |
-| `web/check_parity.py` | Proves the website and the Python model give the same answers. |
-| `web/engine.js` | The Saltback System's decision logic: calibration from probe data, per-storm verdicts, recommendations, rate card. |
-| `web/report.js` | The storm library (example storms) and every table the console shows and exports. |
-| `web/xlsx.js` | Writes .xlsx workbooks with native Excel charts (no library besides JSZip). |
+| `model.py` / `web/model.js` | The physics and the per-storm recommendation (identical; `python web/check_parity.py` compares them on 9 storms) |
+| `simulate.py` | Runs the Python model and saves raw data to `results/` |
+| `explain.py` | Turns that data into plain English (`results/report.txt`) and charts |
+| `build_notebook.py` | Packs the Python files into `Saltback.ipynb` |
+| `web/engine.js` | Season decisions: calibration from drain data, levers, state-chart baseline, recommendations, rate card |
+| `web/report.js` | Example storms and every table the site shows and exports |
+| `web/xlsx.js` | Writes .xlsx workbooks with native Excel charts (uses JSZip) |
+| `web/uncertainty.js` | `node web/uncertainty.js`: 200 uncertain seasons, sensitivity, out-of-sample test → `web/uncertainty-data.js` |
+| `screenshots/` | Before and after screenshots of every page, described in `screenshots/README.md` |
 
-`results/` holds example output from the default settings (22°F road): `report.txt`, `chart.png` (Step 1),
-`chart_step2.png` and `timeline.csv` (Step 2).
+## How it decides
 
-## How Step 2 works (every 5 minutes of the storm)
+1. Every 5 minutes: snow falls, trucks plow and salt, salt dissolves (slower when colder), brine melts ice or
+   refreezes into black ice, traffic packs unprotected snow into ice, brine runs to the drain, the sensor reads it.
+2. **Needed salt**: the smallest rate within 15 minutes of the best icy time any rate reaches.
+3. **Saltback's rate**: needed + 10%, raised until the road is no more than 6 minutes icier than the crew's result,
+   in the best estimate and in the pessimistic case.
+4. **Next storm**: cut at most 25% at a time; safety increases are not capped.
+5. **Salt can't fix it** if the road stays icy over 2 hours at 600 lb per lane-mile; **too cold for rock salt** below 15°F.
+6. **Learning**: the drain sensor shows how much salt really reaches the drain; Saltback adjusts its estimate of how
+   much bounces off the road (it recovered the hidden 28% in the example season and in an out-of-sample test).
+7. **Rate card**: need + 10%, and where that is below the state chart, raised until it is no icier than the chart's
+   rate even in the pessimistic case. Cells outside the published range are flagged, not hidden.
 
-1. Snow falls (as rain if the road is above freezing).
-2. A truck plows loose snow and spreads salt, first after `first_pass_h`, then every `plow_every_h`.
-   Some salt bounces onto the shoulder.
-3. Salt crystals dissolve into the snow: about 15 min near freezing, much slower when colder.
-4. The brine melts ice until it is exactly as salty as the temperature requires. If it is too weak
-   (new snow, a cold snap), it **refreezes into black ice**.
-5. Traffic packs unprotected snow into ice bonded to the pavement. A brine film prevents this,
-   which is why salting early takes less salt.
-6. Brine runs into the drain or is thrown onto the shoulder by tires. After the storm the road thaws
-   and the rest washes away.
-7. The probe logs the drain water. Saltback finds the **smallest salt per pass that keeps the road
-   as safe as possible** and writes the storm card.
+Published rate ranges are approximate, compiled from NHDOT Snow and Ice Control Operational Guidelines (2020),
+the MnDOT Snow and Ice Control Handbook (2022) and UW-Madison report CR19-01 (2021).
 
-## How the model works (Step 1)
+## How confident are we?
 
-1. **Road.** Salt melts ice until the brine gets weak enough to freeze at that temperature.
-   That uses the NaCl freezing-point table from the CRC Handbook. Checked against the widely
-   published "lb of ice melted per lb of salt" chart, the model matches within 5% from 0°F to 25°F.
-   Once all the ice is melted, extra salt melts nothing; it only makes the brine saltier.
-   That extra is the **excess**.
-2. **Drain.** Brine plus later melt/rain, mixed with water from unsalted surfaces, gives the
-   chloride level (mg/L). Chloride is 60.7% of salt by mass.
-3. **Sensor.** Chloride is converted to conductivity, adjusted for cold water (about 2% per °C),
-   with 3% random probe error and ±0.5°C temperature-probe error, and capped at the DFR0300's
-   20 mS/cm limit.
-4. **Saltback's estimate.** Working backward from the noisy reading, how much chloride and salt
-   does it see?
+`node web/uncertainty.js` re-runs the season 200 times with the five least-certain inputs drawn at random
+(brine needed to stop bonding 0.02–0.06 mm, bonding speed 0.25–1 per hour, drain dilution 15–50%, runoff speed
+15–50% per hour, bounce loss 15–38%). Saltback recommends from the drain data alone; the plan is then judged in
+the true world.
 
-## Assumptions (typical published values, NOT real town data)
-
-| Setting | Default | Realistic range | Why it matters |
-|---|---|---|---|
-| Pavement temperature | 22°F | -5 to 32°F | Biggest driver of how much salt is needed |
-| Ice film left after plowing | 0.2 mm | 0.05–0.5 mm | Sets the "needed" amount; **least certain input** |
-| Salt that bounces off the road | 20% | 5% (wet) – 30% (dry) | Salt that lands on soil instead of in the drain |
-| Later melt/rain rinsing the road | 5 mm | 0–20 mm | Dilutes the runoff the sensor sees |
-| Unsalted water in the drain | 30% | 0–70% | Dilutes the runoff too |
-| Runoff water temperature | 1°C | 0–5°C | Cold water reads about 50% low without correction |
-| Salt price | $90/ton | $60–130/ton | Converts waste into dollars |
-
-## What Steps 1 and 2 show (default storm: 4 in of snow, 8 h, 22°F)
-
-- **Storm card:** 8,800 lb on a 10 lane-mile route | 45% excess | chloride runoff HIGH | next comparable storm −35%.
-- 120 lb per pass would have kept the road nearly as safe as the 220 lb used.
-- **Timing matters:** if the first truck arrives one hour later, the same storm needs about 3× more salt per pass, because traffic packs the snow into ice first.
-- **Sensor:** live in the drain, the DFR0300 is maxed out for about 10 hours and sees only about half the salt. A high-range K=10 probe sees about 94%. This is a real hardware decision for the field pilot.
-
-Earlier Step 1 findings:
-
-- Past the needed amount, more salt clears no more ice; at double the dose, half the salt is wasted.
-- The needed amount depends heavily on pavement temperature (about 60 lb/lane-mile at 30°F vs. about 500 at 15°F for the same storm).
-- The DFR0300 handles **storm-average** runoff well (about 5% error), but the **temperature probe is essential**: without it, readings come out about 50% low.
-- **Hardware warning:** the first rush of brine is far above the DFR0300's 20 mS/cm limit, so it can't measure the first flush.
-
-## The Saltback System (example season, simulated data)
-
-12 storms on a 10 lane-mile route. The crew raises its rate a little on cold days, but not as much as the physics
-requires. Hidden in the data: 28% of the salt bounces off the road, not the 20% the model assumes.
-
-- The engine **finds the hidden bounce loss from the drain-probe data** (it estimates 28%) and recommends pre-wetting the salt.
-- **Saltback's plan:** 18.5% less salt over the season, about $1,200 saved, and icy-road hours down from 15.6 to 4.3.
-  It cuts salt on mild storms and **adds** salt on the two coldest, so the roads end up safer, not just cheaper.
-- Ranked actions: lower rates at 23–32°F, get the first truck out within 30 minutes, pre-wet salt,
-  upgrade the drain probe, and report chloride for the stormwater (MS4) permit.
-- **Model tuning note:** the brine film needed to stop snow bonding (0.04 mm) was set so the rate card falls inside
-  published state rate-chart ranges (about 100–170 lb/lane-mile at 23–27°F, 160–350 at 18–22°F).
+- Salt saved 9–14% (typical 13%); no test season got icier; every storm within 6 minutes in 91% of seasons.
+- The input that moves savings most is how much salt bounces off the road.
+- Out-of-sample season (hidden: 28% bounce, 45% dilution, 1.6× faster bonding): Saltback learned the bounce loss
+  exactly and no storm got more than 6 minutes icier, but it under-predicted icy time (5.6 h claimed vs 11.1 h true),
+  because a drain sensor measures salt, not ice. A road-condition source is the next thing to add.
 
 ## Roadmap
 
-- [x] **Step 1** One storm: melt physics, drain mixing, sensor realism, plain-English report
-- [x] **Step 2** Time: 5-minute storm timeline with melting speed, refreezing, new snow, and the probe's live log, plus the website
-- [x] **System** Decision engine: calibration from probe data, per-storm verdicts, ranked recommendations, crew rate card
-- [ ] **Step 3** A whole winter: 20–30 random storms; a town that over-salts vs. one following Saltback's recommendations
-- [ ] **Step 4** Uncertainty (Monte Carlo): 1,000 runs with wrong guesses, sensor fouling, and the $5 screw-electrode probe
-- [ ] **Step 5** Plug in real lab data (Experiments 1 and 2) and compare the model's predictions with what you measured
+- [x] Step 1: one storm, melt physics, sensor realism
+- [x] Step 2: 5-minute storm timeline and the website
+- [x] System: decision engine, recommendations, rate card
+- [x] Step 4: uncertainty (200 seasons), sensitivity, out-of-sample test
+- [ ] Step 3: many random winters; a road-condition input (crew reports or a road weather station)
+- [ ] Step 5: plug in real lab data (Experiments 1 and 2) and compare the model's predictions with what you measured

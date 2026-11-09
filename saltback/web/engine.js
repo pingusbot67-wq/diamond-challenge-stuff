@@ -171,9 +171,13 @@
     const rows = BANDS.map(b => {
       const cells = SNOW.map(sn => {
         const s = { ...S.SETTINGS, ...model, scatter_loss: cal.scatter, pavement_temp_F: b.mid, snowfall_in: sn.inches, storm_hours: 8, first_pass_h: ON_TIME_H, plow_every_h: 2 };
-        const { needed, sweep } = S.findNeeded(s, MAX_LB), pess = S.findNeeded(pessimistic(s), MAX_LB);
+        const { needed, sweep } = S.findNeeded(s, MAX_LB);
         const cantFix = sweep[sweep.length - 1].icy_hours > S.CANT_FIX_H || b.mid < TOO_COLD_F;
-        const v = cantFix ? null : Math.min(MAX_LB, Math.ceil(Math.max(needed, pess.needed) * 1.1 / 10) * 10);
+        // Need + 10%; where that is below the state chart, raise it until it is no icier than the chart's rate
+        // even in the pessimistic world (the same safety idea as for each storm, anchored to published practice).
+        let v = cantFix ? null : Math.min(MAX_LB, Math.ceil(needed * 1.1 / 10) * 10);
+        const mid = chartRate(b);
+        if (v != null && v < mid) { const ps = pessimistic(s), lim = icyOf(ps, mid) + S.SAFETY_SLACK_H; while (v < mid && icyOf(ps, v) > lim) v += 10; }
         const flag = v == null || !b.pub ? null : v < b.pub[0] ? 'below' : v > b.pub[1] ? 'above' : 'within';
         return { lb: v, cantFix, flag };
       });

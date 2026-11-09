@@ -30,6 +30,12 @@
     const hiProbe = s.probe_max_mS_cm < 200 && summary.hours_probe_maxed > 0.5 ? S.stormTimeline({ ...s, probe_max_mS_cm: 200 }).summary.salt_seen_vs_true_pct : null;
     return { s: { ...s }, rows, summary, x: verdict, sweep: verdict.sweep, late, hiProbe };
   }
+  /* A storm from the log, in the same shape as computeRun (timeline + verdict), for reports and exports. */
+  function stormRun(x) {
+    const { rows, summary } = S.stormTimeline(x.settings);
+    rows.forEach(r => { r.ec_true = Number.isNaN(r.cl_true_mg_L) ? NaN : S.chlorideToConductivity(r.cl_true_mg_L, x.settings.water_temp_C); });
+    return { s: { ...x.settings }, rows, summary, x, sweep: x.sweep };
+  }
   const computeLibrary = () => SCENARIOS.map(sc => ({ sc, res: computeRun(scenarioSettings(sc)) }));
 
   /* ---- Tables. Each: {key, name, title, rows:[header, ...], charts:[...]} ---- */
@@ -145,17 +151,18 @@
 
   function aboutTable(meta) {
     return { key: 'about', name: 'About', title: 'About this export', rows: [['Field', 'Value'],
-      ['Product', 'Saltback: storm-drain sensors and feedback for road salt'], ['Exported', meta.when], ['Data', 'Simulated with typical published values, not real town records'],
-      ['Storm shown', meta.run], ['Season data', meta.season], ['Charts', 'Native charts: edit them in Excel or Google Sheets like any other chart'],
+      ['Product', 'Saltback'], ['Exported', meta.when], ['Data', 'Simulated with typical published values, not real town records'],
+      ['Storm timeline included', meta.run || '—'], ['Season data', meta.season], ['Charts', 'Native charts: edit them in Excel or Google Sheets like any other chart'],
       ...meta.sheets.map(s => [`Sheet: ${s.name}`, s.title])] };
   }
 
   function allTables(state) {
-    const tables = [...seasonTables(state.season, state.uncertainty), ...runTables(state.run, state.runLabel), libraryTable(state.library), meltTable(), ...uncertaintyTables(state.uncertainty)];
+    const tables = [...seasonTables(state.season, state.uncertainty), ...(state.run ? runTables(state.run, state.runLabel) : []),
+      ...(state.library ? [libraryTable(state.library)] : []), ...(state.melt === false ? [] : [meltTable()]), ...uncertaintyTables(state.uncertainty)];
     return [aboutTable({ when: state.when || new Date().toISOString().slice(0, 16).replace('T', ' '), run: state.runLabel, season: state.seasonLabel || '—', sheets: tables }), ...tables];
   }
 
-  const api = { SCENARIOS, STATUS, scenarioSettings, computeRun, computeLibrary, runTables, meltTable, libraryTable, seasonTables, uncertaintyTables, allTables, PUBLISHED };
+  const api = { SCENARIOS, STATUS, scenarioSettings, computeRun, computeLibrary, stormRun, runTables, meltTable, libraryTable, seasonTables, uncertaintyTables, allTables, PUBLISHED };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SaltbackReport = api;
 })(typeof window !== 'undefined' ? window : globalThis);

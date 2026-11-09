@@ -1,415 +1,248 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Saltback Storm Simulator</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Saltback: storm-drain sensors and feedback that help towns use less road salt without making roads less safe.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<meta name="description" content="Saltback: storm log, drain-sensor data, storm reports, recommendations and crew rate card for road salt.">
 <style>
-/* Layout: product site. Sticky header with one Export menu and section tabs; 1200px content column of single-purpose cards.
-   Colour meanings (one each): grey = structure, violet = Saltback (brand), green = salt saved, blue = ice and water,
-   amber = over-salted, red = a real safety problem. Colour is always paired with a word. */
+/* Layout: plain record-keeping tool. Narrow text sidebar, page header with actions, full-width tables and thin rules.
+   Black and white; red marks icy road or under-salting only. No cards, shadows or accent colour. */
 :root {
-  --bg: #f5f6f8; --card: #ffffff; --line: #e3e6ea; --line-2: #cdd2d8; --track: #eceef1; --band: #eef0f4;
-  --text: #15181d; --text-2: #4a525d; --text-3: #66707c;
-  --brand: #5b45c2; --brand-soft: #eeebfb; --save: #1d7a4f; --save-soft: #e3f3ea; --water: #2b6cb0; --ice: #7aa6cf;
-  --over: #9a5b00; --over-soft: #fbefdc; --risk: #c0352b; --risk-soft: #fbe6e4; --muted: #8b939d; --snow: #3a3f47; --ink: #2b3038;
-  --sans: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --bg: #ffffff; --fg: #111111; --fg2: #555555; --fg3: #6b6b6b; --line: #e4e4e4; --line2: #c8c8c8; --hover: #f5f5f5; --sel: #efefef;
+  --red: #b42318; --amber: #8a5300; --green: #1f6b40; --chart2: #9a9a9a; --fill: #ededed;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0f1114; --card: #171a1e; --line: #272b31; --line-2: #363b42; --track: #22262c; --band: #1f232a;
-    --text: #e8eaed; --text-2: #b4bbc4; --text-3: #949ca7;
-    --brand: #a896ff; --brand-soft: #2a2547; --save: #4cc38a; --save-soft: #173426; --water: #6aa9ec; --ice: #a8cbec;
-    --over: #f0a53a; --over-soft: #3a2c14; --risk: #ff7468; --risk-soft: #3d1d1b; --muted: #7d858f; --snow: #dfe3e8; --ink: #d5d9de;
-    color-scheme: dark;
-  }
+  :root:not([data-theme="light"]) { --bg: #121212; --fg: #ececec; --fg2: #b0b0b0; --fg3: #9a9a9a; --line: #2a2a2a; --line2: #3c3c3c; --hover: #1b1b1b; --sel: #222222;
+    --red: #ff6b5e; --amber: #e0a040; --green: #5cc48a; --chart2: #777777; --fill: #262626; color-scheme: dark; }
 }
-:root[data-theme="dark"] {
-  --bg: #0f1114; --card: #171a1e; --line: #272b31; --line-2: #363b42; --track: #22262c; --band: #1f232a;
-  --text: #e8eaed; --text-2: #b4bbc4; --text-3: #949ca7;
-  --brand: #a896ff; --brand-soft: #2a2547; --save: #4cc38a; --save-soft: #173426; --water: #6aa9ec; --ice: #a8cbec;
-  --over: #f0a53a; --over-soft: #3a2c14; --risk: #ff7468; --risk-soft: #3d1d1b; --muted: #7d858f; --snow: #dfe3e8; --ink: #d5d9de;
-  color-scheme: dark;
-}
+:root[data-theme="dark"] { --bg: #121212; --fg: #ececec; --fg2: #b0b0b0; --fg3: #9a9a9a; --line: #2a2a2a; --line2: #3c3c3c; --hover: #1b1b1b; --sel: #222222;
+  --red: #ff6b5e; --amber: #e0a040; --green: #5cc48a; --chart2: #777777; --fill: #262626; color-scheme: dark; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 400 15px/1.55 var(--sans); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
-h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 600; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.45 var(--font); font-variant-numeric: tabular-nums; }
+h1, h2, h3 { margin: 0; font-weight: 600; }
 p { margin: 0; }
-a { color: var(--brand); }
-button, select, input { font: inherit; color: inherit; }
+a { color: var(--fg); }
+button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
-.wrap { max-width: 1200px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+.muted { color: var(--fg2); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.muted { color: var(--text-2); }
-.small { font-size: 13px; }
 
-/* header */
-header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--card); border-bottom: 1px solid var(--line); }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--card); }
-.top-in { display: flex; align-items: center; gap: 16px; padding-block: 12px 4px; }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; color: var(--text); text-decoration: none; }
-.brand .logo { width: 22px; height: 22px; border-radius: 6px; background: var(--brand); position: relative; }
-.brand .logo::after { content: ""; position: absolute; inset: 7px 5px 5px; border-radius: 0 0 6px 6px; border: 2px solid var(--card); border-top: 0; }
-.simtag { font-size: 12.5px; color: var(--text-2); background: var(--track); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
-.top-in .spacer { flex: 1; }
-.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding-block: 4px 0; }
-.tabs::-webkit-scrollbar { display: none; }
-.tabs a { text-decoration: none; color: var(--text-2); padding: 8px 12px 10px; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 14.5px; }
-.tabs a:hover { color: var(--text); }
-.tabs a[aria-current="page"] { color: var(--text); border-bottom-color: var(--brand); font-weight: 500; }
-.btn { border: 1px solid var(--line-2); background: var(--card); border-radius: 8px; padding: 8px 14px; font-size: 14px; line-height: 1.3; white-space: nowrap; color: var(--text); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-.btn:hover { border-color: var(--text-3); }
-.btn.pri { background: var(--brand); border-color: var(--brand); color: #fff; }
-:root[data-theme="dark"] .btn.pri { color: #15181d; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.pri { color: #15181d; } }
-.btn:disabled { opacity: .5; cursor: default; }
-.btn.sm { padding: 5px 10px; font-size: 13px; }
+.app { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 100%; }
+nav.side { border-right: 1px solid var(--line); padding: 16px 0; display: flex; flex-direction: column; gap: 2px;
+  padding-left: env(safe-area-inset-left, 0px); }
+nav.side .name { font-weight: 600; font-size: 14px; padding: 0 16px 14px; }
+nav.side a { text-decoration: none; color: var(--fg2); padding: 6px 16px; border-left: 2px solid transparent; }
+nav.side a:hover { color: var(--fg); background: var(--hover); }
+nav.side a[aria-current="page"] { color: var(--fg); font-weight: 600; border-left-color: var(--fg); }
+nav.side .foot { margin-top: auto; padding: 12px 16px 0; color: var(--fg3); font-size: 12px; }
+main { min-width: 0; padding: 20px 24px 48px; padding-right: max(24px, env(safe-area-inset-right, 0px)); }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.head h1 { font-size: 16px; }
+.head .sub { color: var(--fg2); margin-top: 2px; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.btn { border: 1px solid var(--line2); background: var(--bg); padding: 5px 10px; border-radius: 3px; font-size: 13px; color: var(--fg); text-decoration: none; white-space: nowrap; display: inline-block; line-height: 1.4; }
+.btn:hover { background: var(--hover); }
+.btn.pri { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn.pri:hover { opacity: .88; }
+.btn:disabled { opacity: .45; cursor: default; }
+section.block { margin-top: 24px; }
+section.block > h2 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+section.block > .note { margin: -4px 0 8px; }
+.note { color: var(--fg2); font-size: 12.5px; }
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+
+/* summary line */
+.stats { display: flex; flex-wrap: wrap; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.stats > div { padding: 10px 20px 10px 0; margin-right: 20px; border-right: 1px solid var(--line); }
+.stats > div:last-child { border-right: 0; }
+.stats .k { color: var(--fg2); font-size: 12px; }
+.stats .v { font-size: 18px; font-weight: 600; margin-top: 1px; }
+
+/* tables */
+.tw { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 500; color: var(--fg2); border-bottom-color: var(--line2); white-space: nowrap; font-size: 12.5px; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+tr.click { cursor: pointer; }
+table.nw td { white-space: nowrap; }
+td a[data-sel] { white-space: nowrap; }
+tr.click:hover td { background: var(--hover); }
+tr.sel td { background: var(--sel); }
+table.kv td:first-child { color: var(--fg2); width: 30%; }
+table.raw { font-family: var(--mono); font-size: 12px; }
+table.raw th { font-family: var(--font); }
+
+/* status marks: always a word; a small square adds the colour */
+.st { white-space: nowrap; }
+.st::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; background: var(--fg3); vertical-align: 1px; }
+.st.over::before { background: var(--amber); } .st.ok::before { background: var(--green); } .st.under::before, .st.late::before { background: var(--red); }
+.red { color: var(--red); }
+
+/* forms */
+.form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 16px; padding: 12px 0; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.form label { display: flex; flex-direction: column; gap: 3px; color: var(--fg2); font-size: 12px; }
+.form input, .form select, .field { border: 1px solid var(--line2); background: var(--bg); border-radius: 2px; padding: 5px 7px; font-size: 13px; color: var(--fg); min-width: 0; }
+.form .row { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.msg { color: var(--fg2); font-size: 12.5px; }
+.msg.err { color: var(--red); }
+pre.tpl { font: 12px/1.5 var(--mono); background: var(--hover); border: 1px solid var(--line); padding: 8px 10px; overflow-x: auto; margin: 8px 0 0; }
+
+/* report */
+.verdict { font-size: 14px; font-weight: 500; margin: 0 0 16px; max-width: 90ch; }
+.plot { position: relative; }
+.plot svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tip { position: absolute; pointer-events: none; background: var(--bg); border: 1px solid var(--line2); padding: 4px 7px; font-size: 12px; white-space: nowrap; transform: translate(-50%, -100%); z-index: 3; }
+ul.plain { margin: 0; padding-left: 18px; }
+ul.plain li + li { margin-top: 3px; }
+.toast { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 8px 12px; font-size: 13px; z-index: 30; max-width: min(420px, calc(100% - 32px)); }
+.toast a { color: inherit; }
 details.menu { position: relative; }
 details.menu > summary { list-style: none; }
 details.menu > summary::-webkit-details-marker { display: none; }
-.menu-list { position: absolute; right: 0; top: calc(100% + 6px); z-index: 25; background: var(--card); border: 1px solid var(--line-2); border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .14); min-width: 260px; padding: 6px; display: flex; flex-direction: column; }
-.menu-list button, .menu-list a { background: none; border: 0; text-align: left; padding: 8px 10px; border-radius: 6px; font-size: 14px; color: var(--text); text-decoration: none; }
-.menu-list button:hover, .menu-list a:hover { background: var(--track); }
-.menu-list small { display: block; color: var(--text-2); font-size: 12.5px; }
+.menu-list { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; background: var(--bg); border: 1px solid var(--line2); min-width: 220px; display: flex; flex-direction: column; padding: 4px 0; }
+.menu-list button { border: 0; background: none; text-align: left; padding: 6px 12px; font-size: 13px; }
+.menu-list button:hover { background: var(--hover); }
 
-/* page structure */
-main { padding-block: 32px 64px; }
-.view { display: flex; flex-direction: column; gap: 24px; }
-.kicker { font-size: 14px; color: var(--text-2); }
-.page-h h1 { font-size: clamp(22px, 2.6vw, 30px); line-height: 1.25; letter-spacing: -.01em; max-width: 28ch; }
-.page-h.wide h1 { max-width: 40ch; }
-.page-h .lede { margin-top: 8px; color: var(--text-2); max-width: 72ch; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; min-width: 0; }
-.card.flush { padding: 0; overflow: hidden; }
-.card-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-.card-h h2 { font-size: 18px; line-height: 1.35; }
-.card-h .sub { font-size: 14px; color: var(--text-2); margin-top: 4px; }
-.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-.grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-.stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; }
-.stat .l { font-size: 14px; color: var(--text-2); }
-.stat .v { font-size: clamp(26px, 3vw, 34px); font-weight: 600; line-height: 1.2; margin-top: 4px; letter-spacing: -.01em; }
-.stat .v small { font-size: 16px; font-weight: 500; color: var(--text-2); margin-left: 2px; }
-.stat .s { font-size: 13.5px; color: var(--text-2); margin-top: 4px; }
-.stat.good .v { color: var(--save); }
-.note { font-size: 13.5px; color: var(--text-2); }
-.disclaimer { font-size: 13px; color: var(--text-2); }
-
-/* chips and terms */
-.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 500; padding: 1px 8px; border-radius: 999px; background: var(--track); color: var(--text-2); white-space: nowrap; }
-.chip.save { background: var(--save-soft); color: var(--save); } .chip.over { background: var(--over-soft); color: var(--over); }
-.chip.risk { background: var(--risk-soft); color: var(--risk); } .chip.brand { background: var(--brand-soft); color: var(--brand); }
-.chip.water { background: var(--track); color: var(--water); }
-.term { border-bottom: 1px dotted var(--text-3); cursor: help; position: relative; }
-.term:hover::after, .term:focus::after { content: attr(data-def); position: absolute; left: 0; top: calc(100% + 6px); z-index: 30; width: max-content; max-width: 280px;
-  background: var(--text); color: var(--card); font-size: 13px; font-weight: 400; line-height: 1.45; padding: 8px 10px; border-radius: 6px; white-space: normal; }
-
-/* charts */
-.plot { position: relative; min-height: 80px; }
-.plot svg { display: block; width: 100%; height: auto; overflow: visible; }
-.tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line-2); border-radius: 6px; padding: 6px 9px; font-size: 13px;
-  white-space: nowrap; transform: translate(-50%, -100%); box-shadow: 0 6px 16px rgba(0, 0, 0, .12); z-index: 5; }
-.tip span { color: var(--text-2); }
-
-/* recommendations */
-.recs { display: flex; flex-direction: column; gap: 16px; }
-.rec { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; }
-.rec h3 { font-size: 17px; line-height: 1.35; margin-top: 6px; }
-.rec .why { color: var(--text-2); margin-top: 6px; }
-.impact { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; font-size: 14px; }
-.impact b { font-weight: 600; }
-.storm-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; align-items: center; font-size: 13px; color: var(--text-2); }
-.storm-links a { font-size: 13px; }
-.rank { color: var(--text-3); font-size: 13px; }
-.top3 { display: flex; flex-direction: column; }
-.top3 li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
-.top3 li:first-child { border-top: 0; padding-top: 0; }
-.top3 .num { width: 24px; height: 24px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; font-size: 13px; font-weight: 600; }
-.top3 .imp { text-align: right; font-size: 14px; white-space: nowrap; }
-ol.plain, ul.plain { list-style: none; margin: 0; padding: 0; }
-
-/* storm report */
-.picker { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.picker select { border: 1px solid var(--line-2); background: var(--card); border-radius: 8px; padding: 8px 10px; min-width: min(360px, 100%); }
-.report { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
-.report .rh { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
-.report .rh .t { font-size: 13.5px; color: var(--text-2); }
-.report h2.verdict { font-size: 21px; line-height: 1.35; max-width: 50ch; }
-.four { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-.four > div { border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
-.four .q { font-size: 13.5px; color: var(--text-2); }
-.four .a { font-size: 24px; font-weight: 600; margin-top: 4px; line-height: 1.25; }
-.four .d { font-size: 13.5px; color: var(--text-2); margin-top: 6px; }
-.safety { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: 10px; background: var(--save-soft); font-size: 15px; }
-.safety.warn { background: var(--track); }
-.advice { margin: 0; padding-left: 20px; color: var(--text-2); }
-.advice li + li { margin-top: 4px; }
-
-/* rate card */
-.ratecard { border-collapse: collapse; width: 100%; font-size: 15px; }
-.ratecard th, .ratecard td { padding: 12px; border-bottom: 1px solid var(--line); text-align: right; vertical-align: top; }
-.ratecard th:first-child, .ratecard td:first-child { text-align: left; }
-.ratecard thead th { font-size: 13.5px; font-weight: 500; color: var(--text-2); }
-.ratecard td .v { font-size: 20px; font-weight: 600; }
-.ratecard td .f { display: block; font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
-.ratecard td .f.over { color: var(--over); }
-.ratecard td.alt { color: var(--text-2); font-size: 14px; }
-
-/* try a storm */
-.try-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
-.stage { position: relative; height: clamp(280px, 34vw, 440px); border-radius: 10px; overflow: hidden; background: var(--card); }
-#scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.ov { position: absolute; pointer-events: none; font-size: 13px; color: var(--text-2); }
-.ov.tl { top: 12px; left: 14px; } .ov.tr { top: 12px; right: 14px; text-align: right; }
-.ov .big { font-size: 20px; font-weight: 600; color: var(--text); }
-.controls-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.controls-row select { border: 1px solid var(--line-2); background: var(--card); border-radius: 8px; padding: 8px 10px; }
-.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; }
-.seg button { border: 0; background: none; padding: 6px 10px; font-size: 13.5px; color: var(--text-2); }
-.seg button + button { border-left: 1px solid var(--line-2); }
-.seg button[aria-pressed="true"] { background: var(--text); color: var(--card); }
-.timebar { display: flex; align-items: center; gap: 12px; font-size: 13.5px; color: var(--text-2); }
-.track { flex: 1; height: 6px; background: var(--track); border-radius: 3px; position: relative; overflow: hidden; }
-.track span { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--brand); }
-.track em { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--text-3); }
-.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13.5px; color: var(--text-2); }
-.legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-.readouts { display: flex; flex-direction: column; }
-.readouts > div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
-.readouts > div:first-child { border-top: 0; padding-top: 0; }
-.readouts span:first-child { color: var(--text-2); }
-.readouts span:last-child { font-weight: 500; text-align: right; }
-.ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; padding: 8px 0; }
-.ctl label { font-size: 14px; color: var(--text-2); }
-.ctl output { font-size: 14px; font-weight: 500; }
-.ctl input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--brand); margin: 4px 0 0; }
-details.adv > summary { cursor: pointer; font-size: 14px; color: var(--text-2); padding: 8px 0; }
-.opt { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--text-2); padding: 4px 0; }
-.opt input { accent-color: var(--brand); }
-.compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.compare > div { border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
-.compare > div.saltback { border-color: var(--brand); }
-.compare .rowv { display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
-.compare .rowv:first-of-type { border-top: 0; }
-#trace { width: 100%; height: 130px; display: block; }
-
-/* how it works + data */
-.steps { counter-reset: s; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.steps li { counter-increment: s; border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
-.steps li::before { content: counter(s); display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); font-size: 13px; font-weight: 600; margin-bottom: 8px; }
-.steps b { display: block; margin-bottom: 4px; }
-.tbl-wrap { overflow: auto; }
-.tbl-wrap.tall { max-height: 420px; }
-table.t { border-collapse: collapse; width: 100%; font-size: 14px; }
-table.t th, table.t td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
-table.t th { font-weight: 500; color: var(--text-2); font-size: 13.5px; background: var(--card); position: sticky; top: 0; }
-table.t td.n, table.t th.n { text-align: right; white-space: nowrap; }
-table.raw { font-family: var(--mono); font-size: 12.5px; }
-table.raw th { font-family: var(--sans); }
-pre.csv { font: 400 12.5px/1.6 var(--mono); background: var(--track); border-radius: 8px; padding: 12px 14px; overflow-x: auto; margin: 12px 0 0; }
-.toast { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 40; background: var(--text); color: var(--card);
-  padding: 10px 16px; border-radius: 8px; font-size: 14px; max-width: min(440px, calc(100% - 32px)); box-shadow: 0 8px 24px rgba(0, 0, 0, .2); }
-.toast a { color: inherit; }
-footer.foot { padding-block: 24px 40px; border-top: 1px solid var(--line); }
-
-@media (max-width: 980px) {
-  .grid2, .rec, .try-grid { grid-template-columns: minmax(0, 1fr); }
-  .grid4, .four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .steps { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 820px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  nav.side { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px max(8px, env(safe-area-inset-left, 0px)); gap: 0; align-items: center; }
+  nav.side .name { padding: 0 12px 0 8px; }
+  nav.side a { border-left: 0; border-bottom: 2px solid transparent; white-space: nowrap; padding: 6px 10px; }
+  nav.side a[aria-current="page"] { border-bottom-color: var(--fg); }
+  nav.side .foot { display: none; }
+  main { padding: 16px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px)); }
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  .form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats > div { margin-right: 0; padding-right: 12px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .menu-list { right: auto; left: 0; }
 }
-@media (max-width: 560px) {
-  .card, .report { padding: 16px; }
-  .simtag { display: none; }
-  .four, .compare { grid-template-columns: minmax(0, 1fr); }
-  .top3 li { grid-template-columns: 28px minmax(0, 1fr); }
-  .top3 .imp { grid-column: 2; text-align: left; }
-}
-@media print {
-  header.top, footer.foot, .no-print, .toast { display: none !important; }
-  body { background: #fff; color: #000; font-size: 12pt; }
-  main { padding: 0; }
-  .report, .card { border: 0; padding: 0; break-inside: avoid; }
-  .four > div { break-inside: avoid; }
-}
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media print { nav.side, .actions, .toast { display: none !important; } .app { display: block; } main { padding: 0; } }
 </style>
 
-<header class="top">
-  <div class="wrap top-in">
-    <a class="brand" href="#overview"><span class="logo" aria-hidden="true"></span>Saltback</a>
-    <span class="simtag">Simulated data, not real town records</span>
-    <span class="spacer"></span>
-    <details class="menu" id="exportMenu">
-      <summary class="btn">Export</summary>
-      <div class="menu-list" role="menu">
-        <button type="button" data-act="xlsx">Excel workbook (.xlsx)<small>Every table, with editable charts. Opens in Google Sheets too.</small></button>
-        <button type="button" data-act="gsheets" id="gsItem" hidden>Send to Google Sheets<small>Uploads the workbook to your Google Drive</small></button>
-        <button type="button" data-act="png">Charts on this page (.png)<small>One image with every chart on this page</small></button>
-        <button type="button" data-act="report" id="reportItem">Printable storm report (.html)<small>Open it and print, or forward it</small></button>
-        <a href="#data">Single tables (CSV)<small>On the Data page</small></a>
-      </div>
-    </details>
-  </div>
-  <nav class="wrap tabs" aria-label="Sections">
-    <a href="#overview" data-v="overview">Overview</a>
-    <a href="#storms" data-v="storms">Storm reports</a>
-    <a href="#recommendations" data-v="recommendations">Recommendations</a>
-    <a href="#ratecard" data-v="ratecard">Crew rate card</a>
-    <a href="#try" data-v="try">Try a storm</a>
-    <a href="#how" data-v="how">How it works</a>
+<div class="app">
+  <nav class="side" aria-label="Sections">
+    <div class="name">Saltback</div>
+    <a href="#log" data-v="log">Storm log</a>
+    <a href="#report" data-v="report">Storm reports</a>
+    <a href="#recs" data-v="recs">Recommendations</a>
+    <a href="#ratecard" data-v="ratecard">Rate card</a>
+    <a href="#sensors" data-v="sensors">Sensors</a>
     <a href="#data" data-v="data">Data</a>
+    <a href="#settings" data-v="settings">Settings</a>
+    <div class="foot">Simulated data</div>
   </nav>
-</header>
 
-<main class="wrap">
-  <!-- ================= OVERVIEW ================= -->
-  <section class="view" id="v-overview">
-    <div class="page-h wide">
-      <p class="kicker" id="ovKicker"></p>
-      <h1 id="ovHead"></h1>
-      <p class="lede" id="ovLede"></p>
-    </div>
-    <div class="grid4" id="ovStats"></div>
-    <figure class="card" style="margin:0">
-      <div class="card-h"><div><h2 id="wfTitle"></h2><p class="sub">Tons of salt this season, from what the crew spread to Saltback's plan. Each step shows tons and dollars.</p></div></div>
-      <div class="plot" id="chWaterfall"></div>
-    </figure>
-    <div class="grid2">
-      <div class="card">
-        <div class="card-h"><div><h2>Top recommendations</h2><p class="sub">What would make the biggest difference next season</p></div><a class="btn sm" href="#recommendations">All recommendations</a></div>
-        <ol class="plain top3" id="ovTop3"></ol>
+  <main>
+    <!-- STORM LOG -->
+    <section id="v-log">
+      <div class="head"><div><h1>Storm log</h1><p class="sub" id="logSub"></p></div>
+        <div class="actions"><button class="btn pri" id="addBtn" type="button">Add storm</button><a class="btn" href="#data">Import CSV</a>
+          <details class="menu"><summary class="btn">Export</summary><div class="menu-list"><button type="button" data-act="xlsx">Workbook (.xlsx)</button><button type="button" data-csv="season">Storm log (.csv)</button><button type="button" data-copy="season">Copy table</button><button type="button" data-act="gsheets" class="gs" hidden>Send to Google Sheets</button></div></details></div></div>
+      <form class="form" id="addForm" hidden>
+        <label>Date<input type="date" id="f_date" required></label>
+        <label>Route<input type="text" id="f_route" value="Route 4"></label>
+        <label>Lane-miles<input type="number" id="f_lm" value="10" min="1" step="1"></label>
+        <label>Road temperature (°F)<input type="number" id="f_temp" value="24" step="1"></label>
+        <label>Snowfall (in)<input type="number" id="f_snow" value="3" min="0" step="0.5"></label>
+        <label>Storm length (h)<input type="number" id="f_hours" value="6" min="1" step="1"></label>
+        <label>Salt per pass (lb per lane-mile)<input type="number" id="f_rate" value="220" min="0" step="10"></label>
+        <label>First truck after (min)<input type="number" id="f_first" value="30" min="0" step="5"></label>
+        <label>Truck returns every (h)<input type="number" id="f_every" value="2" min="0.5" step="0.5"></label>
+        <label>Road temperature after (°F)<input type="number" id="f_after" value="36" step="1"></label>
+        <label>Drain salt measured (lb, optional)<input type="number" id="f_meas" min="0" step="1"></label>
+        <label>Sensor at limit (h, optional)<input type="number" id="f_maxed" min="0" step="0.1"></label>
+        <div class="row"><button class="btn pri" type="submit">Save storm</button><button class="btn" type="button" id="cancelAdd">Cancel</button><span class="msg" id="addMsg"></span></div>
+      </form>
+      <div class="stats" id="logStats"></div>
+      <div class="tw" style="margin-top:12px"><table class="nw" id="logTable"></table></div>
+      <p class="note" style="margin-top:8px">Select a storm to open its report. Sensor values for storms without measurements are modeled.</p>
+    </section>
+
+    <!-- STORM REPORT -->
+    <section id="v-report" hidden>
+      <div class="head"><div><h1 id="repTitle">Storm report</h1><p class="sub" id="repSub"></p></div>
+        <div class="actions"><select class="field" id="repPick" aria-label="Storm"></select><button class="btn" id="prevBtn" type="button">Previous</button><button class="btn" id="nextBtn" type="button">Next</button>
+          <details class="menu"><summary class="btn">Export</summary><div class="menu-list"><button type="button" data-act="report">Report (.html)</button><button type="button" data-csv="timeline">Timeline (.csv)</button><button type="button" data-copy="runSummary">Copy report table</button></div></details>
+          <button class="btn" id="delBtn" type="button">Delete</button></div></div>
+      <div id="repBody"></div>
+    </section>
+
+    <!-- RECOMMENDATIONS -->
+    <section id="v-recs" hidden>
+      <div class="head"><div><h1>Recommendations</h1><p class="sub" id="recSub"></p></div>
+        <div class="actions"><details class="menu"><summary class="btn">Export</summary><div class="menu-list"><button type="button" data-csv="recs">Recommendations (.csv)</button><button type="button" data-copy="recs">Copy table</button><button type="button" data-csv="levers">Savings by lever (.csv)</button></div></details></div></div>
+      <div class="tw"><table id="recTable"></table></div>
+      <div class="cols">
+        <section class="block"><h2>Savings by lever</h2><div class="tw"><table id="leverTable"></table></div></section>
+        <section class="block"><h2>Change per storm</h2><p class="note">Salt under Saltback's plan compared with what was spread</p><div class="plot" id="chChange"></div></section>
       </div>
-      <figure class="card" style="margin:0">
-        <div class="card-h"><div><h2 id="rtTitle"></h2><p class="sub">Running total of salt over the season's storms, in tons</p></div></div>
-        <div class="plot" id="chRunning"></div>
-      </figure>
-    </div>
-  </section>
+    </section>
 
-  <!-- ================= STORM REPORTS ================= -->
-  <section class="view" id="v-storms" hidden>
-    <div class="page-h"><h1>Storm reports</h1><p class="lede">The one-page report a town receives after every storm. Pick any storm from the season, an example storm, or your own run.</p></div>
-    <div class="picker no-print"><label for="stormPick" class="muted">Storm</label><select id="stormPick"></select>
-      <button class="btn sm" type="button" data-act="report">Download printable report</button><button class="btn sm" type="button" id="printBtn" hidden>Print</button></div>
-    <article class="report" id="report"></article>
-  </section>
+    <!-- RATE CARD -->
+    <section id="v-ratecard" hidden>
+      <div class="head"><div><h1>Rate card</h1><p class="sub">Salt per pass, lb per lane-mile. 8-hour storm, first truck within 30 minutes, calibrated to this route.</p></div>
+        <div class="actions"><details class="menu"><summary class="btn">Export</summary><div class="menu-list"><button type="button" data-csv="rateCard">Rate card (.csv)</button><button type="button" data-copy="rateCard">Copy table</button></div></details></div></div>
+      <div class="tw"><table id="rcTable"></table></div>
+      <p class="note" id="rcNote" style="margin-top:8px"></p>
+      <section class="block"><h2>Rate by road temperature</h2><p class="note">Lines: Saltback (solid moderate snow, dashed light and heavy). Dots: rate used in each logged storm. Grey boxes: published state range.</p><div class="plot" id="chRate"></div></section>
+    </section>
 
-  <!-- ================= RECOMMENDATIONS ================= -->
-  <section class="view" id="v-recommendations" hidden>
-    <div class="page-h wide"><h1>Recommendations</h1><p class="lede" id="recLede"></p></div>
-    <div class="grid2">
-      <figure class="card" style="margin:0"><div class="card-h"><div><h2 id="chgTitle"></h2><p class="sub">Change in salt per storm under Saltback's plan, storms sorted by road temperature</p></div></div><div class="plot" id="chChange"></div></figure>
-      <figure class="card" style="margin:0"><div class="card-h"><div><h2 id="dbTitle"></h2><p class="sub">Minutes of icy road per storm: as salted, and with Saltback's plan</p></div></div><div class="plot" id="chDumbbell"></div></figure>
-    </div>
-    <div class="recs" id="recList"></div>
-  </section>
-
-  <!-- ================= RATE CARD ================= -->
-  <section class="view" id="v-ratecard" hidden>
-    <div class="page-h"><h1>Crew rate card</h1><p class="lede">How much salt to spread per pass, by road temperature and snowfall. Built from this route's data and checked against published state rate charts.</p></div>
-    <div class="card" id="rcCard"></div>
-    <figure class="card" style="margin:0"><div class="card-h"><div><h2 id="rcTitle"></h2><p class="sub">Pounds of salt per <span class="term" tabindex="0" data-def="One mile of one 12-foot traffic lane. Salt rates are given per lane-mile.">lane-mile</span> per pass by road temperature (cold on the left). Lines: Saltback's rate. Dots: what the crew used in each storm. Shaded: the published state range.</p></div></div>
-      <div class="plot" id="chRate"></div></figure>
-  </section>
-
-  <!-- ================= TRY A STORM ================= -->
-  <section class="view" id="v-try" hidden>
-    <div class="page-h"><h1>Try a storm</h1><p class="lede">Pick a storm, run it, then run it again with Saltback's rate to compare: same storm, less salt, same safety.</p></div>
-    <div class="try-grid">
-      <div class="view" style="gap:16px">
-        <div class="card" style="padding:16px">
-          <div class="controls-row">
-            <label for="scenario" class="muted">Storm</label><select id="scenario"></select>
-            <button class="btn pri" id="run" type="button">Run storm</button>
-            <button class="btn" id="skip" type="button">Skip to end</button>
-            <div class="seg" role="group" aria-label="Playback speed"><button type="button" data-speed="1" aria-pressed="true">1×</button><button type="button" data-speed="2" aria-pressed="false">2×</button><button type="button" data-speed="4" aria-pressed="false">4×</button></div>
-          </div>
-          <p class="note" id="scDesc" style="margin-top:8px"></p>
-          <div class="timebar" style="margin-top:12px"><span id="tNow">0:00</span><div class="track" aria-hidden="true"><span id="prog"></span><em id="stormEnd"></em></div><span id="tEnd">32:00</span></div>
-        </div>
-        <div class="card" style="padding:0">
-          <div class="stage">
-            <canvas id="scene" role="img" aria-label="Cross-section of the road, its shoulder and the storm drain during the simulated storm"></canvas>
-            <div class="ov tl"><div class="big" id="ovClock">0:00</div><div id="ovPhase">Ready</div></div>
-            <div class="ov tr"><div class="big" id="ovTemp">22°F</div><div>road surface</div></div>
-          </div>
-          <div class="legend" style="padding:12px 16px;border-top:1px solid var(--line)"><span><i style="background:var(--snow)"></i>Snow</span><span><i style="background:var(--ice)"></i>Ice stuck to the road</span><span><i style="background:var(--water)"></i>Salty water and runoff</span><span><i style="background:var(--brand)"></i>Salt</span><span><i style="background:var(--risk)"></i>Icy road</span></div>
-        </div>
-        <div class="card" id="resultCard" hidden></div>
+    <!-- SENSORS -->
+    <section id="v-sensors" hidden>
+      <div class="head"><div><h1>Sensors</h1><p class="sub">Drain conductivity and temperature readings, every 5 minutes during and after each storm</p></div>
+        <div class="actions"><details class="menu"><summary class="btn">Export</summary><div class="menu-list"><button type="button" data-csv="sensorLog">Sensor summary (.csv)</button><button type="button" data-copy="sensorLog">Copy table</button></div></details></div></div>
+      <div class="cols">
+        <section><h2 style="font-size:13px;margin-bottom:8px">Node</h2><table class="kv" id="nodeTable"></table></section>
+        <section><h2 style="font-size:13px;margin-bottom:8px">Calibration from drain data</h2><table class="kv" id="calTable"></table><p class="note" id="calNote" style="margin-top:6px"></p></section>
       </div>
-      <div class="view" style="gap:16px">
-        <div class="card" style="padding:20px">
-          <h2 style="font-size:16px;margin-bottom:12px">Right now</h2>
-          <div class="readouts" id="readouts"></div>
-        </div>
-        <div class="card" style="padding:20px">
-          <h2 style="font-size:16px;margin-bottom:4px">Settings</h2>
-          <div id="mainCtl"></div>
-          <details class="adv"><summary>Advanced assumptions</summary><div id="advCtl"></div></details>
-        </div>
-      </div>
-    </div>
-    <div class="grid2">
-      <figure class="card" style="margin:0"><div class="card-h"><div><h2>Snow is plowed off; ice that sticks is what makes the road icy</h2><p class="sub">Thickness on the road over the storm, in millimeters of water. The road counts as icy when stuck ice is thicker than 0.05 mm.</p></div></div><div class="plot" id="chRoad"></div></figure>
-      <figure class="card" style="margin:0"><div class="card-h"><div><h2>What the drain sensor read</h2><p class="sub">Dark dots: the sensor reading. Light dots: the true value. Grey dotted line: the most this sensor can read. Units: millisiemens per centimeter (mS/cm), a measure of how salty the water is.</p></div></div><canvas id="trace" aria-label="Drain sensor reading over the storm"></canvas></figure>
-    </div>
-  </section>
+      <section class="block"><h2>Readings by storm</h2><div class="tw"><table class="nw" id="sensTable"></table></div></section>
+    </section>
 
-  <!-- ================= HOW IT WORKS ================= -->
-  <section class="view" id="v-how" hidden>
-    <div class="page-h wide"><h1>How it works</h1><p class="lede">Saltback combines a drain sensor, the town's truck logs and a physics model. Every number on this site comes from the model below, run on simulated storms with typical published values. None of it is real town data.</p></div>
-    <div class="card">
-      <h2 style="font-size:18px;margin-bottom:16px">From storm to recommendation</h2>
-      <ol class="plain steps">
-        <li><b>Measure</b>A low-cost conductivity and temperature sensor in a storm drain measures how salty the runoff is after each storm.</li>
-        <li><b>Combine</b>Saltback adds the truck log (how much salt was spread, and when) and the weather (road temperature, snowfall).</li>
-        <li><b>Model</b>A physics model steps the storm every 5 minutes: snow falls, salt dissolves, brine melts ice or refreezes, traffic packs snow into ice, runoff reaches the drain.</li>
-        <li><b>Find the right amount</b>Saltback tries every salt rate and finds the smallest one that keeps the road within 15 minutes of the best possible result.</li>
-        <li><b>Check safety</b>The recommended rate must be no more than 6 minutes icier than what the crew actually did, both in the best estimate and in a pessimistic case.</li>
-        <li><b>Learn</b>Over a season, the sensor shows how much salt really reaches the drain. Saltback adjusts its model of the route and the crew rate card.</li>
-      </ol>
-    </div>
-    <div class="card" id="rulesCard"></div>
-    <div class="card" id="confCard"></div>
-    <div class="grid2">
-      <figure class="card" style="margin:0"><div class="card-h"><div><h2 id="histTitle"></h2><p class="sub">Salt saved across 200 test seasons with uncertain inputs, in percent</p></div></div><div class="plot" id="chHist"></div></figure>
-      <figure class="card" style="margin:0"><div class="card-h"><div><h2 id="tornTitle"></h2><p class="sub">Salt saved when one input is set to the low or high end of its range, others unchanged</p></div></div><div class="plot" id="chTornado"></div></figure>
-    </div>
-    <div class="card" id="oosCard"></div>
-    <div class="card"><div class="card-h"><div><h2>Assumptions</h2><p class="sub">Every input, its value, its realistic range and where it comes from</p></div></div><div class="tbl-wrap" id="assumpTable"></div></div>
-    <div class="grid2">
-      <figure class="card" style="margin:0"><div class="card-h"><div><h2>The model matches the published melting chart within 5% from 0°F to 25°F</h2><p class="sub">Pounds of ice one pound of salt can melt. Line: Saltback's model. Circles: the widely published chart, which the model never reads.</p></div></div><div class="plot" id="chMelt"></div></figure>
-      <div class="card"><h2 style="font-size:18px;margin-bottom:12px">Developer details</h2><div class="note" id="devNotes"></div></div>
-    </div>
-  </section>
+    <!-- DATA -->
+    <section id="v-data" hidden>
+      <div class="head"><div><h1>Data</h1><p class="sub">Every table, the raw 5-minute timeline of the selected storm, and import</p></div>
+        <div class="actions"><button class="btn pri" type="button" data-act="xlsx">Download workbook (.xlsx)</button><button class="btn gs" type="button" data-act="gsheets" hidden>Send to Google Sheets</button></div></div>
+      <div class="tw"><table id="dsTable"></table></div>
+      <section class="block"><h2>Import storm records</h2>
+        <p class="note">CSV, one row per storm. Required: date, pavement_temp_F, snowfall_in, storm_hours, salt_per_pass_lb. Optional: route, lane_miles, first_pass_h, plow_every_h, temp_after_F, probe_max_mS_cm, measured_drain_salt_lb, probe_maxed_h. Imported storms are added to the log.</p>
+        <div class="actions" style="margin-top:8px"><label class="btn" for="csvFile">Choose CSV file</label><input type="file" id="csvFile" accept=".csv,text/csv" hidden><button class="btn" id="copyTpl" type="button">Copy template</button><span class="msg" id="impMsg" aria-live="polite"></span></div>
+        <pre class="tpl" id="tpl"></pre></section>
+      <section class="block"><h2>Timeline of the selected storm</h2><p class="note" id="tlNote"></p><div class="tw" style="max-height:420px;overflow:auto"><table class="raw" id="tlTable"></table></div></section>
+    </section>
 
-  <!-- ================= DATA ================= -->
-  <section class="view" id="v-data" hidden>
-    <div class="page-h"><h1>Data</h1><p class="lede">Every table behind the site, the raw 5-minute timeline, and an import for your own storm records.</p></div>
-    <div class="card">
-      <div class="card-h"><div><h2>Workbook</h2><p class="sub">One sheet per table, with editable charts. Open it in Excel, or in Google Sheets with File → Import → Upload.</p></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" type="button" data-act="xlsx">Download workbook (.xlsx)</button><button class="btn" type="button" data-act="gsheets" id="gsData" hidden>Send to Google Sheets</button></div></div>
-      <div class="tbl-wrap" id="dsTable"></div>
-    </div>
-    <div class="card"><div class="card-h"><div><h2>Raw timeline of the last storm you ran</h2><p class="sub" id="tlCount"></p></div></div><div class="tbl-wrap tall" id="tlTable"></div></div>
-    <div class="card">
-      <div class="card-h"><div><h2>Import storm records (CSV)</h2><p class="sub">One row per storm per route. Imported storms replace the example season; your simulator runs are kept.</p></div></div>
-      <p class="note">Required columns: date, pavement_temp_F, snowfall_in, storm_hours, salt_per_pass_lb. Optional: route, lane_miles, first_pass_h, plow_every_h, temp_after_F, probe_max_mS_cm, measured_drain_salt_lb (salt the sensor accounted for, whole route), probe_maxed_h.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px">
-        <label class="btn pri" for="csvFile">Choose CSV file</label><input type="file" id="csvFile" accept=".csv,text/csv" hidden>
-        <button class="btn" id="copyTpl" type="button">Copy template</button><button class="btn" id="loadEx" type="button">Back to the example season</button>
-        <span class="note" id="impMsg" aria-live="polite"></span>
+    <!-- SETTINGS -->
+    <section id="v-settings" hidden>
+      <div class="head"><div><h1>Settings</h1><p class="sub">Prices, sensor and model assumptions</p></div></div>
+      <div class="cols">
+        <section><h2 style="font-size:13px;margin-bottom:8px">General</h2>
+          <form class="form" id="setForm" style="grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--line)">
+            <label>Salt price ($ per ton)<input type="number" id="s_price" min="1" step="1"></label>
+            <label>Drain sensor<select id="s_probe"><option value="20">Standard, up to 20 mS/cm</option><option value="200">High-range, up to 200 mS/cm</option></select></label>
+            <div class="row"><button class="btn pri" type="submit">Save</button><span class="msg" id="setMsg"></span></div>
+          </form>
+          <h2 style="font-size:13px;margin:8px 0">Data</h2>
+          <div class="actions"><button class="btn" id="loadSim" type="button">Load simulated season (12 storms)</button><button class="btn" id="clearAll" type="button">Clear all storms</button></div>
+          <p class="msg" id="dataMsg" style="margin-top:6px"></p>
+        </section>
+        <section><h2 style="font-size:13px;margin-bottom:8px">Decision rules</h2>
+          <ul class="plain muted">
+            <li>Needed salt: the smallest rate within 15 minutes of the best icy time any rate reaches.</li>
+            <li>Saltback's rate: needed + 10%, raised until the road is no more than 6 minutes icier than the logged result, also in a pessimistic case (faster runoff, more brine needed, faster bonding).</li>
+            <li>Next storm: cuts of at most 25%; increases not capped.</li>
+            <li>Still icy over 2 hours at 600 lb per lane-mile: salt alone can't fix it. Below 15°F: sand or a stronger chemical.</li>
+          </ul></section>
       </div>
-      <pre class="csv" id="tpl"></pre>
-    </div>
-  </section>
-</main>
-<footer class="wrap foot"><p class="disclaimer">Simulated data, based on typical published values, not real town records. Saltback is a student project for the Diamond Challenge 2027.</p></footer>
+      <section class="block"><h2>Model assumptions</h2><div class="tw"><table id="assTable"></table></div></section>
+    </section>
+  </main>
+</div>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -417,769 +250,336 @@ footer.foot { padding-block: 24px 40px; border-top: 1px solid var(--line); }
 <script src="engine.js"></script>
 <script src="report.js"></script>
 <script src="xlsx.js"></script>
-<script src="uncertainty-data.js"></script>
 <script>
 (() => {
 'use strict';
-const S = window.Saltback, E = window.SaltbackEngine, R = window.SaltbackReport, X = window.SaltbackXLSX, U = window.SaltbackUncertainty || null;
+const S = window.Saltback, E = window.SaltbackEngine, R = window.SaltbackReport, X = window.SaltbackXLSX;
 const $ = id => document.getElementById(id);
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const store = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-
-/* ---------- plain-language formatting ---------- */
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const int = v => (Number.isFinite(v) ? Math.round(v).toLocaleString('en-US') : '—');
-const tons = lb => { const t = lb / 2000; return Math.abs(t) >= 10 ? Math.round(t).toLocaleString('en-US') : (Math.round(t * 10) / 10).toString(); };
+const t1 = lb => (lb / 2000).toFixed(1);
 const money = v => `$${Math.round(Math.abs(v)).toLocaleString('en-US')}`;
-const pct0 = v => `${Math.round(Math.abs(v))}%`;
-const icyTxt = h => { if (!Number.isFinite(h)) return '—'; const m = Math.round(h * 60); return m < 60 ? `${m} min` : m < 600 ? `${(m / 60).toFixed(1)} h` : `${Math.round(m / 60)} h`; };
-const hrs = h => `${h.toFixed(1)} h`;
-const clock = h => { const t = Math.round(h * 60); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };   // rounds first, so 31.999 h shows 32:00
-const dateTxt = d => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? new Date(d + 'T12:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : d);
-const usd = lb => lb / 2000 * (S.SETTINGS.salt_price_per_ton);
-const DEF = {
-  laneMile: 'One mile of one 12-foot traffic lane. Salt rates are given per lane-mile.',
-  needed: 'The smallest salt rate that keeps the road within 15 minutes of the best result any amount of salt can reach.',
-  excess: 'Salt spread beyond Saltback\'s safe rate. It bought no extra safety.',
-  chloride: 'The part of road salt that dissolves into water and never breaks down. It builds up in streams and groundwater.',
-  bounce: 'Salt that bounces or blows off the road onto the shoulder instead of melting ice.',
-  rateCard: 'A table telling the crew how much salt to spread at each road temperature and snowfall.',
-};
-const term = (k, t) => `<span class="term" tabindex="0" data-def="${esc(DEF[k])}">${t}</span>`;
+const mins = h => { if (!Number.isFinite(h)) return '—'; const m = Math.round(h * 60); return m < 60 ? `${m} min` : `${(m / 60).toFixed(1)} h`; };
+const hm = h => { const t = Math.round(h * 60); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
+const dateTxt = d => (/^\d{4}-\d{2}-\d{2}$/.test(d) ? new Date(d + 'T12:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : d);
+const shortDate = d => dateTxt(d).replace(/, \d{4}$/, '');
+const stamp = () => new Date().toISOString().slice(0, 10);
+const STATUS = { over: 'Over-salted', ok: 'About right', under: 'Under-salted', late: 'Late first truck', cant_fix: 'Salt could not fix', too_cold: 'Too cold for salt' };
+const st = s => `<span class="st ${s}">${STATUS[s]}</span>`;
 let toastT;
-function toast(html, ms = 3600) { const t = $('toast'); t.innerHTML = html; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms); }
+function toast(html, ms = 3200) { const t = $('toast'); t.innerHTML = html; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms); }
 
-/* ---------- platform capabilities (absent outside claude.ai; the page works without them) ---------- */
+/* platform capabilities (only inside claude.ai) */
 const use = n => (window.claude && typeof window.claude.use === 'function' ? window.claude.use(n).catch(() => null) : Promise.resolve(null));
 const dlP = use('downloads'), mcpP = use('mcp');
-async function saveFile(filename, data) {
+async function saveFile(name, data) {
   const dl = await dlP;
-  if (dl) {
-    try { await dl.save({ filename, data }); toast(`Saved ${esc(filename)}`); }
-    catch (e) { toast(e && e.code === 'declined' ? 'Download cancelled.' : e && e.code === 'rate_limited' ? 'Another download is waiting for your answer.' : `Could not save ${esc(filename)} here.`); }
-    return;
-  }
-  const blob = data instanceof Blob ? data : new Blob([data]), url = URL.createObjectURL(blob), a = document.createElement('a');
-  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
-  toast(`Downloading ${esc(filename)}`);
+  if (dl) { try { await dl.save({ filename: name, data }); toast(`Saved ${esc(name)}`); } catch (e) { toast(e && e.code === 'declined' ? 'Download cancelled.' : `Could not save ${esc(name)}.`); } return; }
+  const url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data])), a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
-async function copyText(text, what) { try { await navigator.clipboard.writeText(text); toast(`${what} copied. Paste into Google Sheets or Excel.`); } catch { toast('Copying is blocked here. Use the CSV download instead.'); } }
+async function copyText(text, what) { try { await navigator.clipboard.writeText(text); toast(`${what} copied`); } catch { toast('Copy is blocked here; use CSV.'); } }
 
-/* ---------- state ---------- */
-const settings = { ...S.SETTINGS };
-let scenario = R.SCENARIOS[0], custom = false;
-let current = null, lastRun = null, compareWith = null, userRun = false, passCount = 0, appliedSoFar = 0;
-let simCount = store.get('saltback.simCount') || 0;
-let records = store.get('saltback.records.v3') || E.exampleSeason();
-let sourceNote = store.get('saltback.source.v3') || 'example';
-let library = null, analysis = null, dirty = true, pick = store.get('saltback.pick') || 'season:0';
-const play = { on: false, idx: 0, speed: 1 };
-const saveRecords = () => { store.set('saltback.records.v3', records); store.set('saltback.source.v3', sourceNote); };
-const ensureLibrary = () => (library ||= R.computeLibrary());
-function ensureAnalysis() { if (dirty || !analysis) { analysis = records.length ? E.analyze(records, { price: settings.salt_price_per_ton }) : null; dirty = false; } return analysis; }
-const isExample = () => sourceNote === 'example';
+/* state */
+const prefs = { price: S.SETTINGS.salt_price_per_ton, probe: 20, ...(store.get('saltback.prefs') || {}) };
+let records = store.get('saltback.records.v4') || E.exampleSeason().map(r => ({ ...r, source: 'simulated' }));
+let analysis = null, dirty = true, selId = store.get('saltback.sel');
+const save = () => { store.set('saltback.records.v4', records); dirty = true; };
+function A() {
+  if (dirty || !analysis) {
+    const recs = records.map(r => ({ ...r, probe_max_mS_cm: r.probe_max_mS_cm ?? prefs.probe }));
+    analysis = recs.length ? E.analyze(recs, { price: prefs.price }) : null; dirty = false; runCache = {};
+  }
+  return analysis;
+}
+const usd = lb => lb / 2000 * prefs.price;
+const selIndex = () => { const a = A(); if (!a) return -1; const i = a.storms.findIndex(x => x.record.id === selId); return i >= 0 ? i : 0; };
+const select = id => { selId = id; store.set('saltback.sel', id); };
 
-/* ---------- colours (charts carry real colours so image export matches the screen) ---------- */
+/* colours for charts */
 const C = {};
-const TOKENS = ['bg', 'card', 'line', 'line-2', 'track', 'band', 'text', 'text-2', 'text-3', 'brand', 'brand-soft', 'save', 'save-soft', 'water', 'ice', 'over', 'over-soft', 'risk', 'risk-soft', 'muted', 'snow', 'ink'];
-const LIGHT = { bg: '#f5f6f8', card: '#ffffff', line: '#e3e6ea', 'line-2': '#cdd2d8', track: '#eceef1', band: '#eef0f4', text: '#15181d', 'text-2': '#4a525d', 'text-3': '#66707c',
-  brand: '#5b45c2', 'brand-soft': '#eeebfb', save: '#1d7a4f', 'save-soft': '#e3f3ea', water: '#2b6cb0', ice: '#7aa6cf', over: '#9a5b00', 'over-soft': '#fbefdc', risk: '#c0352b', 'risk-soft': '#fbe6e4', muted: '#8b939d', snow: '#3a3f47', ink: '#2b3038' };
-function readColors() { const cs = getComputedStyle(document.documentElement); TOKENS.forEach(k => { C[k] = cs.getPropertyValue('--' + k).trim() || LIGHT[k]; }); }
+function readColors() { const cs = getComputedStyle(document.documentElement); ['bg', 'fg', 'fg2', 'fg3', 'line', 'line2', 'red', 'amber', 'green', 'chart2', 'fill'].forEach(k => { C[k] = cs.getPropertyValue('--' + k).trim(); }); }
 readColors();
-const rgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
-const rgba = (h, a) => `rgba(${rgb(h).join(',')},${a})`;
-const rethemed = () => { readColors(); renderView(); };
+const LIGHT = { bg: '#ffffff', fg: '#111111', fg2: '#555555', fg3: '#6b6b6b', line: '#e4e4e4', line2: '#c8c8c8', red: '#b42318', amber: '#8a5300', green: '#1f6b40', chart2: '#9a9a9a', fill: '#ededed' };
+const rethemed = () => { readColors(); render(); };
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', rethemed);
 new MutationObserver(rethemed).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-/* ================= SHARED SVG CHART STYLE ================= */
-const F = 'font-family="IBM Plex Sans, Segoe UI, Arial, sans-serif"';
-const txt = (x, y, s, o = {}) => `<text x="${x}" y="${y}" ${F} font-size="${o.size || 12}" fill="${o.color || C['text-2']}" text-anchor="${o.anchor || 'start'}"${o.weight ? ` font-weight="${o.weight}"` : ''}>${esc(s)}</text>`;
+/* ---------- one minimal chart style ---------- */
+const FF = 'font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"';
+const tx = (x, y, s, o = {}) => `<text x="${x}" y="${y}" ${FF} font-size="${o.size || 11}" fill="${o.color || C.fg2}" text-anchor="${o.anchor || 'start'}"${o.bold ? ' font-weight="600"' : ''}>${esc(s)}</text>`;
 function ticks(min, max, n = 5) { const raw = (max - min) / n || 1, mag = 10 ** Math.floor(Math.log10(raw)), e = raw / mag, step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag, out = [];
   for (let v = Math.ceil(min / step) * step; v <= max + 1e-9; v += step) out.push(+v.toFixed(8)); return out; }
-const svgOpen = (w, h, aria) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(aria)}">`;
-function mount(host, svg, summary) { host.innerHTML = svg + `<p class="sr-only">${esc(summary)}</p>`; }
-const W = host => Math.max(300, host.clientWidth || 600);
-
-/* Line chart with direct labels, optional shaded regions, marks and a hover readout. */
-function lineChart(host, cfg) {
-  const w = W(host), h = cfg.h || 280, m = { l: 52, r: cfg.right ?? 110, t: 16, b: 44 }, iw = w - m.l - m.r, ih = h - m.t - m.b, { x, y } = cfg;
-  const X = v => m.l + (v - x.min) / (x.max - x.min) * iw;
-  const Y = y.log ? v => m.t + ih - (Math.log10(Math.max(v, y.min)) - Math.log10(y.min)) / (Math.log10(y.max) - Math.log10(y.min)) * ih : v => m.t + ih - (v - y.min) / (y.max - y.min) * ih;
-  let g = svgOpen(w, h, cfg.aria);
-  (cfg.shade || []).forEach(s => { g += `<rect x="${X(s.x0)}" y="${m.t}" width="${Math.max(0, X(s.x1) - X(s.x0))}" height="${ih}" fill="${s.color}"/>`; if (s.label) g += txt((X(s.x0) + X(s.x1)) / 2, m.t + 16, s.label, { anchor: 'middle', color: s.labelColor || C['text-2'], size: 12, weight: 500 }); if (s.label2) g += txt((X(s.x0) + X(s.x1)) / 2, m.t + 32, s.label2, { anchor: 'middle', size: 12, color: s.labelColor || C['text-2'] }); });
-  (cfg.bands || []).forEach(b => { g += `<rect x="${X(b.x0)}" y="${Y(b.y1)}" width="${X(b.x1) - X(b.x0)}" height="${Y(b.y0) - Y(b.y1)}" fill="${b.color}"/>`; });
-  const yt = y.log ? [10, 100, 1000, 10000, 100000].filter(v => v >= y.min && v <= y.max) : ticks(y.min, y.max, 4);
-  g += yt.map(v => `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.line}"/>` + txt(m.l - 8, Y(v) + 4, y.fmt ? y.fmt(v) : int(v), { anchor: 'end', size: 11.5 })).join('');
-  g += (x.ticks || ticks(x.min, x.max, w < 480 ? 4 : 6)).map(v => txt(X(v), h - m.b + 18, x.fmt ? x.fmt(v) : int(v), { anchor: 'middle', size: 11.5 })).join('');
-  g += `<line x1="${m.l}" x2="${w - m.r}" y1="${m.t + ih}" y2="${m.t + ih}" stroke="${C['text-3']}"/>`;
-  g += txt(m.l + iw / 2, h - 6, x.label, { anchor: 'middle', size: 12 }) + `<text transform="translate(13 ${m.t + ih / 2}) rotate(-90)" ${F} font-size="12" fill="${C['text-2']}" text-anchor="middle">${esc(y.label)}</text>`;
-  (cfg.refs || []).forEach(r => { g += `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(r.v)}" y2="${Y(r.v)}" stroke="${r.color}" stroke-dasharray="4 4"/>` + txt(m.l + 6, Y(r.v) - 5, r.label, { color: r.color, size: 11.5 }); });
+const Wd = host => Math.max(280, host.clientWidth || 560);
+function line(host, cfg) {
+  const w = Wd(host), h = cfg.h || 220, m = { l: 46, r: cfg.r ?? 90, t: 10, b: 34 }, iw = w - m.l - m.r, ih = h - m.t - m.b, { x, y } = cfg;
+  const X = v => m.l + (v - x.min) / (x.max - x.min) * iw, Y = v => m.t + ih - (v - y.min) / (y.max - y.min) * ih;
+  let g = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(cfg.aria)}">`;
+  (cfg.boxes || []).forEach(b => { g += `<rect x="${X(b.x0)}" y="${Y(b.y1)}" width="${X(b.x1) - X(b.x0)}" height="${Y(b.y0) - Y(b.y1)}" fill="${C.fill}"/>`; });
+  (cfg.span || []).forEach(s => { g += `<rect x="${X(s.x0)}" y="${m.t}" width="${Math.max(0, X(s.x1) - X(s.x0))}" height="${ih}" fill="${C.fill}"/>` + (s.label ? tx(X(s.x0) + 4, m.t + 12, s.label) : ''); });
+  g += ticks(y.min, y.max, 4).map(v => `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.line}"/>` + tx(m.l - 6, Y(v) + 4, y.fmt ? y.fmt(v) : int(v), { anchor: 'end' })).join('');
+  g += (x.ticks || ticks(x.min, x.max, w < 460 ? 4 : 6)).map(v => tx(X(v), h - m.b + 14, x.fmt ? x.fmt(v) : int(v), { anchor: 'middle' })).join('');
+  g += `<line x1="${m.l}" x2="${w - m.r}" y1="${m.t + ih}" y2="${m.t + ih}" stroke="${C.line2}"/>` + tx(m.l + iw / 2, h - 3, x.label, { anchor: 'middle' });
+  g += `<text transform="translate(11 ${m.t + ih / 2}) rotate(-90)" ${FF} font-size="11" fill="${C.fg2}" text-anchor="middle">${esc(y.label)}</text>`;
+  (cfg.refs || []).forEach(r => { g += `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(r.v)}" y2="${Y(r.v)}" stroke="${r.color}" stroke-dasharray="3 3"/>` + tx(m.l + 4, Y(r.v) - 4, r.label, { color: r.color }); });
   const ends = [];
   cfg.series.forEach(s => {
-    const pts = s.pts.filter(p => p[1] != null && Number.isFinite(p[1]));
-    if (s.dots) { g += pts.map(([a, b]) => `<circle cx="${X(a)}" cy="${Y(b)}" r="${s.r || 4}" fill="${s.fill || C.card}" stroke="${s.color}" stroke-width="2"><title>${esc(s.name)}: ${esc(y.tip ? y.tip(b) : b)}</title></circle>`).join(''); }
-    else { let d = '', pen = false; s.pts.forEach(([a, b]) => { if (b == null || !Number.isFinite(b)) { pen = false; return; } d += `${pen ? 'L' : 'M'}${X(a).toFixed(1)},${Y(b).toFixed(1)}`; pen = true; });
-      g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.w || 2.2}" ${s.dash ? 'stroke-dasharray="6 4"' : ''} stroke-linejoin="round" stroke-linecap="round"/>`; }
-    if (s.label !== false && pts.length) { const [a, b] = pts[pts.length - 1]; ends.push({ y: Y(b), x: X(a), text: s.name, color: s.labelColor || s.color }); }
+    if (s.dots) { g += s.pts.map(p => `<circle cx="${X(p[0])}" cy="${Y(p[1])}" r="3.5" fill="${p[2] || s.color}"><title>${esc(p[3] || '')}</title></circle>`).join(''); return; }
+    let d = '', pen = false; s.pts.forEach(([a, b]) => { if (b == null || !Number.isFinite(b)) { pen = false; return; } d += `${pen ? 'L' : 'M'}${X(a).toFixed(1)},${Y(b).toFixed(1)}`; pen = true; });
+    g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.w || 1.5}" ${s.dash ? 'stroke-dasharray="4 3"' : ''}/>`;
+    const last = [...s.pts].reverse().find(p => p[1] != null && Number.isFinite(p[1])); if (last && s.name) ends.push({ x: X(last[0]) + 6, y: Y(last[1]) + 4, t: s.name, c: s.color });
   });
-  ends.sort((a, b) => a.y - b.y); for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 15) ends[i].y = ends[i - 1].y + 15;
-  ends.forEach(e => { g += txt(e.x + 8, e.y + 4, e.text, { color: e.color, size: 12.5, weight: 500 }); });
-  (cfg.marks || []).forEach(k => { g += `<circle cx="${X(k.x)}" cy="${Y(k.y)}" r="6" fill="${k.color}" stroke="${C.card}" stroke-width="2"/>` + txt(X(k.x) + (k.dx ?? 10), Y(k.y) + (k.dy ?? -10), k.label, { color: k.color, size: 12.5, weight: 600, anchor: k.anchor || 'start' }); });
-  (cfg.notes || []).forEach(n => { g += txt(n.x != null ? X(n.x) : m.l + 8, n.y != null ? Y(n.y) : m.t + 16, n.text, { color: n.color || C.text, size: 13, weight: n.weight || 500, anchor: n.anchor || 'start' }); });
-  g += `<line class="hv" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" stroke="${C['text-3']}" stroke-dasharray="3 3" visibility="hidden"/><rect class="hit" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent"/></svg><div class="tip" hidden></div>`;
-  mount(host, g, cfg.summary);
-  const svg = host.querySelector('svg'), hv = svg.querySelector('.hv'), tip = host.querySelector('.tip'), hit = svg.querySelector('.hit'), base = cfg.series[0].pts;
+  ends.sort((a, b) => a.y - b.y); for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
+  ends.forEach(e => { g += tx(e.x, e.y, e.t, { color: e.c }); });
+  (cfg.marks || []).forEach(k => { g += `<circle cx="${X(k.x)}" cy="${Y(k.y)}" r="4" fill="${k.color}"/>` + tx(X(k.x) + 6, Y(k.y) - (k.dy ?? 8), k.label, { color: k.color, bold: true }); });
+  g += `<line class="hv" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" stroke="${C.fg3}" visibility="hidden"/><rect class="hit" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent"/></svg><div class="tip" hidden></div><p class="sr-only">${esc(cfg.summary || cfg.aria)}</p>`;
+  host.innerHTML = g;
   if (!cfg.tip) return;
-  hit.addEventListener('pointermove', e => { const r = svg.getBoundingClientRect(), sx = (e.clientX - r.left) * (w / r.width), xv = x.min + (sx - m.l) / iw * (x.max - x.min);
+  const svg = host.querySelector('svg'), hv = svg.querySelector('.hv'), tip = host.querySelector('.tip'), base = cfg.series[0].pts;
+  svg.querySelector('.hit').addEventListener('pointermove', e => { const r = svg.getBoundingClientRect(), sx = (e.clientX - r.left) * (w / r.width), xv = x.min + (sx - m.l) / iw * (x.max - x.min);
     let k = 0; for (let i = 1; i < base.length; i++) if (Math.abs(base[i][0] - xv) < Math.abs(base[k][0] - xv)) k = i;
     hv.setAttribute('x1', X(base[k][0])); hv.setAttribute('x2', X(base[k][0])); hv.setAttribute('visibility', 'visible');
-    tip.innerHTML = cfg.tip(k); tip.hidden = false; tip.style.left = `${Math.min(r.width - 90, Math.max(90, (X(base[k][0]) / w) * r.width))}px`; tip.style.top = `${(m.t + 30) / h * r.height}px`; });
-  hit.addEventListener('pointerleave', () => { hv.setAttribute('visibility', 'hidden'); tip.hidden = true; });
+    tip.textContent = cfg.tip(k); tip.hidden = false; tip.style.left = `${Math.min(r.width - 70, Math.max(70, X(base[k][0]) / w * r.width))}px`; tip.style.top = `${(m.t + 24) / h * r.height}px`; });
+  svg.querySelector('.hit').addEventListener('pointerleave', () => { hv.setAttribute('visibility', 'hidden'); tip.hidden = true; });
+}
+function bars(host, cfg) {   // horizontal bars around zero
+  const w = Wd(host), rowH = 22, lw = Math.min(150, w * 0.36), m = { l: lw, r: 64, t: 4, b: 26 }, h = m.t + m.b + cfg.rows.length * rowH, iw = w - m.l - m.r;
+  const vals = cfg.rows.map(r => r.v).filter(v => v != null), lo = Math.min(0, ...vals, cfg.min ?? 0), hi = Math.max(0, ...vals, cfg.max ?? 0) || 1, X = v => m.l + (v - lo) / (hi - lo) * iw;
+  let g = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(cfg.aria)}">`;
+  g += ticks(lo, hi, 4).map(v => `<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${h - m.b}" stroke="${C.line}"/>` + tx(X(v), h - m.b + 14, cfg.fmt(v), { anchor: 'middle' })).join('');
+  g += `<line x1="${X(0)}" x2="${X(0)}" y1="${m.t}" y2="${h - m.b}" stroke="${C.fg3}"/>`;
+  cfg.rows.forEach((r, i) => { const yc = m.t + i * rowH + rowH / 2; g += tx(m.l - 8, yc + 4, r.label, { anchor: 'end', color: C.fg });
+    if (r.v == null) { g += tx(X(0) + 6, yc + 4, r.note, { color: C.fg3 }); return; }
+    const a = X(0), b = X(r.v); g += `<rect x="${Math.min(a, b)}" y="${yc - 6}" width="${Math.max(1, Math.abs(b - a))}" height="12" fill="${r.color}"/>` + tx(Math.max(a, b) + 6, yc + 4, r.text); });
+  host.innerHTML = g + `</svg><p class="sr-only">${esc(cfg.aria)}</p>`;
 }
 
-/* Horizontal bars around a zero line (positive right, negative left), labelled directly. */
-function hBars(host, cfg) {
-  const w = W(host), rowH = cfg.rowH || 30, lw = Math.min(cfg.labelW || 150, w * 0.38), m = { l: lw, r: 70, t: cfg.top || 8, b: 30 }, h = m.t + m.b + cfg.rows.length * rowH, iw = w - m.l - m.r;
-  const vals = cfg.rows.flatMap(r => (r.value == null ? [] : [r.value, r.base ?? 0])), lo = Math.min(0, ...vals, cfg.min ?? 0), hi = Math.max(0, ...vals, cfg.max ?? 0) || 1;
-  const X = v => m.l + (v - lo) / (hi - lo) * iw;
-  let g = svgOpen(w, h, cfg.aria);
-  g += ticks(lo, hi, w < 480 ? 3 : 5).map(v => `<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${h - m.b}" stroke="${C.line}"/>` + txt(X(v), h - m.b + 16, cfg.fmtAxis ? cfg.fmtAxis(v) : int(v), { anchor: 'middle', size: 11.5 })).join('');
-  g += `<line x1="${X(0)}" x2="${X(0)}" y1="${m.t}" y2="${h - m.b}" stroke="${C['text-3']}"/>`;
-  if (cfg.axisLabel) g += txt(m.l + iw / 2, h - 2, cfg.axisLabel, { anchor: 'middle', size: 12 });
-  cfg.rows.forEach((r, i) => {
-    const yc = m.t + i * rowH + rowH / 2;
-    g += txt(m.l - 10, yc + 4, r.label, { anchor: 'end', color: C.text, size: 12.5 });
-    if (r.value == null) { g += txt(X(0) + 8, yc + 4, r.note || '', { color: r.color || C['text-2'], size: 12.5, weight: 500 }); return; }
-    const a = X(r.base ?? 0), b = X(r.value), x0 = Math.min(a, b), bw = Math.max(1.5, Math.abs(b - a)), bh = Math.min(16, rowH - 10);
-    g += `<rect x="${x0}" y="${yc - bh / 2}" width="${bw}" height="${bh}" rx="3" fill="${r.color}"><title>${esc(r.label)}: ${esc(r.text)}</title></rect>`;
-    const right = r.value >= (r.base ?? 0), tx = right ? b + 6 : (cfg.negLabelsRight ? X(0) + 6 : b - 6);
-    g += txt(tx, yc + 4, r.text, { anchor: right || cfg.negLabelsRight ? 'start' : 'end', color: r.textColor || C.text, size: 12.5, weight: 500 });
-  });
-  mount(host, g + '</svg>', cfg.summary);
+/* ================= STORM LOG ================= */
+function renderLog() {
+  const a = A();
+  $('logSub').textContent = a ? `${a.storms.length} storms · ${[...new Set(records.map(r => r.route))].join(', ')}` : 'No storms recorded';
+  if (!a) { $('logStats').innerHTML = ''; $('logTable').innerHTML = '<tbody><tr><td class="muted">No storms recorded. Add a storm, import a CSV on the Data page, or load the simulated season in Settings.</td></tr></tbody>'; return; }
+  const se = a.season, sgn = v => (v >= 0 ? '−' : '+');
+  $('logStats').innerHTML = [['Storms', se.storms], ['Salt spread', `${t1(se.applied)} t`], ['Chloride released', `${t1(se.chloride)} t`], ['Icy road time', `${se.icyNow.toFixed(1)} h`],
+    ['Saltback plan', `${t1(se.plan)} t (${sgn(se.reductionPct)}${Math.abs(se.reductionPct).toFixed(1)}%)`], ['Icy time with plan', `${se.icyPlan.toFixed(1)} h`]]
+    .map(([k, v]) => `<div><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+  const si = selIndex();
+  $('logTable').innerHTML = `<thead><tr><th>Date</th><th>Route</th><th class="n">Road °F</th><th class="n">Snow in</th><th class="n">Hours</th><th class="n">First truck</th><th class="n">lb/lane-mi</th><th class="n">Passes</th><th class="n">Salt lb</th><th class="n">Chloride lb</th><th class="n">Sensor at limit</th><th class="n">Icy</th><th>Status</th><th class="n">Next storm</th></tr></thead><tbody>${
+    a.storms.map((x, i) => { const r = x.record, s = x.settings;
+      return `<tr class="click${i === si ? ' sel' : ''}" data-i="${i}" tabindex="0"><td>${esc(dateTxt(r.date))}</td><td>${esc(r.route)}</td><td class="n">${s.pavement_temp_F}</td><td class="n">${s.snowfall_in}</td><td class="n">${s.storm_hours}</td>
+        <td class="n">${mins(s.first_pass_h)}</td><td class="n">${x.perPass}</td><td class="n">${x.passes}</td><td class="n">${int(x.applied)}</td><td class="n">${int(x.chloride)}</td><td class="n">${x.maxedH > 0.05 ? `${x.maxedH.toFixed(1)} h` : '—'}</td>
+        <td class="n${x.icy > 1 ? ' red' : ''}">${mins(x.icy)}</td><td>${st(x.status)}</td><td class="n">${x.next != null ? `${x.next} lb` : x.onTime ? 'start sooner' : '—'}</td></tr>`; }).join('')}</tbody>`;
 }
+$('logTable').addEventListener('click', e => { const tr = e.target.closest('tr[data-i]'); if (!tr) return; select(A().storms[+tr.dataset.i].record.id); location.hash = 'report'; });
+$('logTable').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.closest('tr[data-i]')?.click(); });
+$('addBtn').addEventListener('click', () => { $('addForm').hidden = !$('addForm').hidden; if (!$('f_date').value) $('f_date').value = stamp(); });
+$('cancelAdd').addEventListener('click', () => { $('addForm').hidden = true; });
+$('addForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = id => $(id).value.trim(), n = id => (v(id) === '' ? null : +v(id)), msg = $('addMsg');
+  if (!v('f_date')) { msg.textContent = 'Enter a date.'; msg.className = 'msg err'; return; }
+  const rec = { id: `m${Date.now()}`, source: 'manual', date: v('f_date'), route: v('f_route') || 'Route 1', lane_miles: n('f_lm') || 10, pavement_temp_F: n('f_temp'), snowfall_in: n('f_snow'),
+    storm_hours: n('f_hours'), salt_per_pass_lb: n('f_rate'), first_pass_h: (n('f_first') ?? 30) / 60, plow_every_h: n('f_every') || 2, temp_after_F: n('f_after'),
+    measured_drain_salt_lb: n('f_meas'), probe_maxed_h: n('f_maxed') };
+  if ([rec.pavement_temp_F, rec.snowfall_in, rec.storm_hours, rec.salt_per_pass_lb].some(z => z == null || Number.isNaN(z))) { msg.textContent = 'Fill in temperature, snowfall, hours and salt per pass.'; msg.className = 'msg err'; return; }
+  records.push(rec); records.sort((p, q) => String(p.date).localeCompare(String(q.date))); save(); select(rec.id);
+  $('addForm').hidden = true; msg.textContent = ''; toast(`Storm on ${esc(dateTxt(rec.date))} saved. <a href="#report">Open report</a>`); renderLog();
+});
 
-/* ================= OVERVIEW ================= */
-function headline(a) {
-  const se = a.season, p = se.reductionPct;
-  const salt = p >= 0.5 ? `used ${pct0(p)} less salt` : p <= -0.5 ? `used about the same salt (${pct0(p)} more)` : 'used about the same salt';
-  const icy = se.icyPlan < se.icyNow - 0.05 ? ` and cut icy-road time from ${hrs(se.icyNow)} to ${hrs(se.icyPlan)}` : ' with no extra icy-road time';
-  return `Saltback would have ${salt} this season${icy}.`;
+/* ================= STORM REPORT ================= */
+let runCache = {};
+function runFor(x) { const k = x.record.id; return runCache[k] || (runCache[k] = R.stormRun(x)); }
+function reportRows(x) {
+  const r = x.record, s = x.settings, wasted = x.status === 'over' ? x.applied - x.plan : 0;
+  const excess = x.status === 'over' ? `${Math.round(x.excessPct)}% (${int(wasted)} lb, ${money(usd(wasted))})` : x.status === 'ok' ? 'None' : x.status === 'under' ? 'None; under-salted' : '—';
+  const next = x.next != null ? `${x.next} lb per lane-mile${Math.round(x.nextChangePct || 0) ? ` (${x.nextChangePct > 0 ? '+' : '−'}${Math.abs(Math.round(x.nextChangePct))}%)` : ''}` : x.onTime ? `First truck within 30 min, then ${x.onTime.rate} lb per lane-mile` : x.status === 'too_cold' ? 'Sand or a stronger chemical' : 'Brine before the freeze, or a pass just before it';
+  const safety = x.status === 'cant_fix' || x.status === 'too_cold' ? `${mins(x.icy)} as salted; at least ${mins(x.bestIcy)} at any salt rate` : `${mins(x.icy)} as salted → ${mins(x.icyPlan)} with Saltback's rate${x.onTime ? ' and an on-time first truck' : ''}`;
+  return [['Status', st(x.status)], ['Salt spread', `${int(x.applied)} lb (${t1(x.applied)} t, ${money(usd(x.applied))}) · ${x.perPass} lb per lane-mile × ${x.passes} passes`],
+    ['Excess', excess], ['Runoff', `${int(x.chloride)} lb chloride released, ${x.chlorideVsTypical}; drain peak ${Math.round(x.peakX)}× the EPA short-term stream limit before dilution`],
+    ['Next storm', next], ['Icy road time', safety], ['Weather', `${s.snowfall_in} in snow over ${s.storm_hours} h · road ${s.pavement_temp_F}°F, ${s.temp_after_F}°F after`],
+    ['Trucks', `first after ${mins(s.first_pass_h)}, then every ${s.plow_every_h} h · ${s.route_lane_miles} lane-miles`],
+    ['Drain sensor', `${r.measured_drain_salt_lb != null ? `${int(r.measured_drain_salt_lb)} lb salt measured` : 'modeled'} · at limit ${x.maxedH.toFixed(1)} h`]];
 }
-function renderOverview() {
-  const a = ensureAnalysis();
-  if (!a) { $('ovHead').textContent = 'No storm records yet. Import a CSV on the Data page or load the example season.'; return; }
-  const se = a.season, lm = records[0]?.lane_miles || 10;
-  $('ovKicker').textContent = isExample() ? `Example season · Route 4 · ${se.storms} storms · ${lm} lane-miles · simulated` : `Your imported season · ${se.storms} storms`;
-  $('ovHead').textContent = headline(a);
-  const rng = U && isExample() ? `Likely range ${Math.round(U.summary.savingsP5)}–${Math.round(U.summary.savingsP95)}% less salt across ${U.summary.n} test seasons with uncertain inputs; no test season got icier. ` : '';
-  const chart = se.vsChartPct >= 0 ? `${pct0(se.vsChartPct)} less salt` : `${pct0(se.vsChartPct)} more salt`;
-  $('ovLede').innerHTML = `${rng}Compared with a crew following a published state ${term('rateCard', 'rate chart')}: ${chart}, and ${hrs(se.chartIcy)} → ${hrs(se.icyPlan)} of icy road. Next season's first step, with cuts limited to 25% per storm, uses ${pct0(se.stepPct)} ${se.stepPct >= 0 ? 'less' : 'more'} salt.`;
-  $('ovStats').innerHTML = [
-    ['Salt saved', `${tons(se.net)}<small> tons</small>`, `${pct0(se.reductionPct)} of the ${tons(se.applied)} tons spread`, se.net > 0],
-    ['Dollars saved', money(se.usd), `at $${settings.salt_price_per_ton} per ton of salt`, se.usd > 0],
-    ['Icy road time', `${hrs(se.icyNow)} → ${hrs(se.icyPlan)}`, 'season total, as salted → with Saltback', se.icyPlan < se.icyNow],
-    [`${term('chloride', 'Chloride')} kept out of streams`, `${tons(se.chlorideAvoided)}<small> tons</small>`, 'it never breaks down once it is in the water', se.chlorideAvoided > 0],
-  ].map(([l, v, s, good]) => `<div class="stat ${good ? 'good' : ''}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
-  drawWaterfall($('chWaterfall'), a);
-  $('ovTop3').innerHTML = a.recommendations.filter(r => r.impact.lb != null || r.impact.icyMin != null).slice(0, 3).map((r, i) => `<li><span class="num">${i + 1}</span><div><b>${esc(r.title)}</b><div class="note">${esc(r.why.split('. ')[0])}.</div></div><div class="imp">${impactShort(r)}</div></li>`).join('');
-  drawRunning($('chRunning'), a);
+function renderReport() {
+  const a = A(); if (!a) { $('repBody').innerHTML = '<p class="muted">No storms recorded.</p>'; return; }
+  const i = selIndex(), x = a.storms[i], r = x.record, run = runFor(x);
+  $('repPick').innerHTML = a.storms.map((y, k) => `<option value="${k}">${esc(dateTxt(y.record.date))} · ${esc(y.record.route)}</option>`).join(''); $('repPick').value = i;
+  $('prevBtn').disabled = i === 0; $('nextBtn').disabled = i === a.storms.length - 1;
+  $('repTitle').textContent = `Storm report · ${dateTxt(r.date)}`;
+  $('repSub').textContent = `${r.route} · ${x.settings.route_lane_miles} lane-miles · ${({ simulated: 'simulated data', manual: 'entered by hand', csv: 'imported', simulator: 'simulator run' })[r.source] || r.source}`;
+  $('repBody').innerHTML = `<p class="verdict">${esc(x.verdict)}</p>
+    <div class="cols"><div><table class="kv"><tbody>${reportRows(x).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</tbody></table>
+      ${x.advice.length ? `<section class="block"><h2>Actions</h2><ul class="plain">${x.advice.map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>` : ''}
+      <section class="block"><h2>Truck log</h2><table><thead><tr><th>Pass</th><th>Time</th><th class="n">lb per lane-mile</th><th class="n">Route lb</th></tr></thead><tbody>${
+        run.rows.filter(z => z.truck_pass).map((z, k) => `<tr><td>${k + 1}</td><td>T+${hm(z.hour)}</td><td class="n">${x.perPass}</td><td class="n">${int(x.perPass * x.settings.route_lane_miles)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No passes</td></tr>'}</tbody></table></section></div>
+    <div><section><h2 style="font-size:13px;margin-bottom:4px">Drain sensor log</h2><p class="note">Conductivity in mS/cm every 5 minutes. Dashed grey: true value. Dotted: sensor limit.</p><div class="plot" id="chSensor"></div></section>
+      <section class="block"><h2>Salt rate and icy time</h2><p class="note">Hours icy if this storm had been salted at each rate</p><div class="plot" id="chCurve"></div></section></div></div>`;
+  drawSensor($('chSensor'), run); drawCurve($('chCurve'), x);
 }
-function impactShort(r) {
-  const i = r.impact, parts = [];
-  if (i.lb != null && Math.abs(i.lb) >= 100) parts.push(i.lb > 0 ? `<span class="chip save">${tons(i.lb)} tons less salt</span>` : `<span class="chip risk">${tons(-i.lb)} tons more salt</span>`);
-  if (i.icyMin != null && Math.abs(i.icyMin) >= 5 && !i.icyLabel) parts.push(i.icyMin < 0 ? `<span class="chip save">${icyTxt(-i.icyMin / 60)} less icy road</span>` : `<span class="chip">${icyTxt(i.icyMin / 60)} more icy road</span>`);
-  return parts.join(' ') || '<span class="chip">Data quality</span>';
+function drawSensor(host, run) {
+  const rows = run.rows, lim = run.s.probe_max_mS_cm, top = Math.max(lim * 1.2, ...rows.map(z => (Number.isNaN(z.ec_true) ? 0 : z.ec_true))) * 1.05;
+  line(host, { aria: 'Drain sensor conductivity over the storm', h: 200, r: 60, x: { min: 0, max: rows[rows.length - 1].hour, label: 'hours since snow started' }, y: { min: 0, max: top, label: 'mS/cm' },
+    series: [{ name: 'reading', color: C.fg, pts: rows.map(z => [z.hour, z.reading_mS_cm]) }, { name: 'true', color: C.chart2, dash: true, pts: rows.map(z => [z.hour, z.ec_true]) }],
+    refs: [{ v: lim, color: C.fg3, label: `sensor limit ${lim}` }], tip: k => `T+${hm(rows[k].hour)} · ${Number.isNaN(rows[k].reading_mS_cm) ? 'no flow' : rows[k].reading_mS_cm.toFixed(1) + ' mS/cm'}`,
+    summary: `Sensor at its limit for ${run.summary.hours_probe_maxed.toFixed(1)} h` });
 }
-function drawWaterfall(host, a) {
-  const se = a.season, timing = se.timingCut - se.timingAdd;
-  const steps = [{ label: 'Salt the crew spread', v: se.applied, kind: 'total' }, { label: 'Lower rates where the crew over-salted', v: -se.rateCut, kind: 'step' },
-    { label: 'First truck out within 30 minutes', v: -timing, kind: 'step' }, { label: 'More salt where the road was under-salted', v: se.rateAdd, kind: 'step' }, { label: "Saltback's plan", v: se.plan, kind: 'total' }];
-  const biggest = [...steps.slice(1, 4)].sort((p, q) => Math.abs(q.v) - Math.abs(p.v))[0];
-  $('wfTitle').textContent = se.net <= 0 ? 'Saltback moves salt from mild storms to the ones that need it' : biggest.v < 0 ? `Most of the savings come from ${biggest.label.toLowerCase()}` : 'Saltback adds salt where roads were under-salted';
-  const w = W(host), h = 330, m = { l: 48, r: 12, t: 46, b: 70 }, iw = w - m.l - m.r, ih = h - m.t - m.b, n = steps.length, bw = Math.min(110, iw / n * 0.6);
-  const max = Math.max(se.applied, se.plan) * 1.08, Y = v => m.t + ih - v / max * ih, X = i => m.l + (i + 0.5) * iw / n;
-  let g = svgOpen(w, h, 'Waterfall chart of the season\'s salt, from what the crew spread to Saltback\'s plan');
-  g += ticks(0, max / 2000, 4).map(t => `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(t * 2000)}" y2="${Y(t * 2000)}" stroke="${C.line}"/>` + txt(m.l - 8, Y(t * 2000) + 4, `${t}`, { anchor: 'end', size: 11.5 })).join('');
-  g += `<text transform="translate(13 ${m.t + ih / 2}) rotate(-90)" ${F} font-size="12" fill="${C['text-2']}" text-anchor="middle">tons of salt</text>`;
-  let run = 0;
-  steps.forEach((s, i) => {
-    let y0, y1, col, label;
-    if (s.kind === 'total') { y0 = 0; y1 = s.v; run = s.v; col = i === 0 ? C.ink : C.brand; label = `${tons(s.v)} t · ${money(usd(s.v))}`; }
-    else { const before = run; run += s.v; y0 = Math.min(before, run); y1 = Math.max(before, run); col = s.v < 0 ? C.save : s.v > 0 ? C.risk : C.muted;
-      label = Math.abs(s.v) < 50 ? 'none needed' : `${s.v < 0 ? '−' : '+'}${tons(Math.abs(s.v))} t · ${s.v < 0 ? '−' : '+'}${money(usd(s.v))}`; }
-    const x = X(i) - bw / 2, top = Y(y1), hh = Math.max(2, Y(y0) - Y(y1));
-    g += `<rect x="${x}" y="${top}" width="${bw}" height="${hh}" rx="3" fill="${col}"><title>${esc(s.label)}: ${esc(label)}</title></rect>`;
-    g += txt(X(i), top - 8, label, { anchor: 'middle', color: s.kind === 'total' ? C.text : col, size: 12.5, weight: 600 });
-    if (i < n - 1) g += `<line x1="${x + bw}" x2="${X(i + 1) - bw / 2}" y1="${Y(run)}" y2="${Y(run)}" stroke="${C['text-3']}" stroke-dasharray="3 3"/>`;
-    const words = s.label.split(' '), lines = []; let cur = '';
-    words.forEach(wd => { if ((cur + ' ' + wd).trim().length > Math.max(12, Math.floor(iw / n / 7))) { lines.push(cur.trim()); cur = wd; } else cur += ' ' + wd; }); lines.push(cur.trim());
-    lines.slice(0, 4).forEach((ln, k) => { g += txt(X(i), h - m.b + 18 + k * 15, ln, { anchor: 'middle', size: 12, color: C.text }); });
-  });
-  mount(host, g + '</svg>', `The crew spread ${tons(se.applied)} tons. Lower rates where the crew over-salted save ${tons(se.rateCut)} tons; an on-time first truck saves ${tons(timing)} tons; under-salted storms need ${tons(se.rateAdd)} more tons. Saltback's plan uses ${tons(se.plan)} tons.`);
+function drawCurve(host, x) {
+  const sw = x.sweep, plan = x.status === 'late' ? null : x.planRate;
+  const marks = [{ x: x.perPass, y: x.icy, color: x.status === 'over' ? C.amber : x.status === 'ok' ? C.fg : C.red, label: `logged ${x.perPass}` }];
+  if (plan != null && plan !== x.perPass) marks.push({ x: plan, y: x.icyPlan, color: C.fg, label: `Saltback ${plan}`, dy: 22 });
+  line(host, { aria: 'Salt rate against icy hours', h: 200, r: 16, span: x.status === 'over' && plan != null ? [{ x0: plan, x1: x.perPass, label: 'no extra safety' }] : [],
+    x: { min: 0, max: S.MAX_LB, label: 'lb per lane-mile per pass' }, y: { min: 0, max: Math.max(1, ...sw.map(z => z.icy_hours)) * 1.15, label: 'hours icy', fmt: v => +v.toFixed(1) },
+    series: [{ name: '', color: C.fg, pts: sw.map(z => [z.salt_per_pass_lb, z.icy_hours]) }], marks, tip: k => `${sw[k].salt_per_pass_lb} lb · ${mins(sw[k].icy_hours)} icy` });
 }
-function drawRunning(host, a) {
-  let ca = 0, cp = 0; const pts = a.storms.map((x, i) => { ca += x.applied; cp += x.plan; return [i, ca / 2000, cp / 2000]; });
-  const gap = (ca - cp) / 2000;
-  $('rtTitle').textContent = gap > 0.05 ? `By the end of the season the gap is ${tons(ca - cp)} tons, about ${money(usd(ca - cp))}` : 'Saltback\'s plan uses about the same salt over the season';
-  const labels = a.storms.map(x => dateTxt(x.record.date));
-  lineChart(host, { aria: 'Running total of salt over the season', h: 260, right: 120,
-    x: { min: 0, max: Math.max(1, pts.length - 1), label: 'Storms in date order', ticks: pts.map(p => p[0]).filter((_, i, arr) => arr.length < 8 || i % 2 === 0), fmt: v => labels[v] || '' },
-    y: { min: 0, max: (ca / 2000) * 1.1, label: 'tons of salt, running total', fmt: v => int(v) },
-    series: [{ name: 'Crew', color: C.ink, pts: pts.map(p => [p[0], p[1]]) }, { name: "Saltback's plan", color: C.brand, pts: pts.map(p => [p[0], p[2]]) }],
-    tip: k => `<div>${esc(labels[k])}</div><div><span>Crew</span> ${tons(pts[k][1] * 2000)} t</div><div><span>Saltback</span> ${tons(pts[k][2] * 2000)} t</div>`,
-    summary: `Over ${pts.length} storms the crew spread ${tons(ca)} tons and Saltback's plan ${tons(cp)} tons.` });
-}
-
-/* ================= STORM REPORTS ================= */
-function pickOptions() {
-  const a = ensureAnalysis(), lib = ensureLibrary();
-  const season = a ? a.storms.map((x, i) => `<option value="season:${i}">${esc(dateTxt(x.record.date))}${x.record.source === 'simulator' ? '' : ` · ${x.settings.pavement_temp_F}°F, ${x.settings.snowfall_in} in`}</option>`).join('') : '';
-  const ex = lib.map(({ sc }) => `<option value="example:${sc.id}">${esc(sc.name)}</option>`).join('');
-  const mine = lastRun && lastRun.logName ? `<optgroup label="Your last run"><option value="run:last">${esc(lastRun.label)}</option></optgroup>` : '';
-  $('stormPick').innerHTML = `<optgroup label="${isExample() ? 'This season (example)' : 'This season'}">${season}</optgroup><optgroup label="Example storms">${ex}</optgroup>${mine}`;
-  if (![...$('stormPick').options].some(o => o.value === pick)) pick = 'season:0';
-  $('stormPick').value = pick;
-}
-function stormFor(key) {
-  const [kind, id] = key.split(':');
-  if (kind === 'season') { const a = ensureAnalysis(); const x = a && a.storms[+id]; if (!x) return null; return { x, s: x.settings, title: x.record.source === 'simulator' ? x.record.date : `${dateTxt(x.record.date)}${x.record.date.length === 10 ? `, ${x.record.date.slice(0, 4)}` : ''}`, route: x.record.route || 'Route 4' }; }
-  if (kind === 'example') { const it = ensureLibrary().find(l => l.sc.id === id); if (!it) return null; return { x: it.res.x, s: it.res.s, title: it.sc.name, route: 'Example route', desc: it.sc.desc }; }
-  if (kind === 'run' && lastRun) return { x: lastRun.x, s: lastRun.s, title: lastRun.label, route: 'Your run' };
-  return null;
-}
-function typicalText(x, s) {
-  const a = ensureAnalysis(); if (!a || !a.season.chlorideMedian) return '';
-  const perLm = x.chloride / s.route_lane_miles, med = a.season.chlorideMedian / (records[0]?.lane_miles || 10), q = perLm / med;
-  return q < 0.75 ? 'lower than usual for this route' : q > 1.33 ? 'higher than usual for this route' : 'typical for this route';
-}
-function reportHTML(st, forFile) {
-  const { x, s } = st, n = x.passes, statusChip = { over: '<span class="chip over">Over-salted</span>', ok: '<span class="chip save">About right</span>', under: '<span class="chip risk">Under-salted, icy</span>', late: '<span class="chip risk">Late first truck</span>', cant_fix: '<span class="chip">Salt alone couldn\'t fix it</span>', too_cold: '<span class="chip">Too cold for rock salt</span>' }[x.status];
-  const wasted = x.status === 'over' ? x.applied - x.plan : 0;
-  const excessA = x.status === 'over' ? `${Math.round(x.excessPct)}%` : x.status === 'ok' ? 'None' : x.status === 'under' ? 'Too little' : '—';
-  const excessD = x.status === 'over' ? `${int(wasted)} lb (${money(usd(wasted))}) bought no extra safety` : x.status === 'ok' ? 'The crew used about the right amount' : x.status === 'under' ? `${x.target} lb per lane-mile would have kept the road clearer` : x.status === 'late' ? 'The problem was timing, not the amount' : 'More salt would not have helped';
-  const nextA = x.status === 'over' || x.status === 'ok' || x.status === 'under' ? `${x.next} lb` : x.status === 'late' ? 'Start sooner' : 'Change the tool';
-  const nextD = x.status === 'over' ? `per lane-mile, ${pct0(x.nextChangePct)} less. Saltback will check the result.` : x.status === 'ok' ? 'per lane-mile, the same as this storm' : x.status === 'under' ? `per lane-mile, ${pct0(x.nextChangePct)} more` : x.status === 'late' ? `First truck within 30 minutes, then ${x.onTime.rate} lb per lane-mile` : x.status === 'too_cold' ? 'Sand or a stronger chemical below 15°F' : 'Brine before the freeze, or a pass just before it';
-  const safety = x.status === 'cant_fix' || x.status === 'too_cold'
-    ? `<div class="safety warn"><span class="chip">Safety</span><span>Icy time: ${icyTxt(x.icy)} as salted. Even ${S.MAX_LB} lb per lane-mile would have left about ${icyTxt(x.bestIcy)} of icy road.</span></div>`
-    : `<div class="safety"><span class="chip save">Safety check passed</span><span>Icy time: ${icyTxt(x.icy)} as salted → ${icyTxt(x.icyPlan)} with Saltback's rate${x.onTime ? ' and an on-time first truck' : ''}.</span></div>`;
-  const advice = x.advice.length ? `<div><h3 style="font-size:15px;margin-bottom:6px">What to do</h3><ul class="advice">${x.advice.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : '';
-  return `<div class="rh"><div><div class="t">Storm report · ${esc(st.route)} · ${s.route_lane_miles} lane-miles</div><h1 style="font-size:24px;margin-top:4px">${esc(st.title)}</h1>
-      <div class="t" style="margin-top:4px">${s.snowfall_in} in of snow over ${s.storm_hours} h · road ${s.pavement_temp_F}°F · first truck after ${icyTxt(s.first_pass_h)}</div></div><div>${statusChip}</div></div>
-    <h2 class="verdict">${esc(x.verdict)}</h2>
-    <div class="four">
-      <div><div class="q">Salt spread</div><div class="a">${tons(x.applied)} tons</div><div class="d">${int(x.applied)} lb: ${x.perPass} lb per lane-mile × ${n} passes · ${money(usd(x.applied))}</div></div>
-      <div><div class="q">How much was ${forFile ? 'excess' : term('excess', 'excess')}</div><div class="a">${excessA}</div><div class="d">${excessD}</div></div>
-      <div><div class="q">How salty the runoff was</div><div class="a">${int(x.chloride)} lb</div><div class="d">of ${forFile ? 'chloride' : term('chloride', 'chloride')} released, ${typicalText(x, s)}. Drain water peaked at ${Math.round(x.peakX)}× the stream limit before dilution.</div></div>
-      <div><div class="q">How much to use next time</div><div class="a">${nextA}</div><div class="d">${nextD}</div></div>
-    </div>
-    ${safety}
-    <figure style="margin:0"><h3 style="font-size:16px">${esc(curveTitle(x))}</h3><p class="note" style="margin:4px 0 8px">Hours of icy road if this storm had been salted at each rate, in pounds per lane-mile per pass</p><div class="plot" data-curve="1"></div></figure>
-    ${advice}
-    <p class="disclaimer">Simulated with typical published values, not real town records. Generated by Saltback.</p>`;
-}
-const curveTitle = x => (x.status === 'over' ? `Past ${x.planRate} lb, more salt bought no extra safety` : x.status === 'ok' ? 'The crew spread about the right amount' : x.status === 'under' ? 'A bit more salt would have cleared the road much sooner' : x.status === 'late' ? 'At the crew\'s timing, no amount of salt could catch up' : 'Even the most salt leaves hours of icy road');
-function drawCurve(host, st) {
-  const { x, s } = st, sw = x.sweep, used = x.perPass, plan = x.status === 'late' ? null : x.planRate;
-  const ymax = Math.max(1, ...sw.map(r => r.icy_hours)) * 1.15, shade = [];
-  if (x.status === 'over' && plan != null) shade.push({ x0: plan, x1: used, color: rgba(C.over, 0.14), label: 'Wasted: no extra safety', label2: `${int(x.applied - x.plan)} lb · ${money(usd(x.applied - x.plan))}`, labelColor: C.over });
-  const icyUsed = x.icy, marks = [{ x: used, y: icyUsed, color: x.status === 'over' ? C.over : x.status === 'ok' ? C.ink : C.risk, label: `Used ${used}`, dy: -12 }];
-  if (plan != null && plan !== used) marks.push({ x: plan, y: x.icyPlan, color: C.brand, label: `Recommended ${plan}`, dy: -32, anchor: 'start', dx: 4 });
-  lineChart(host, { aria: 'Salt per pass against hours of icy road', h: 260, right: 20, shade,
-    x: { min: 0, max: S.MAX_LB, label: 'Salt per pass (lb per lane-mile)' }, y: { min: 0, max: ymax, label: 'Hours of icy road', fmt: v => `${+v.toFixed(1)}` },
-    series: [{ name: 'Icy road', color: C.text, label: false, pts: sw.map(r => [r.salt_per_pass_lb, r.icy_hours]) }], marks,
-    tip: k => `<div>${sw[k].salt_per_pass_lb} lb per lane-mile</div><div><span>Icy</span> ${icyTxt(sw[k].icy_hours)}</div>`,
-    summary: `At ${used} lb per lane-mile the road was icy ${icyTxt(icyUsed)}.${plan != null ? ` Saltback's rate is ${plan} lb, with ${icyTxt(x.icyPlan)} icy.` : ''}` });
-}
-function renderStorms() {
-  pickOptions();
-  const st = stormFor(pick); if (!st) { $('report').innerHTML = '<p>Pick a storm.</p>'; return; }
-  $('report').innerHTML = reportHTML(st);
-  drawCurve($('report').querySelector('[data-curve]'), st);
-}
-$('stormPick').addEventListener('change', e => { pick = e.target.value; store.set('saltback.pick', pick); renderStorms(); });
-if (window.top === window) { $('printBtn').hidden = false; $('printBtn').addEventListener('click', () => { $('v-storms').classList.add('printing'); window.print(); $('v-storms').classList.remove('printing'); }); }
+$('repPick').addEventListener('change', e => { select(A().storms[+e.target.value].record.id); renderReport(); });
+$('prevBtn').addEventListener('click', () => { const a = A(), i = selIndex(); if (i > 0) { select(a.storms[i - 1].record.id); renderReport(); } });
+$('nextBtn').addEventListener('click', () => { const a = A(), i = selIndex(); if (i < a.storms.length - 1) { select(a.storms[i + 1].record.id); renderReport(); } });
+$('delBtn').addEventListener('click', () => {
+  const a = A(); if (!a) return; const x = a.storms[selIndex()], b = $('delBtn');
+  if (b.dataset.confirm !== x.record.id) { b.dataset.confirm = x.record.id; b.textContent = 'Click again to delete'; setTimeout(() => { b.textContent = 'Delete'; delete b.dataset.confirm; }, 3000); return; }
+  records = records.filter(r => r.id !== x.record.id); save(); delete b.dataset.confirm; b.textContent = 'Delete'; toast(`Deleted storm on ${esc(dateTxt(x.record.date))}`); location.hash = 'log';
+});
 async function downloadReport() {
-  const st = stormFor(pick) || stormFor('season:0'); if (!st) return;
-  const saved = { ...C }; Object.assign(C, LIGHT);
-  const box = document.createElement('div'); box.style.width = '880px'; box.style.position = 'absolute'; box.style.left = '-9999px'; document.body.appendChild(box);
-  box.innerHTML = reportHTML(st, true); drawCurve(box.querySelector('[data-curve]'), st);
-  const css = [...document.styleSheets[document.styleSheets.length - 1].cssRules || []].map(r => r.cssText).join('\n');
-  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Saltback storm report: ${esc(st.title)}</title>
-<style>${css}\n:root{color-scheme:light}body{background:#fff;padding:24px}.report{max-width:880px;margin:0 auto}.term{border:0}@media print{body{padding:0}}</style></head>
-<body><article class="report">${box.innerHTML}</article></body></html>`;
-  box.remove(); Object.assign(C, saved);
-  await saveFile(`saltback-storm-report-${st.title.replace(/[^\w]+/g, '-').toLowerCase()}.html`, html);
+  const a = A(); if (!a) return; const x = a.storms[selIndex()], run = runFor(x), saved = { ...C }; Object.assign(C, LIGHT);
+  const box = document.createElement('div'); box.style.cssText = 'position:absolute;left:-9999px;width:720px'; document.body.appendChild(box);
+  box.innerHTML = '<div class="plot"></div><div class="plot"></div>'; const [p1, p2] = box.querySelectorAll('.plot'); drawSensor(p1, run); drawCurve(p2, x);
+  const s1 = p1.querySelector('svg').outerHTML, s2 = p2.querySelector('svg').outerHTML; box.remove(); Object.assign(C, saved); readColors();
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Storm report ${esc(x.record.date)}</title><style>body{font:13px/1.45 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111;max-width:760px;margin:24px auto;padding:0 16px}
+h1{font-size:18px;margin:0 0 6px}td{padding:5px 10px 5px 0;border-bottom:1px solid #e4e4e4;vertical-align:top}td:first-child{color:#555;width:28%}table{border-collapse:collapse;width:100%}h2{font-size:13px;margin:20px 0 6px}
+.st::before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;background:#6b6b6b}.st.over::before{background:#8a5300}.st.ok::before{background:#1f6b40}.st.under::before,.st.late::before{background:#b42318}svg{width:100%;height:auto}</style></head><body>
+<h1>Storm report · ${esc(dateTxt(x.record.date))} · ${esc(x.record.route)}</h1><p>${esc(x.verdict)}</p><table>${reportRows(x).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table>
+${x.advice.length ? `<h2>Actions</h2><ul>${x.advice.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}<h2>Drain sensor log (mS/cm)</h2>${s1}<h2>Salt rate and icy time</h2>${s2}
+<p style="color:#6b6b6b;font-size:12px;margin-top:20px">Saltback · simulated data based on typical published values · ${new Date().toLocaleDateString('en-US')}</p></body></html>`;
+  await saveFile(`storm-report-${x.record.date}.html`, html);
 }
 
 /* ================= RECOMMENDATIONS ================= */
 function renderRecs() {
-  const a = ensureAnalysis(); if (!a) return;
-  const se = a.season;
-  $('recLede').textContent = `Ranked: safety first, then by salt saved. Each one says what to do, why, what it changes, and how sure we are. Next season's first step limits cuts to 25% per storm and uses ${pct0(se.stepPct)} ${se.stepPct >= 0 ? 'less' : 'more'} salt; later seasons can reach the full ${pct0(se.reductionPct)} once the sensor data confirms each step.`;
-  const order = [...a.storms].sort((p, q) => p.settings.pavement_temp_F - q.settings.pavement_temp_F);
-  const cuts = a.storms.filter(x => x.plan < x.applied - 1).length;
-  $('chgTitle').textContent = `${cuts} of ${a.storms.length} storms needed less salt; the coldest needed a different tool`;
-  hBars($('chChange'), { aria: 'Recommended change in salt per storm', labelW: 150, rowH: 28, negLabelsRight: true, axisLabel: 'change in salt for the storm (%)', fmtAxis: v => `${v > 0 ? '+' : ''}${Math.round(v)}%`, min: -100, max: 40,
-    rows: order.map(x => { const ch = 100 * (x.plan - x.applied) / x.applied, fixed = x.status === 'cant_fix' || x.status === 'too_cold';
-      return { label: `${dateTxt(x.record.date)} · ${x.settings.pavement_temp_F}°F`, value: fixed ? null : ch, note: x.status === 'too_cold' ? 'too cold: sand or chemical' : "salt can't fix it", color: fixed ? C.muted : ch < -0.5 ? C.save : ch > 0.5 ? C.risk : C.muted,
-        text: Math.abs(ch) < 0.5 ? 'no change' : `${ch > 0 ? '+' : '−'}${pct0(ch)}${x.onTime ? ' · on-time truck' : ''}` }; }),
-    summary: order.map(x => `${x.record.date}: ${R.STATUS[x.status]}`).join('; ') });
-  drawDumbbell($('chDumbbell'), a);
-  const lvl = { high: 'save', medium: 'over', low: 'risk' };
-  $('recList').innerHTML = a.recommendations.map((r, i) => {
-    const imp = [], im = r.impact;
-    if (im.lb != null) imp.push(im.lbLabel ? `<span><b>${tons(Math.abs(im.lb))} tons</b> ${esc(im.lbLabel)}</span>` : im.lb >= 0 ? `<span><b>${tons(im.lb)} tons</b> less salt · <b>${money(im.usd)}</b> saved</span>` : `<span><b>${tons(-im.lb)} tons</b> more salt · ${money(-im.usd)}</span>`);
-    if (im.icyMin != null && Math.abs(im.icyMin) >= 1) imp.push(im.icyLabel ? `<span><b>${icyTxt(im.icyMin / 60)}</b> ${esc(im.icyLabel)}</span>` : im.icyMin < 0 ? `<span><b>${icyTxt(-im.icyMin / 60)}</b> less icy road</span>` : `<span><b>${icyTxt(im.icyMin / 60)}</b> more icy road (within the 6-minute limit per storm)</span>`);
-    else if (im.icyMin != null) imp.push('<span>No change in icy time</span>');
-    if (im.chlorideLb != null) imp.push(`<span><b>${tons(im.chlorideLb)} tons</b> less chloride with Saltback's plan</span>`);
-    const links = r.storms.length ? `<div class="storm-links">Storms: ${r.storms.map(k => `<a href="#storms" data-storm="season:${k}">${esc(dateTxt(a.storms[k].record.date))}</a>`).join(' · ')}</div>` : '';
-    return `<div class="card rec"><div><span class="rank">${i + 1} · ${esc(r.type)}</span><h3>${esc(r.title)}</h3><p class="why">${esc(r.why)}</p>
-      <div class="impact">${imp.join('')}</div><div class="impact"><span class="chip ${lvl[r.confidence]}">How sure: ${r.confidence}</span><span class="note">${esc(r.confidenceWhy)}</span></div>${links}</div>
-      <figure style="margin:0"><div class="plot" data-rec="${esc(r.id)}"></div></figure></div>`; }).join('');
-  a.recommendations.forEach(r => drawRecChart($('recList').querySelector(`[data-rec="${CSS.escape(r.id)}"]`), r, a));
+  const a = A(); if (!a) { $('recTable').innerHTML = '<tbody><tr><td class="muted">No storms recorded.</td></tr></tbody>'; $('leverTable').innerHTML = ''; $('chChange').innerHTML = ''; return; }
+  const se = a.season, sg = v => (v >= 0 ? '−' : '+');
+  $('recSub').textContent = `${se.storms} storms · plan ${t1(se.plan)} t vs ${t1(se.applied)} t spread (${sg(se.reductionPct)}${Math.abs(se.reductionPct).toFixed(1)}%) · icy ${se.icyNow.toFixed(1)} → ${se.icyPlan.toFixed(1)} h · first step with 25% cap: ${sg(se.stepPct)}${Math.abs(se.stepPct).toFixed(1)}%`;
+  const imp = r => { const i = r.impact, out = [];
+    if (i.lb != null) out.push(i.lbLabel ? `${t1(Math.abs(i.lb))} t ${i.lbLabel}` : i.lb >= 0 ? `−${t1(i.lb)} t salt, ${money(i.usd)}` : `+${t1(-i.lb)} t salt`);
+    if (i.icyMin != null && Math.abs(i.icyMin) >= 1) out.push(i.icyLabel ? `${mins(i.icyMin / 60)} icy, not preventable with salt` : i.icyMin < 0 ? `−${mins(-i.icyMin / 60)} icy` : `+${mins(i.icyMin / 60)} icy`);
+    if (i.chlorideLb != null) out.push(`−${t1(i.chlorideLb)} t chloride`);
+    return out.join('<br>') || '—'; };
+  $('recTable').innerHTML = `<thead><tr><th class="n">#</th><th>Type</th><th>Action</th><th class="n">Impact</th><th>Confidence</th><th>Storms</th></tr></thead><tbody>${
+    a.recommendations.map((r, i) => `<tr><td class="n">${i + 1}</td><td>${esc(r.type)}</td><td><b>${esc(r.title)}</b><div class="note">${esc(r.why)}</div></td><td class="n">${imp(r)}</td>
+      <td>${esc(r.confidence)}<div class="note">${esc(r.confidenceWhy)}</div></td><td>${r.storms.map(k => `<a href="#report" data-sel="${esc(a.storms[k].record.id)}">${esc(shortDate(a.storms[k].record.date))}</a>`).join(', ') || '—'}</td></tr>`).join('')}</tbody>`;
+  const tm = se.timingCut - se.timingAdd, sgnv = (v, i) => (i && i < 4 ? (v > 0 ? '+' : v < 0 ? '−' : '') : '');
+  $('leverTable').innerHTML = `<thead><tr><th>Step</th><th class="n">Salt t</th><th class="n">Cost</th></tr></thead><tbody>${[['Salt spread', se.applied], ['Lower rates where over-salted', -se.rateCut], ['First truck within 30 min', -tm], ['More salt where under-salted', se.rateAdd], ["Saltback's plan", se.plan]]
+    .map(([k, v], i) => `<tr><td>${k}</td><td class="n">${sgnv(v, i)}${t1(Math.abs(v))}</td><td class="n">${sgnv(v, i)}${money(usd(v))}</td></tr>`).join('')}</tbody>`;
+  const ord = [...a.storms].sort((p, q) => p.settings.pavement_temp_F - q.settings.pavement_temp_F);
+  bars($('chChange'), { aria: 'Change in salt per storm', fmt: v => `${v > 0 ? '+' : ''}${Math.round(v)}%`, min: -100, max: 30,
+    rows: ord.map(x => { const fixed = x.status === 'cant_fix' || x.status === 'too_cold', ch = 100 * (x.plan - x.applied) / x.applied;
+      return { label: `${shortDate(x.record.date)} · ${x.settings.pavement_temp_F}°F`, v: fixed ? null : ch, note: STATUS[x.status], color: ch > 0 ? C.red : C.fg, text: `${ch > 0 ? '+' : ''}${Math.round(ch)}%` }; }) });
 }
-function drawDumbbell(host, a) {
-  const st = [...a.storms].sort((p, q) => p.settings.pavement_temp_F - q.settings.pavement_temp_F);
-  const better = st.filter(x => x.icyPlan < x.icy - 0.05).length, worse = st.filter(x => x.icyPlan > x.icy + 0.05).length;
-  $('dbTitle').textContent = worse ? `Icy time drops in ${better} storms and rises by at most ${Math.round(a.season.worstSafetyMin)} minutes in ${worse}` : `No storm gets icier; ${better} get much safer`;
-  const w = W(host), rowH = 28, lw = Math.min(150, w * 0.36), m = { l: lw, r: 80, t: 26, b: 34 }, h = m.t + m.b + st.length * rowH, iw = w - m.l - m.r;
-  const maxM = Math.max(60, ...st.map(x => Math.max(x.icy, x.icyPlan) * 60)), X = v => m.l + Math.sqrt(Math.max(0, v) / maxM) * iw;
-  let g = svgOpen(w, h, 'Icy minutes per storm as salted and with Saltback\'s plan');
-  [0, 15, 60, 240, 480, 960].filter(v => v <= maxM).forEach(v => { g += `<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${h - m.b}" stroke="${C.line}"/>` + txt(X(v), h - m.b + 16, v < 60 ? `${v} min` : `${v / 60} h`, { anchor: 'middle', size: 11.5 }); });
-  g += txt(m.l + iw / 2, h - 2, 'icy road time (square-root scale)', { anchor: 'middle', size: 12 });
-  g += `<circle cx="${m.l + 4}" cy="10" r="5" fill="${C.ink}"/>` + txt(m.l + 14, 14, 'As salted', { size: 12.5, color: C.text }) + `<circle cx="${m.l + 104}" cy="10" r="5" fill="${C.brand}"/>` + txt(m.l + 114, 14, "Saltback's plan", { size: 12.5, color: C.text });
-  st.forEach((x, i) => { const y = m.t + i * rowH + rowH / 2, a1 = X(x.icy * 60), b1 = X(x.icyPlan * 60), col = x.icyPlan < x.icy - 0.05 ? C.save : x.icyPlan > x.icy + 0.05 ? C.risk : C.muted;
-    g += txt(m.l - 10, y + 4, `${dateTxt(x.record.date)} · ${x.settings.pavement_temp_F}°F`, { anchor: 'end', size: 12.5, color: C.text });
-    g += `<line x1="${a1}" x2="${b1}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="3"/><circle cx="${a1}" cy="${y}" r="5.5" fill="${C.ink}"><title>As salted: ${icyTxt(x.icy)}</title></circle><circle cx="${b1}" cy="${y}" r="5.5" fill="${C.brand}"><title>Saltback: ${icyTxt(x.icyPlan)}</title></circle>`;
-    g += txt(Math.max(a1, b1) + 10, y + 4, Math.abs(x.icy - x.icyPlan) < 0.05 ? icyTxt(x.icy) : `${icyTxt(x.icy)} → ${icyTxt(x.icyPlan)}`, { size: 12, color: C['text-2'] }); });
-  mount(host, g + '</svg>', st.map(x => `${x.record.date}: ${icyTxt(x.icy)} as salted, ${icyTxt(x.icyPlan)} with Saltback`).join('; '));
-}
-let lateCache = null;
-function drawRecChart(host, r, a) {
-  if (!host) return;
-  const st = r.storms.map(k => a.storms[k]);
-  if (r.type === 'Rate') {
-    hBars(host, { aria: 'Crew rate against Saltback rate for these storms', labelW: 110, rowH: 26, axisLabel: 'lb per lane-mile per pass',
-      rows: st.flatMap(x => [{ label: `${dateTxt(x.record.date)} crew`, value: x.perPass, color: C.over, text: `${x.perPass} lb` }, { label: 'Saltback', value: x.planRate, color: C.brand, text: `${x.planRate} lb` }]),
-      summary: st.map(x => `${x.record.date}: crew ${x.perPass}, Saltback ${x.planRate} lb`).join('; ') });
-  } else if (r.type === 'Timing') {
-    if (!lateCache) { const base = { ...S.SETTINGS, scatter_loss: a.calibration.scatter }; lateCache = E.lateTruckCurve(base); }
-    const pts = lateCache, ok = pts.filter(p => !p.cantFix), slope = ok.length > 1 ? (ok[ok.length - 1].needed - ok[0].needed) / ((ok[ok.length - 1].minutes - ok[0].minutes) / 30) : 0;
-    lineChart(host, { aria: 'Salt needed per pass depending on when the first truck arrives', h: 220, right: 16,
-      x: { min: 0, max: 120, label: 'First truck arrives after (minutes)', ticks: [0, 30, 60, 90, 120] }, y: { min: 0, max: Math.max(...pts.map(p => p.needed)) * 1.25, label: 'salt needed (lb per lane-mile)' },
-      series: [{ name: 'Needed', color: C.brand, label: false, pts: pts.map(p => [p.minutes, p.needed]) }, { name: 'points', dots: true, label: false, color: C.brand, fill: C.brand, r: 4, pts: pts.map(p => [p.minutes, p.needed]) }],
-      notes: [{ text: `Each 30 minutes late costs about ${Math.round(slope)} lb per lane-mile`, x: 4, y: Math.max(...pts.map(p => p.needed)) * 1.18 }, ...pts.filter(p => p.cantFix).slice(0, 1).map(p => ({ text: "from here, salt can't catch up", x: p.minutes + 4, y: p.needed * 0.55, anchor: 'start', color: C.risk }))],
-      summary: pts.map(p => `${p.minutes} min: ${p.needed} lb`).join('; ') + ' (overnight snow, 22°F)' });
-  } else if (r.id === 'cantfix') {
-    hBars(host, { aria: 'Icy time in storms salt could not fix', labelW: 110, rowH: 28, axisLabel: 'hours of icy road', fmtAxis: v => `${v} h`,
-      rows: st.map(x => ({ label: `${dateTxt(x.record.date)} · ${x.settings.pavement_temp_F}°F`, value: x.icy, color: C.muted, text: icyTxt(x.icy) })), summary: st.map(x => `${x.record.date}: ${icyTxt(x.icy)}`).join('; ') });
-  } else if (r.id === 'prewet') {
-    hBars(host, { aria: 'Share of salt landing on the shoulder', labelW: 140, rowH: 34, axisLabel: '% of salt landing off the road', fmtAxis: v => `${v}%`, max: 40,
-      rows: [{ label: 'Model assumed', value: S.SETTINGS.scatter_loss * 100, color: C.muted, text: `${Math.round(S.SETTINGS.scatter_loss * 100)}%` }, { label: 'Drain data shows', value: a.calibration.scatter * 100, color: C.over, text: `${Math.round(a.calibration.scatter * 100)}%` }],
-      summary: `Assumed ${Math.round(S.SETTINGS.scatter_loss * 100)}%, measured about ${Math.round(a.calibration.scatter * 100)}%` });
-  } else if (r.id === 'sensor') {
-    hBars(host, { aria: 'Hours the drain sensor was at its limit', labelW: 110, rowH: 26, axisLabel: 'hours at the sensor limit', fmtAxis: v => `${v} h`,
-      rows: st.map(x => ({ label: dateTxt(x.record.date), value: x.maxedH, color: C.water, text: `${x.maxedH.toFixed(1)} h` })), summary: st.map(x => `${x.record.date}: ${x.maxedH.toFixed(1)} h`).join('; ') });
-  } else if (r.id === 'permit') {
-    drawChloride(host, a);
-  } else if (r.type === 'Safety') {
-    hBars(host, { aria: 'Icy time before and after for under-salted storms', labelW: 110, rowH: 26, axisLabel: 'hours of icy road', fmtAxis: v => `${v} h`,
-      rows: st.flatMap(x => [{ label: `${dateTxt(x.record.date)} now`, value: x.icy, color: C.risk, text: icyTxt(x.icy) }, { label: 'Saltback', value: x.icyPlan, color: C.brand, text: icyTxt(x.icyPlan) }]), summary: '' });
-  } else host.innerHTML = '';
-}
-function drawChloride(host, a) {
-  const st = a.storms, med = a.season.chlorideMedian, total = st.reduce((s, x) => s + x.chloride, 0);
-  const gallons = total * 453592 / 230 / 3.785;
-  const w = W(host), h = 230, m = { l: 52, r: 70, t: 10, b: 56 }, iw = w - m.l - m.r, ih = h - m.t - m.b, n = st.length, bw = Math.min(26, iw / n * 0.6);
-  const max = Math.max(...st.map(x => x.chloride)) * 1.15, Y = v => m.t + ih - v / max * ih, X = i => m.l + (i + 0.5) * iw / n;
-  let g = svgOpen(w, h, 'Pounds of chloride released per storm with the season median');
-  g += ticks(0, max, 4).map(v => `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.line}"/>` + txt(m.l - 8, Y(v) + 4, int(v), { anchor: 'end', size: 11.5 })).join('');
-  g += `<text transform="translate(13 ${m.t + ih / 2}) rotate(-90)" ${F} font-size="12" fill="${C['text-2']}" text-anchor="middle">lb of chloride</text>`;
-  st.forEach((x, i) => { g += `<rect x="${X(i) - bw / 2}" y="${Y(x.chloride)}" width="${bw}" height="${Y(0) - Y(x.chloride)}" rx="2" fill="${C.water}"><title>${esc(x.record.date)}: ${int(x.chloride)} lb (${x.chlorideVsTypical})</title></rect>`;
-    if (n <= 14 && w > 420) g += `<text transform="translate(${X(i) + 4} ${h - m.b + 10}) rotate(-45)" ${F} font-size="11" fill="${C['text-2']}" text-anchor="end">${esc(dateTxt(x.record.date))}</text>`; });
-  g += `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(med)}" y2="${Y(med)}" stroke="${C.text}" stroke-dasharray="5 4"/>` + txt(w - m.r + 6, Y(med) + 4, 'median', { size: 12, color: C.text, weight: 500 });
-  mount(host, g + '</svg>', `Chloride per storm; median ${int(med)} lb. Season total ${int(total)} lb, enough to push about ${Math.round(gallons / 1e6)} million gallons past 230 mg/L.`);
-  host.insertAdjacentHTML('afterbegin', `<p class="note" style="margin-bottom:8px" title="${int(total)} lb × 453,592 mg per lb ÷ 230 mg per liter ÷ 3.785 liters per gallon">This season's ${tons(total)} tons of chloride could push about <b>${Math.round(gallons / 1e6)} million gallons</b> of water past the EPA long-term stream limit (230 mg/L). Hover for the formula.</p>`);
-}
+document.addEventListener('click', e => { const l = e.target.closest('[data-sel]'); if (l) select(l.dataset.sel); });
 
 /* ================= RATE CARD ================= */
 function renderRateCard() {
-  const a = ensureAnalysis(); if (!a) return;
-  const rc = a.rateCard, flagTxt = { below: 'below state range', above: 'above state range', within: 'within state range' };
-  $('rcCard').innerHTML = `<div class="card-h"><div><h2>${isExample() ? 'Route 4' : 'Your route'}: salt per pass, lb per ${term('laneMile', 'lane-mile')}</h2><p class="sub">For an 8-hour storm with the first truck out within 30 minutes. Calibrated to this route's drain data.</p></div><button class="btn sm no-print" type="button" data-act="png">Save as image</button></div>
-    <div class="tbl-wrap"><table class="ratecard"><thead><tr><th>Road temperature</th>${rc.snow.map(s => `<th>${s.label} snow · ${s.inches} in</th>`).join('')}<th>State charts (approx.)</th><th>Crew average</th></tr></thead><tbody>${
-    rc.rows.map(r => `<tr><td><b>${r.band.label}</b>${r.band.note ? `<span class="f" style="display:block;font-size:12.5px;color:var(--text-2)">${esc(r.band.note)}</span>` : ''}</td>${r.cells.map(c => c.lb == null ? '<td class="alt">Sand or a stronger chemical</td>' : `<td><span class="v">${c.lb}</span><span class="f ${c.flag === 'above' || c.flag === 'below' ? 'over' : ''}">${flagTxt[c.flag] || ''}</span></td>`).join('')}
-      <td>${r.band.pub ? `${r.band.pub[0]}–${r.band.pub[1]}` : 'no dry salt'}</td><td>${r.habit == null ? '—' : Math.round(r.habit)}</td></tr>`).join('')}</tbody></table></div>
-    <p class="note" style="margin-top:12px">Cells outside the published range are flagged, not hidden. Where Saltback is below the state range, cut in steps of 25% per storm and let the drain data confirm each step. ${esc(rc.source)}</p>`;
-  const over = a.storms.filter(x => x.status === 'over').length, under = a.storms.filter(x => x.status === 'too_cold' || x.status === 'under').length;
-  $('rcTitle').textContent = `The crew salts mild days like cold ones${under ? ', and the coldest days need a different tool' : ''}`;
-  const lines = rc.snow.map((sn, k) => ({ name: `${sn.label} snow`, color: C.brand, w: k === 1 ? 3 : 1.5, dash: k !== 1, labelColor: C.brand, pts: rc.rows.filter(r => r.cells[k].lb != null).map(r => [r.band.mid, r.cells[k].lb]).sort((p, q) => p[0] - q[0]) }));
-  const crew = a.storms.filter(x => x.settings.pavement_temp_F < 33);
-  const dots = [['over', C.over, 'Crew, over-salted'], ['risk', C.risk, 'Crew, under-salted or too cold'], ['ok', C.ink, 'Crew, about right or late truck']].map(([k, col, name]) => ({ name, dots: true, color: col, fill: col, r: 5, label: false,
-    pts: crew.filter(x => (k === 'over' ? x.status === 'over' : k === 'risk' ? (x.status === 'under' || x.status === 'too_cold') : !['over', 'under', 'too_cold'].includes(x.status))).map(x => [x.settings.pavement_temp_F, x.perPass]) }));
-  lineChart($('chRate'), { aria: 'Saltback rate by road temperature with crew rates and the published range', h: 340, right: 120,
-    bands: rc.rows.filter(r => r.band.pub).map(r => ({ x0: Math.max(5, r.band.lo), x1: Math.min(33, r.band.hi), y0: r.band.pub[0], y1: r.band.pub[1], color: rgba(C.text, 0.07) })),
-    shade: [{ x0: 5, x1: 15, color: rgba(C.text, 0.035), label: 'Below 15°F: sand or chemical' }],
-    x: { min: 5, max: 33, label: 'Road surface temperature (°F), colder on the left', fmt: v => `${v}°` }, y: { min: 0, max: 620, label: 'lb per lane-mile per pass' },
-    series: [lines[1], lines[0], lines[2], ...dots], refs: [],
-    notes: [{ text: 'Grey boxes: state chart range', x: 16, y: 600, color: C['text-2'], weight: 400 }, ...(over ? [{ text: `Amber dots: ${over} over-salted storms`, x: 16, y: 565, color: C.over }] : []), ...(under ? [{ text: 'Red dots: too cold for rock salt', x: 16, y: 530, color: C.risk }] : [])],
-    summary: rc.rows.map(r => `${r.band.label}: ${r.cells.map(c => c.lb ?? 'alternative').join(' / ')} lb`).join('; ') });
+  const a = A(); if (!a) { $('rcTable').innerHTML = '<tbody><tr><td class="muted">No storms recorded.</td></tr></tbody>'; $('chRate').innerHTML = ''; return; }
+  const rc = a.rateCard, f = { below: 'below state range', above: 'above state range', within: '' };
+  $('rcTable').innerHTML = `<thead><tr><th>Road temperature</th>${rc.snow.map(s => `<th class="n">${s.label} snow (${s.inches} in)</th>`).join('')}<th class="n">State range</th><th class="n">Logged average</th></tr></thead><tbody>${
+    rc.rows.map(r => `<tr><td>${r.band.label}</td>${r.cells.map(c => `<td class="n">${c.lb == null ? 'sand / chemical' : `<b>${c.lb}</b>${f[c.flag] ? `<div class="note">${f[c.flag]}</div>` : ''}`}</td>`).join('')}<td class="n">${r.band.pub ? `${r.band.pub[0]}–${r.band.pub[1]}` : 'no dry salt'}</td><td class="n">${r.habit == null ? '—' : Math.round(r.habit)}</td></tr>`).join('')}</tbody>`;
+  $('rcNote').textContent = `Cells outside the published range are flagged. Where Saltback is below the state range, reduce in steps of at most 25% per storm. ${rc.source}`;
+  const col = x => (x.status === 'over' ? C.amber : x.status === 'under' || x.status === 'too_cold' || x.status === 'late' ? C.red : C.fg);
+  line($('chRate'), { aria: 'Rate by road temperature', h: 280, r: 70, boxes: rc.rows.filter(r => r.band.pub).map(r => ({ x0: Math.max(5, r.band.lo), x1: Math.min(33, r.band.hi), y0: r.band.pub[0], y1: r.band.pub[1] })),
+    x: { min: 5, max: 33, label: 'road temperature °F', fmt: v => `${v}°` }, y: { min: 0, max: 620, label: 'lb per lane-mile' },
+    series: [1, 0, 2].map(k => ({ name: rc.snow[k].label.toLowerCase(), color: C.fg, w: k === 1 ? 2 : 1, dash: k !== 1, pts: rc.rows.filter(r => r.cells[k].lb != null).map(r => [r.band.mid, r.cells[k].lb]).sort((p, q) => p[0] - q[0]) }))
+      .concat([{ dots: true, pts: a.storms.filter(x => x.settings.pavement_temp_F < 33).map(x => [x.settings.pavement_temp_F, x.perPass, col(x), `${x.record.date}: ${x.perPass} lb, ${STATUS[x.status]}`]) }]),
+    summary: rc.rows.map(r => `${r.band.label}: ${r.cells.map(c => c.lb ?? 'alternative').join('/')}`).join('; ') });
 }
 
-/* ================= TRY A STORM ================= */
-const MAIN_CTL = [['pavement_temp_F', 'Road temperature', -5, 34, 1, v => `${v}°F`], ['snowfall_in', 'Snowfall', 0, 18, 0.5, v => `${v} in`],
-  ['storm_hours', 'Storm length', 4, 24, 1, v => `${v} h`], ['salt_per_pass_lb', 'Salt per pass', 0, 500, 10, v => `${v} lb per lane-mile`], ['first_pass_h', 'First truck arrives after', 0, 3, 0.25, v => icyTxt(v)]];
-const ADV_CTL = [['temp_after_F', 'Road temperature after the storm', 10, 50, 1, v => `${v}°F`], ['plow_every_h', 'Truck returns every', 1, 4, 0.5, v => `${v} h`],
-  ['route_lane_miles', 'Route size', 1, 50, 1, v => `${v} lane-miles`], ['scatter_loss', 'Salt bouncing off the road', 0, 0.4, 0.05, v => `${Math.round(v * 100)}%`],
-  ['drain_per_h', 'Brine running off, per hour', 0.1, 0.8, 0.05, v => `${Math.round(v * 100)}%`], ['traffic_loss_per_h', 'Brine thrown off by tires, per hour', 0.02, 0.15, 0.01, v => `${Math.round(v * 100)}%`],
-  ['bond_per_h', 'Snow packed into ice by traffic, per hour', 0.2, 1, 0.05, v => `${Math.round(v * 100)}%`], ['brine_film_mm', 'Brine needed to stop snow sticking', 0.02, 0.06, 0.005, v => `${v.toFixed(3)} mm`],
-  ['unsalted_share', 'Drain water from unsalted ground', 0, 0.7, 0.05, v => `${Math.round(v * 100)}%`], ['water_temp_C', 'Runoff temperature at the sensor', 0, 5, 0.5, v => `${v}°C`],
-  ['salt_price_per_ton', 'Salt price', 60, 130, 5, v => `$${v} per ton`]];
-const ctlHTML = ([k, l, mn, mx, st]) => `<div class="ctl"><label for="c_${k}">${l}</label><output id="o_${k}" for="c_${k}"></output><input type="range" id="c_${k}" min="${mn}" max="${mx}" step="${st}"></div>`;
-$('mainCtl').innerHTML = MAIN_CTL.map(ctlHTML).join('');
-$('advCtl').innerHTML = ADV_CTL.map(ctlHTML).join('') + `<label class="opt"><input type="checkbox" id="hiProbe">High-range drain sensor (reads 10× higher)</label><label class="opt"><input type="checkbox" id="tprobe">Correct the sensor for cold water</label>`;
-const ALLCTL = [...MAIN_CTL, ...ADV_CTL];
-function syncControls() { for (const [k, , , , , fmt] of ALLCTL) { $('c_' + k).value = settings[k]; $('o_' + k).textContent = fmt(+settings[k]); } $('hiProbe').checked = settings.probe_max_mS_cm >= 200; $('tprobe').checked = settings.use_temp_probe !== false; }
-function changed() { custom = true; $('scenario').value = 'custom'; $('scDesc').textContent = `Your own settings, starting from “${scenario.name}”.`; syncControls(); }
-for (const [k, , , , , fmt] of ALLCTL) $('c_' + k).addEventListener('input', e => { settings[k] = +e.target.value; $('o_' + k).textContent = fmt(settings[k]); changed(); });
-$('hiProbe').addEventListener('change', e => { settings.probe_max_mS_cm = e.target.checked ? 200 : 20; changed(); });
-$('tprobe').addEventListener('change', e => { settings.use_temp_probe = e.target.checked; changed(); });
-$('scenario').innerHTML = R.SCENARIOS.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('') + '<option value="custom" hidden>Your settings</option>';
-function loadScenario(id) { scenario = R.SCENARIOS.find(s => s.id === id) || R.SCENARIOS[0]; custom = false; Object.keys(settings).forEach(k => { settings[k] = S.SETTINGS[k]; }); Object.assign(settings, R.scenarioSettings(scenario)); $('scenario').value = scenario.id; $('scDesc').textContent = scenario.desc; syncControls(); }
-$('scenario').addEventListener('change', e => { if (e.target.value !== 'custom') loadScenario(e.target.value); });
-
-/* particle cross-section */
-const cv = $('scene'), ctx = cv.getContext('2d'), tv = $('trace'), tctx = tv.getContext('2d');
-let CW = 0, CH = 0, TW = 0, TH = 0, G = {}, Fd = {};
-const P = { flakes: [], grains: [], soilSalt: [], runoff: [], pool: [] };
-let passes = [];
-const rnd = (a, b) => a + Math.random() * (b - a);
-function fit(el, c) { const r = el.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); el.width = Math.max(1, Math.round(r.width * d)); el.height = Math.max(1, Math.round(r.height * d)); c.setTransform(d, 0, 0, d, 0, 0); return [r.width, r.height]; }
-function layout() {
-  if ($('v-try').hidden) return;
-  [CW, CH] = fit(cv, ctx); [TW, TH] = fit(tv, tctx);
-  const narrow = CW < 560;
-  G = { narrow, ground: CH * 0.64, roadL: CW * (narrow ? 0.12 : 0.1), drainL: CW * (narrow ? 0.7 : 0.76) };
-  G.drainR = G.drainL + Math.max(16, CW * 0.028); G.chamberT = G.ground + 40; G.chamberB = CH - 14; G.chamberL = G.drainL - 10; G.chamberR = Math.min(CW - 6, G.drainR + (narrow ? 30 : 64)); G.probeX = (G.drainR + G.chamberR) / 2;
-  Fd.asphalt = []; for (let i = 0; i < CW * 2.2; i++) { const x = rnd(G.roadL, CW); if (x > G.drainL - 1 && x < G.drainR + 1) continue; Fd.asphalt.push(x, G.ground + 2 + Math.random() ** 1.4 * 15); }
-  Fd.soil = []; for (let i = 0; i < G.roadL * (CH - G.ground) / 55; i++) Fd.soil.push(rnd(0, G.roadL - 4), G.ground + 3 + Math.random() * (CH - G.ground - 6));
-  Fd.outline = []; for (let y = G.ground; y < G.chamberT; y += 4) Fd.outline.push(G.drainL, y, G.drainR, y);
-  for (let x = G.chamberL; x <= G.chamberR; x += 4) Fd.outline.push(x, G.chamberT, x, G.chamberB);
-  for (let y = G.chamberT; y <= G.chamberB; y += 4) Fd.outline.push(G.chamberL, y, G.chamberR, y);
-  Fd.snowpack = []; for (let i = 0; i < 3400; i++) Fd.snowpack.push(rnd(G.roadL, G.drainL), Math.random());
-  Fd.brine = []; for (let i = 0; i < 1100; i++) Fd.brine.push({ x: rnd(G.roadL, G.drainL), u: Math.random(), v: rnd(4, 14) });
-  P.soilSalt = P.soilSalt.filter(d => d.x < G.roadL);
-}
-const rowAt = i => current.rows[Math.max(0, Math.min(current.rows.length - 1, i))];
-function stateAt(f) { const a = rowAt(Math.floor(f)), b = rowAt(Math.ceil(f)), t = f - Math.floor(f), L = k => a[k] + (b[k] - a[k]) * t;
-  return { r: a, ice: L('bonded_ice_mm'), brine: L('brine_mm'), snow: L('loose_snow_mm'), crystals: L('salt_crystals_g_m2'), flow: L('drain_flow_L_h') }; }
-function layers(st) { const ice = Math.min(15, st.ice * 150), brine = Math.min(6, st.brine * 26), snow = Math.min(36, st.snow * 15); return { ice, brine, snow, iceTop: G.ground - ice, brineTop: G.ground - ice - brine, top: G.ground - ice - brine - snow }; }
-function spawnPass(n) { const gap = (current.s.plow_every_h / S.DT_H) / (18 * play.speed); passes.push({ t: 0, dur: Math.max(0.45, Math.min(1.4, gap * 0.8)), n, x: null }); appliedSoFar += current.s.salt_per_pass_lb; }
-function syncGrains(st) { const rest = P.grains.filter(g => g.m === 'rest'), target = Math.round(Math.min(420, st.crystals * 16));
-  if (rest.length > target) { for (let k = rest.length - target; k > 0; k--) { const g = rest[(Math.random() * rest.length) | 0]; if (g.m === 'rest') { g.m = 'melt'; g.t = 0; } } }
-  else if (target - rest.length > 20 && !passes.length) { for (let k = 0; k < target - rest.length; k++) P.grains.push({ m: 'rest', x: rnd(G.roadL + 2, G.drainL - 2), a: 0 }); } }
-function update(dt) {
-  if (!current || !CW) return;
-  const st = stateAt(play.idx), r = st.r, s = current.s, L = layers(st);
-  if (r.storming && s.snowfall_in > 0 && !reduce) { let n = 240 * Math.min(2.4, (s.snowfall_in / s.storm_hours) / 0.45) * (play.on ? 1 : 0.3) * dt; const rain = r.temp_F >= 32;
-    while (n > 0) { if (Math.random() < n) P.flakes.push({ x: rnd(-30, CW), y: rnd(-8, 0), vx: rnd(6, 22), vy: rain ? rnd(380, 520) : rnd(26, 58), ph: rnd(0, 6), s: Math.random() < 0.25 ? 1.6 : 1.1, rain }); n -= 1; } }
-  for (const f of P.flakes) { f.ph += dt * 1.7; f.x += (f.vx + (f.rain ? 0 : Math.sin(f.ph) * 8)) * dt; f.y += f.vy * dt; }
-  P.flakes = P.flakes.filter(f => f.y < ((f.x > G.roadL && f.x < G.drainL) ? L.top : G.ground) && f.x < CW + 30).slice(-2400);
-  for (const p of passes) { p.t += dt / p.dur; p.x = G.roadL - 20 + p.t * (CW - G.roadL + 40);
-    if (p.x > G.roadL && p.x < G.drainL) for (let k = 0, want = (40 + s.salt_per_pass_lb * 0.9) * dt / p.dur; k < want; k++) {
-      if (Math.random() < s.scatter_loss) P.grains.push({ m: 'arc', x0: p.x, y0: G.ground - 22, x1: rnd(3, G.roadL - 5), y1: G.ground + rnd(4, 24), t: 0, d: rnd(0.5, 0.9) });
-      else P.grains.push({ m: 'fall', x: p.x + rnd(-10, 10), y: G.ground - rnd(18, 26), vx: rnd(-50, 20), vy: rnd(-30, 20) }); } }
-  passes = passes.filter(p => p.t < 1);
-  for (const g of P.grains) {
-    if (g.m === 'fall') { g.vy += 800 * dt; g.x += g.vx * dt; g.y += g.vy * dt; if (g.y >= L.top + Math.min(5, L.snow)) { g.m = 'rest'; g.a = 1; g.x = Math.max(G.roadL + 1, Math.min(G.drainL - 1, g.x)); } }
-    else if (g.m === 'arc') { g.t += dt / g.d; if (g.t >= 1) { g.m = 'gone'; if (P.soilSalt.length < 900) P.soilSalt.push({ x: g.x1, y: g.y1 }); } }
-    else if (g.m === 'melt') { g.t += dt / 0.8; if (g.t >= 1) g.m = 'gone'; } else if (g.a < 1) g.a = Math.min(1, g.a + dt * 2.5); }
-  P.grains = P.grains.filter(g => g.m !== 'gone'); syncGrains(st);
-  for (const b of Fd.brine) { b.x += b.v * dt * (st.flow > 0.05 ? 2.2 : 0.6); if (b.x > G.drainL) b.x = G.roadL; }
-  if (st.flow > 0.05 && !reduce) { let n = Math.min(140, Math.sqrt(st.flow) * 13) * dt; while (n > 0) { if (Math.random() < n) P.runoff.push({ x: rnd(G.roadL, G.drainL), v: rnd(80, 170), k: 0, y: 0 }); n -= 1; } }
-  for (const d of P.runoff) {
-    if (d.k === 0) { d.x += d.v * dt; d.y = L.brineTop - 1 + rnd(-0.5, 0.5); if (d.x >= G.drainL + 2) { d.k = 1; d.x = rnd(G.drainL + 3, G.drainR - 3); } }
-    else if (d.k === 1) { d.y += 200 * dt; if (d.y > G.chamberT + 6) { d.k = 2; d.vx = rnd(-30, 60); } }
-    else { d.y += 150 * dt; d.x = Math.max(G.chamberL + 2, Math.min(G.chamberR - 2, d.x + d.vx * dt)); if (d.y > G.chamberB - 4) { d.k = 3; if (P.pool.length < 700) P.pool.push({ x: rnd(G.chamberL + 3, G.chamberR - 3), y: G.chamberB - 3 - Math.random() * Math.min(18, 3 + P.pool.length / 40), a: 1 }); } } }
-  P.runoff = P.runoff.filter(d => d.k < 3).slice(-1400); for (const p of P.pool) p.a -= dt * 0.06; P.pool = P.pool.filter(p => p.a > 0);
-}
-function dots(arr, col) { ctx.fillStyle = col; for (let i = 0; i < arr.length; i += 2) ctx.fillRect(arr[i], arr[i + 1], 1, 1); }
-function draw() {
-  if (!current || !CW) return;
-  const st = stateAt(play.idx), r = st.r, s = current.s, L = layers(st);
-  ctx.clearRect(0, 0, CW, CH);
-  dots(Fd.soil, rgba(C.text, 0.18)); dots(Fd.asphalt, rgba(C.text, 0.3));
-  ctx.fillStyle = rgba(C.text, 0.28); for (let i = 0; i < Fd.outline.length; i += 4) { ctx.fillRect(Fd.outline[i], Fd.outline[i + 1], 1, 1); ctx.fillRect(Fd.outline[i + 2], Fd.outline[i + 3], 1, 1); }
-  if (L.ice > 0.5) { ctx.fillStyle = rgba(C.ice, 0.9); for (let x = G.roadL; x < G.drainL; x += 3) for (let y = G.ground - 1.5; y > L.iceTop; y -= 3) ctx.fillRect(x, y, 1.2, 1.2); }
-  if (L.brine > 0.15) { ctx.fillStyle = rgba(C.water, 0.95); const f = Math.min(1, L.brine / 6 * 1.6); for (const b of Fd.brine) if (b.u < f) ctx.fillRect(b.x, L.iceTop - (b.u / f) * L.brine - 0.5, 1.2, 1.2); }
-  if (L.snow > 0.4) { ctx.fillStyle = rgba(C.snow, 0.8); const sp = Fd.snowpack; for (let i = 0; i < sp.length; i += 2) { const h = sp[i + 1] * 36; if (h < L.snow) ctx.fillRect(sp[i], L.brineTop - h, 1.1, 1.1); } }
-  if (r.icy) { ctx.fillStyle = rgba(C.risk, 0.9); for (let x = G.roadL; x < G.drainL; x += 3) ctx.fillRect(x, G.ground + 19, 1.6, 1.6); }
-  ctx.fillStyle = C.brand; for (const d of P.soilSalt) ctx.fillRect(d.x, d.y, 1.4, 1.4);
-  for (const g of P.grains) { if (g.m === 'arc') { const t = g.t; ctx.fillRect(g.x0 + (g.x1 - g.x0) * t, g.y0 + (g.y1 - g.y0) * t - Math.sin(Math.PI * t) * 54, 1.5, 1.5); } else if (g.m === 'fall') ctx.fillRect(g.x, g.y, 1.5, 1.5); }
-  const restY = L.top + Math.min(5, L.snow) - 1.5;
-  for (const g of P.grains) if (g.m === 'rest') { ctx.globalAlpha = g.a; ctx.fillRect(g.x, restY, 1.7, 1.7); }
-  ctx.globalAlpha = 1; ctx.fillStyle = C.water;
-  for (const g of P.grains) if (g.m === 'melt') { const k = g.t * 5; ctx.globalAlpha = 0.8 * (1 - g.t); ctx.fillRect(g.x - k, restY, 1, 1); ctx.fillRect(g.x + k, restY, 1, 1); }
-  ctx.globalAlpha = 1; ctx.fillStyle = C.water; for (const d of P.runoff) ctx.fillRect(d.x, d.y, 1.3, 1.3);
-  for (const p of P.pool) { ctx.globalAlpha = Math.min(1, p.a); ctx.fillRect(p.x, p.y, 1.3, 1.3); } ctx.globalAlpha = 1;
-  const read = r.reading_mS_cm, level = Number.isNaN(read) ? 0 : Math.min(1, read / s.probe_max_mS_cm), py = G.chamberB - 14;
-  ctx.fillStyle = rgba(C.text, 0.55); for (let y = G.chamberT - 8; y < py; y += 3) ctx.fillRect(G.probeX, y, 1, 1);
-  ctx.fillStyle = r.probe_maxed ? C['text-2'] : C.water; const Rr = 3 + level * 9; for (let i = 0; i < 22; i++) { const a = i / 22 * Math.PI * 2 + performance.now() / 2400; ctx.fillRect(G.probeX + Math.cos(a) * Rr, py + Math.sin(a) * Rr, 1.4, 1.4); }
-  for (const f of P.flakes) { if (f.rain) { ctx.fillStyle = rgba(C.water, 0.6); ctx.fillRect(f.x, f.y, 1, 4); } else { ctx.fillStyle = rgba(C.snow, 0.8); ctx.fillRect(f.x, f.y, f.s, f.s); } }
-  ctx.font = '500 12px "IBM Plex Sans", Arial, sans-serif';
-  for (const p of passes) { if (p.x == null) continue; ctx.fillStyle = rgba(C.text, 0.45); for (let y = 0; y < G.ground; y += 4) ctx.fillRect(p.x, y, 1, 1); ctx.fillStyle = C.text; ctx.textAlign = 'left'; ctx.fillText(`Truck pass ${p.n}: ${s.salt_per_pass_lb} lb`, Math.min(p.x + 6, CW - 140), G.ground - 46); }
-  ctx.fillStyle = rgba(C.text, 0.6); ctx.font = '400 12px "IBM Plex Sans", Arial, sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText('Shoulder', 4, G.ground + 36); if (!G.narrow) ctx.fillText('Road, one lane', G.roadL + 4, G.ground + 36);
-  ctx.textAlign = 'right'; ctx.fillText('Storm drain', G.drainL - 4, G.ground + 36); if (!G.narrow) { ctx.textAlign = 'left'; ctx.fillText('Sensor', G.chamberR + 6, G.chamberB - 10); }
-}
-function drawTrace() {
-  if (!current || !TW) return;
-  const rows = current.rows, n = rows.length, s = current.s, L = 44, B = 22;
-  const top = Math.max(s.probe_max_mS_cm * 1.2, ...rows.map(r => (Number.isNaN(r.ec_true) ? 0 : r.ec_true))) * 1.05;
-  const X = i => L + (i / (n - 1)) * (TW - L - 6), Y = v => TH - B - (v / top) * (TH - B - 8);
-  tctx.clearRect(0, 0, TW, TH); tctx.font = '400 11.5px "IBM Plex Sans", Arial, sans-serif';
-  tctx.textAlign = 'right'; for (const v of ticks(0, top, 3)) { tctx.fillStyle = rgba(C.text, 0.08); tctx.fillRect(L, Math.round(Y(v)), TW - L, 1); tctx.fillStyle = C['text-2']; tctx.fillText(int(v), L - 6, Y(v) + 4); }
-  tctx.save(); tctx.translate(11, (TH - B) / 2); tctx.rotate(-Math.PI / 2); tctx.textAlign = 'center'; tctx.fillText('mS/cm', 0, 0); tctx.restore();
-  tctx.textAlign = 'center'; const hrsT = rows[n - 1].hour; for (let hh = 0; hh <= hrsT; hh += hrsT > 24 ? 8 : 4) tctx.fillText(`${hh} h`, X(hh / S.DT_H), TH - 5);
-  tctx.fillStyle = C['text-2']; for (let x = L; x < TW; x += 5) tctx.fillRect(x, Y(s.probe_max_mS_cm), 1.6, 1.6);
-  const upto = Math.floor(play.idx);
-  tctx.fillStyle = rgba(C.text, 0.3); for (let i = 0; i <= upto; i++) { const v = rows[i].ec_true; if (!Number.isNaN(v)) tctx.fillRect(X(i), Y(v), 1.6, 1.6); }
-  tctx.fillStyle = C.text; for (let i = 0; i <= upto; i++) { const v = rows[i].reading_mS_cm; if (!Number.isNaN(v)) tctx.fillRect(X(i), Y(v) - 0.5, 2, 2); }
-}
-let lastI = -1;
-function saltiness(cl) { if (Number.isNaN(cl)) return 'No runoff yet'; const x = cl / S.CL_LIMITS[1]; return cl < 230 ? 'Fresh' : cl < 860 ? 'Slightly salty' : x < 10 ? `Salty (${Math.round(x)}× the stream limit)` : `Very salty (${Math.round(x)}× the stream limit)`; }
-function hud(force) {
-  if (!current) return; const i = Math.floor(play.idx); if (i === lastI && !force) return; lastI = i;
-  const r = rowAt(i), phase = r.storming ? (passes.length ? 'Plowing and salting' : r.temp_F >= 32 ? 'Raining' : 'Snowing') : (r.temp_F > 32 ? 'After the storm, thawing' : 'After the storm');
-  $('ovClock').textContent = clock(r.hour); $('ovPhase').textContent = phase; $('ovTemp').textContent = `${Math.round(r.temp_F)}°F`;
-  $('tNow').textContent = clock(r.hour); $('prog').style.width = `${100 * i / (current.rows.length - 1)}%`;
-  const cond = r.icy ? '<span class="chip risk">Icy</span>' : r.loose_snow_mm > 0.3 ? '<span class="chip">Snow covered</span>' : r.brine_mm > 0.02 ? '<span class="chip water">Wet, salted</span>' : '<span class="chip save">Bare</span>';
-  const wet = !Number.isNaN(r.reading_mS_cm);
-  $('readouts').innerHTML = [['Road condition', cond], ['Icy right now?', r.icy ? '<span class="chip risk">Yes</span>' : 'No'], ['Salt used so far', `${int(appliedSoFar)} lb per lane-mile`],
-    ['Runoff saltiness', esc(saltiness(r.cl_true_mg_L))], ['Drain sensor', !wet ? 'Dry' : r.probe_maxed ? '<span class="chip">At its limit</span>' : 'Reading normally']].map(([k, v]) => `<div><span>${k}</span><span>${v}</span></div>`).join('');
-}
-let last = performance.now();
-function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (current && play.on) { const rows = current.rows, prev = Math.floor(play.idx);
-    play.idx = Math.min(rows.length - 1, play.idx + dt * (rowAt(prev).storming ? 18 : 54) * play.speed);
-    for (let i = prev + 1; i <= Math.floor(play.idx); i++) if (rows[i].truck_pass) { if ($('v-try').hidden) { passCount++; appliedSoFar += current.s.salt_per_pass_lb; } else spawnPass(++passCount); }
-    if (play.idx >= rows.length - 1) finish(); }
-  if (!$('v-try').hidden && current) { update(dt); draw(); drawTrace(); hud(); }
-  requestAnimationFrame(frame);
-}
-function run(boot, comparing) {
-  if (play.on) return;
-  userRun = boot !== true;
-  compareWith = comparing ? lastRun : null;
-  current = R.computeRun({ ...settings });
-  current.label = comparing ? `${lastRun.label} at Saltback's rate` : custom ? `Your settings (from ${scenario.name})` : scenario.name;
-  P.flakes = []; P.grains = []; P.soilSalt = []; P.runoff = []; P.pool = []; passes = []; passCount = 0; appliedSoFar = 0; play.idx = 0; lastI = -1;
-  $('run').disabled = true; $('resultCard').hidden = !comparing ? true : $('resultCard').hidden;
-  $('tEnd').textContent = clock(current.rows[current.rows.length - 1].hour + S.DT_H);
-  $('stormEnd').style.left = `${100 * current.rows.findIndex(r => !r.storming) / (current.rows.length - 1)}%`;
-  drawRoad();
-  if (reduce) { play.idx = current.rows.length - 1; current.rows.forEach(r => { if (r.truck_pass) appliedSoFar += current.s.salt_per_pass_lb; }); finish(); return; }
-  play.on = true; if (current.rows[0].truck_pass) spawnPass(++passCount);
-}
-function finish() {
-  play.on = false; passes = []; $('run').disabled = false; $('run').textContent = 'Run again'; hud(true);
-  if (!userRun) return;
-  const prev = compareWith;
-  lastRun = current; simCount += 1; store.set('saltback.simCount', simCount); lastRun.logName = `Sim run ${simCount}`;
-  records.push({ ...E.recordFromRun(current.s, current.summary, simCount), date: `Your run ${simCount}: ${current.label}` }); saveRecords(); dirty = true;
-  showResult(prev);
-}
-function showResult(prev) {
-  const x = lastRun.x, s = lastRun.s, card = $('resultCard'); card.hidden = false;
-  if (prev) {
-    const a = prev.x, b = x, d = 100 * (b.applied - a.applied) / a.applied;
-    const col = (title, xx, cls) => `<div class="${cls}"><h3 style="font-size:15px;margin-bottom:8px">${title}</h3><div class="rowv"><span>Salt spread</span><b>${int(xx.applied)} lb</b></div><div class="rowv"><span>Icy road time</span><b>${icyTxt(xx.icy)}</b></div><div class="rowv"><span>Chloride released</span><b>${int(xx.chloride)} lb</b></div><div class="rowv"><span>Salt cost</span><b>${money(usd(xx.applied))}</b></div></div>`;
-    card.innerHTML = `<div class="card-h"><div><h2>Same storm, ${d < -0.5 ? `${pct0(d)} less salt` : 'same salt'}, ${b.icy <= a.icy + 0.1 ? 'same safety' : `${icyTxt(b.icy - a.icy)} more icy road`}</h2><p class="sub">${esc(prev.label)}, as salted and at Saltback's rate</p></div><a class="btn sm" href="#storms" data-storm="run:last">Storm report</a></div><div class="compare">${col('As salted', a, '')}${col("Saltback's rate", b, 'saltback')}</div>`;
-    return;
-  }
-  const canImprove = (x.status === 'over' && x.planRate < x.perPass) || x.status === 'under' || x.status === 'late';
-  const btn = canImprove ? `<button class="btn pri" id="againBtn" type="button">${x.status === 'late' ? 'Run again with an on-time first truck' : `Run again with Saltback's rate (${x.planRate} lb)`}</button>` : '';
-  card.innerHTML = `<div class="card-h"><div><h2>${esc(x.verdict)}</h2><p class="sub">${int(x.applied)} lb spread · ${icyTxt(x.icy)} of icy road · ${int(x.chloride)} lb of chloride. Logged as ${esc(lastRun.logName)} in this season's storms.</p></div></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${btn}<a class="btn" href="#storms" data-storm="run:last">Open the storm report</a></div>`;
-  if (canImprove) $('againBtn').addEventListener('click', () => { if (x.onTime) settings.first_pass_h = E.ON_TIME_H; settings.salt_per_pass_lb = x.planRate; syncControls(); run(false, true); });
-}
-$('run').addEventListener('click', () => run());
-$('skip').addEventListener('click', () => { if (!play.on) return; current.rows.forEach((r, i) => { if (r.truck_pass && i > play.idx) appliedSoFar += current.s.salt_per_pass_lb; }); play.idx = current.rows.length - 1; finish(); });
-document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => { play.speed = +b.dataset.speed; document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); }));
-function drawRoad() {
-  if (!current || $('v-try').hidden) return; const rows = current.rows;
-  lineChart($('chRoad'), { aria: 'Snow, stuck ice and brine on the road over the storm', h: 240, right: 96,
-    x: { min: 0, max: rows[rows.length - 1].hour, label: 'Hours since the snow started' }, y: { min: 0, max: Math.max(0.2, ...rows.map(r => Math.max(r.loose_snow_mm, r.bonded_ice_mm, r.brine_mm))) * 1.1, label: 'mm of water', fmt: v => `${+v.toFixed(2)}` },
-    series: [{ name: 'Loose snow', color: C.muted, pts: rows.map(r => [r.hour, r.loose_snow_mm]) }, { name: 'Stuck ice', color: C.ice, pts: rows.map(r => [r.hour, r.bonded_ice_mm]) }, { name: 'Brine', color: C.water, pts: rows.map(r => [r.hour, r.brine_mm]) }],
-    refs: [{ v: S.ICY_G / 1000, color: C.risk, label: 'icy above this line' }], summary: 'Loose snow builds between truck passes and is plowed off; stuck ice stays thin when brine protects the road.' });
-}
-
-/* ================= HOW IT WORKS ================= */
-function renderHow() {
-  $('rulesCard').innerHTML = `<h2 style="font-size:18px;margin-bottom:12px">The safety rules Saltback follows</h2><ul class="advice" style="color:var(--text)">
-    <li><b>${term('needed', 'Needed salt')}</b> is the smallest rate that keeps the road within 15 minutes of the best result any amount of salt can reach.</li>
-    <li>Saltback's rate is the needed salt plus 10%, raised until the road is <b>no more than 6 minutes icier</b> than what the crew actually achieved.</li>
-    <li>The same check is repeated in a <b>pessimistic case</b>: brine runs off faster, more brine is needed to stop snow sticking, and traffic packs snow faster. The rate must pass both.</li>
-    <li>Advice for the next storm <b>cuts at most 25% at a time</b>. Safety increases are not capped.</li>
-    <li>If the road stays icy for more than 2 hours even at ${S.MAX_LB} lb per lane-mile, Saltback says <b>salt alone couldn't fix it</b> and suggests brine, timing, sand or a stronger chemical instead.</li>
-    <li>Below about 15°F, state guides advise against more rock salt, so Saltback recommends <b>sand or a stronger chemical</b> and does not count extra salt or claim safety gains it can't model.</li></ul>`;
-  if (!U) { $('confCard').innerHTML = '<p>Uncertainty results are not available. Run node web/uncertainty.js.</p>'; return; }
-  const u = U.summary, b = U.bestEstimate || {}, o = U.outOfSample;
-  $('confCard').innerHTML = `<h2 style="font-size:18px;margin-bottom:8px">How confident are we?</h2>
-    <p class="muted" style="max-width:80ch">We re-ran the example season ${u.n} times. Each time the real world was different from what Saltback assumes: the five least-certain inputs were drawn at random from realistic ranges. Saltback made its recommendations from the drain data alone, and we then checked them in that real world.</p>
-    <div class="grid4" style="margin-top:16px">
-      <div class="stat"><div class="l">Salt saved</div><div class="v">${Math.round(u.savingsP5)}–${Math.round(u.savingsP95)}%</div><div class="s">typical ${Math.round(u.savingsP50)}% (5th to 95th percentile)</div></div>
-      <div class="stat good"><div class="l">Seasons that got icier</div><div class="v">${100 - u.shareSeasonNotIcier}%</div><div class="s">of ${u.n} test seasons</div></div>
-      <div class="stat"><div class="l">Every storm within 6 minutes</div><div class="v">${u.shareNoStormOver6}%</div><div class="s">of seasons; worst storm +${u.worstStormMinP95} min (95th percentile)</div></div>
-      <div class="stat"><div class="l">First step (25% cap)</div><div class="v">${Math.round(u.stepP5)}–${Math.round(u.stepP95)}%</div><div class="s">less salt; every storm within 6 min in ${u.stepShareNoStormOver6}%</div></div>
-    </div>
-    <p class="note" style="margin-top:16px">Why the pessimistic check matters: without it, Saltback would claim ${Math.round(b.savingsPct || 0)}% savings (${Math.round(b.savingsP5 || 0)}–${Math.round(b.savingsP95 || 0)}%), but every storm stayed within 6 minutes in only ${b.shareNoStormOver6 ?? '—'}% of test seasons, and the worst storm got up to ${Math.round((b.worstStormMinP95 || 0) / 60)} hours icier. Saltback trades some savings for a promise it can keep.</p>`;
-  $('histTitle').textContent = `In ${u.n} test seasons, Saltback saved ${Math.round(u.savingsP5)}–${Math.round(u.savingsP95)}% of the salt`;
-  const vals = U.runs.map(r => r.savingsPct), lo = Math.floor(Math.min(...vals)), hi = Math.ceil(Math.max(...vals)), bins = [];
-  for (let v = lo; v < hi; v += 1) bins.push({ x0: v, x1: v + 1, n: vals.filter(z => z >= v && (z < v + 1 || (v + 1 === hi && z <= hi))).length });
-  const host = $('chHist'), w = W(host), h = 240, m = { l: 44, r: 16, t: 28, b: 44 }, iw = w - m.l - m.r, ih = h - m.t - m.b, maxN = Math.max(...bins.map(z => z.n));
-  const X = v => m.l + (v - lo) / (hi - lo) * iw, Y = v => m.t + ih - v / maxN * ih;
-  let g = svgOpen(w, h, 'Histogram of salt saved across test seasons');
-  g += `<rect x="${X(u.savingsP5)}" y="${m.t}" width="${X(u.savingsP95) - X(u.savingsP5)}" height="${ih}" fill="${rgba(C.brand, 0.08)}"/>`;
-  g += txt((X(u.savingsP5) + X(u.savingsP95)) / 2, m.t - 10, 'likely range (5th–95th percentile)', { anchor: 'middle', size: 12, color: C.brand });
-  bins.forEach(z => { g += `<rect x="${X(z.x0) + 1}" y="${Y(z.n)}" width="${Math.max(1, X(z.x1) - X(z.x0) - 2)}" height="${Y(0) - Y(z.n)}" fill="${C.muted}"><title>${z.x0}–${z.x1}%: ${z.n} seasons</title></rect>`; });
-  const hl = U.headline.savingsPct; g += `<line x1="${X(hl)}" x2="${X(hl)}" y1="${m.t}" y2="${m.t + ih}" stroke="${C.brand}" stroke-width="2"/>` + txt(X(hl) + 6, m.t + 14, `example season: ${Math.round(hl)}%`, { color: C.brand, size: 12.5, weight: 600 });
-  g += ticks(lo, hi, 5).map(v => txt(X(v), h - m.b + 16, `${v}%`, { anchor: 'middle', size: 11.5 })).join('') + txt(m.l + iw / 2, h - 4, 'salt saved', { anchor: 'middle', size: 12 });
-  g += `<line x1="${m.l}" x2="${w - m.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="${C['text-3']}"/>`;
-  mount(host, g + '</svg>', `Salt saved ranged from ${u.savingsP5}% to ${u.savingsP95}% (5th–95th percentile), typical ${u.savingsP50}%.`);
-  const t = U.tornado, base = U.headline.savingsPct;
-  $('tornTitle').textContent = `${t[0].label} moves the savings most`;
-  const th = $('chTornado'), tw = W(th), lw = Math.min(200, tw * 0.42), mm = { l: lw, r: 50, t: 10, b: 34 }, rowH = 40, hh = mm.t + mm.b + t.length * rowH, tiw = tw - mm.l - mm.r;
-  const all = t.flatMap(z => [z.savingsLo, z.savingsHi, base]), tlo = Math.floor(Math.min(...all) - 1), thi = Math.ceil(Math.max(...all) + 1), TX = v => mm.l + (v - tlo) / (thi - tlo) * tiw;
-  let tg = svgOpen(tw, hh, 'Sensitivity of salt savings to each uncertain input');
-  tg += ticks(tlo, thi, 4).map(v => `<line x1="${TX(v)}" x2="${TX(v)}" y1="${mm.t}" y2="${hh - mm.b}" stroke="${C.line}"/>` + txt(TX(v), hh - mm.b + 16, `${v}%`, { anchor: 'middle', size: 11.5 })).join('');
-  tg += `<line x1="${TX(base)}" x2="${TX(base)}" y1="${mm.t}" y2="${hh - mm.b}" stroke="${C.brand}" stroke-width="2"/>` + txt(mm.l + tiw / 2, hh - 2, 'salt saved', { anchor: 'middle', size: 12 });
-  t.forEach((z, i) => { const yc = mm.t + i * rowH + rowH / 2, a = TX(Math.min(z.savingsLo, z.savingsHi)), bb = TX(Math.max(z.savingsLo, z.savingsHi));
-    tg += txt(mm.l - 10, yc + 4, z.label, { anchor: 'end', size: 12.5, color: C.text });
-    tg += `<rect x="${a}" y="${yc - 8}" width="${Math.max(2, bb - a)}" height="16" rx="3" fill="${C.muted}"><title>${esc(z.label)}: ${z.savingsLo}% at ${z.lo}, ${z.savingsHi}% at ${z.hi}</title></rect>`;
-    tg += txt(bb + 6, yc + 4, `${Math.round(Math.min(z.savingsLo, z.savingsHi))}–${Math.round(Math.max(z.savingsLo, z.savingsHi))}%`, { size: 12, color: C['text-2'] }); });
-  mount(th, tg + '</svg>', t.map(z => `${z.label}: ${z.savingsLo}% to ${z.savingsHi}%`).join('; '));
-  $('oosCard').innerHTML = `<h2 style="font-size:18px;margin-bottom:8px">A test on data Saltback did not generate</h2>
-    <p class="muted" style="max-width:80ch">We built one more season with three hidden differences from Saltback's assumptions: ${Math.round(o.truth.scatter_loss * 100)}% ${term('bounce', 'bounce loss')} (Saltback assumes ${Math.round(o.assumed.scatter_loss * 100)}%), ${Math.round(o.truth.unsalted_share * 100)}% dilution in the drain (assumes ${Math.round(o.assumed.unsalted_share * 100)}%), and snow packing into ice ${Math.round(o.truth.bond_per_h / o.assumed.bond_per_h * 10) / 10}× faster.</p>
-    <div class="grid2" style="margin-top:16px"><div><h3 style="font-size:15px;margin-bottom:6px">What it got right</h3><ul class="advice"><li>It learned the bounce loss from the drain data: ${Math.round(o.learnedScatter * 100)}% (true ${Math.round(o.truth.scatter_loss * 100)}%), from ${o.calN} storms with usable sensor readings.</li><li>Extra dilution did not fool it: the sensor measures salt load, and dilution doesn't change the load.</li><li>No storm got more than 6 minutes icier than the crew's result (worst: +${o.worstStormMin} min).</li></ul></div>
-    <div><h3 style="font-size:15px;margin-bottom:6px">What it got wrong</h3><ul class="advice"><li>It can't see how fast snow bonds, because the drain sensor measures salt, not ice. It predicted ${hrs(o.icyPlanClaimed)} of icy road with its plan; the real answer was ${hrs(o.icyPlanTrue)} (the crew had ${hrs(o.icyNow)}).</li><li>This is why the pessimistic check exists, and why a road-condition source (crew reports or a road weather station) is on the roadmap.</li></ul></div></div>`;
-  const RNG = U.ranges, src = { scatter_loss: 'Typical 5% (wet) to 30% (dry) bounce loss reported for spinner spreaders', drain_per_h: 'Assumption; depends on road slope and traffic', brine_film_mm: 'Tuned so the rate card falls within published state charts', bond_per_h: 'Assumption; least certain input', unsalted_share: 'Assumption; depends on the drain\'s catchment' };
-  const rows = [['Road temperature, snowfall, storm length', 'per storm', 'from weather data', 'Truck logs and weather records'], ['Salt price', `$${S.SETTINGS.salt_price_per_ton}/ton`, '$60–130', 'Typical delivered road salt prices'],
-    ['Freezing point of salt brine', 'table', 'fixed', 'CRC Handbook of Chemistry and Physics (NaCl)'], ['Conductivity of salt water', 'table', 'fixed', 'Standard NaCl conductivity values'],
-    ['Chloride share of salt', '60.7%', 'fixed', 'Molar masses of Na and Cl'], ['Stream limits for chloride', '230 / 860 mg/L', 'fixed', 'US EPA aquatic-life criteria (1988)'],
-    ...Object.entries(RNG).map(([k, r]) => [r.label, k === 'scatter_loss' ? `${Math.round(S.SETTINGS.scatter_loss * 100)}%` : String(S.SETTINGS[k]), `${r.lo}–${r.hi} ${r.unit}`, src[k] || '']),
-    ['Icy road threshold', '0.05 mm of stuck ice', 'definition', 'Saltback definition'], ['Published state rate ranges', 'see rate card', 'approximate', E.PUBLISHED_SOURCE]];
-  $('assumpTable').innerHTML = `<table class="t"><thead><tr><th>Input</th><th>Value</th><th>Range tested</th><th>Source</th></tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-  const temps = []; for (let tt = 0; tt <= 30; tt += 0.5) temps.push([tt, S.iceMeltedPerSalt(S.fToC(tt))]);
-  lineChart($('chMelt'), { aria: 'Ice melted per pound of salt by temperature', h: 260, right: 110, x: { min: 0, max: 30, label: 'Road temperature (°F)', fmt: v => `${v}°` }, y: { min: 0, max: 60, label: 'lb of ice per lb of salt' },
-    series: [{ name: 'Saltback model', color: C.brand, pts: temps }, { name: 'Published chart', dots: true, color: C.text, label: false, pts: Object.entries(R.PUBLISHED).map(([tt, v]) => [+tt, v]) }],
-    notes: [{ text: 'Circles: published chart', x: 2, y: 54, color: C.text }], summary: 'The model matches the published chart within 5% from 0°F to 25°F.' });
-  $('devNotes').innerHTML = `<ul class="advice"><li>Physics: <code>model.py</code> (Python, for Google Colab) and <code>model.js</code> (this site). <code>web/check_parity.py</code> runs both on 9 storms and confirms identical results.</li>
-    <li>Decisions: <code>web/engine.js</code>. Report tables: <code>web/report.js</code>. Workbook writer with native charts: <code>web/xlsx.js</code>.</li>
-    <li>Uncertainty and out-of-sample tests: <code>node web/uncertainty.js</code> (about 30 seconds), last run ${esc(U ? U.generated : '—')}.</li>
-    <li>Sensor modeled: DFRobot DFR0300 conductivity probe (reads up to 20 mS/cm) with a DS18B20 temperature probe; the high-range option models a K=10 probe (200 mS/cm). Time step 5 minutes.</li>
-    <li>Drain node in the example: one storm drain on a 400 m² catchment of a 10 lane-mile route.</li></ul>`;
+/* ================= SENSORS ================= */
+function sensorRows(a) { return a.storms.map(x => { const run = runFor(x), wet = run.rows.filter(z => !Number.isNaN(z.reading_mS_cm)), sm = run.summary;
+  const expected = x.applied * sm.salt_to_drain_pct / 100 * sm.salt_seen_vs_true_pct / 100, meas = x.record.measured_drain_salt_lb;
+  return { x, n: wet.length, maxR: Math.max(0, ...wet.map(z => z.reading_mS_cm)), limH: x.maxedH, meas, expected, ratio: meas != null && expected > 1 ? meas / expected : null }; }); }
+function renderSensors() {
+  const a = A(); if (!a) { ['nodeTable', 'calTable', 'sensTable'].forEach(id => { $(id).innerHTML = ''; }); $('calNote').textContent = ''; return; }
+  const rows = sensorRows(a), cal = a.calibration, kv = arr => `<tbody>${arr.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</tbody>`;
+  $('nodeTable').innerHTML = kv([['Node', `SB-01 · storm drain, ${esc(records[0]?.route || 'route')}`], ['Sensors', 'Conductivity (DFRobot DFR0300) and temperature (DS18B20)'], ['Range', `0–${prefs.probe} mS/cm`], ['Interval', '5 minutes'],
+    ['Storms recorded', rows.length], ['Readings', int(rows.reduce((s, r) => s + r.n, 0))], ['Hours at limit', rows.reduce((s, r) => s + r.limH, 0).toFixed(1)], ['Last storm', esc(dateTxt(a.storms[a.storms.length - 1].record.date))]]);
+  $('calTable').innerHTML = kv([['Storms usable for calibration', `${cal.n} of ${rows.length}`], ['Measured vs expected drain salt, before calibration', cal.factor == null ? '—' : `${Math.round(cal.factor * 100)}%`],
+    ['Salt landing off the road', `${Math.round(cal.scatter * 100)}% (default ${Math.round(S.SETTINGS.scatter_loss * 100)}%)`], ['Spreader output vs setting', `${Math.round(cal.spreader * 100)}%`]]);
+  $('calNote').textContent = cal.factor == null ? 'Needs three storms with readings below the sensor limit.' : `Result: ${cal.note}.`;
+  $('sensTable').innerHTML = `<thead><tr><th>Storm</th><th class="n">Readings</th><th class="n">Max mS/cm</th><th class="n">Hours at limit</th><th class="n">Drain salt measured lb</th><th class="n">Calibrated model lb</th><th class="n">Measured / model</th><th>Used for calibration</th></tr></thead><tbody>${
+    rows.map(r => `<tr class="click" data-sel="${esc(r.x.record.id)}" tabindex="0"><td><a href="#report" data-sel="${esc(r.x.record.id)}">${esc(dateTxt(r.x.record.date))}</a></td><td class="n">${r.n}</td><td class="n">${r.maxR.toFixed(1)}</td><td class="n${r.limH > 0.5 ? ' red' : ''}">${r.limH.toFixed(1)}</td><td class="n">${r.meas == null ? '—' : int(r.meas)}</td><td class="n">${int(r.expected)}</td><td class="n">${r.ratio == null ? '—' : `${Math.round(r.ratio * 100)}%`}</td><td>${r.meas != null && r.limH <= 0.5 ? 'yes' : 'no'}</td></tr>`).join('')}</tbody>`;
 }
 
 /* ================= DATA ================= */
 function tables() {
-  return R.allTables({ run: lastRun, runLabel: lastRun.label, library: ensureLibrary(), season: ensureAnalysis(), uncertainty: isExample() ? U : null,
-    seasonLabel: isExample() ? 'Example season, Route 4 (simulated)' : 'Imported CSV', when: new Date().toLocaleString('en-US') });
+  const a = A(); if (!a) return [];
+  const x = a.storms[selIndex()], ts = R.allTables({ season: a, run: runFor(x), runLabel: `${x.record.date} ${x.record.route}`, melt: false, when: new Date().toLocaleString('en-US'), seasonLabel: 'Storm log' });
+  ts.push({ key: 'sensorLog', name: 'Sensor summary', title: 'Drain sensor readings by storm', rows: [['Storm', 'Readings', 'Max mS/cm', 'Hours at limit', 'Drain salt measured (lb)', 'Expected (lb)', 'Measured/expected']]
+    .concat(sensorRows(a).map(r => [r.x.record.date, r.n, +r.maxR.toFixed(2), +r.limH.toFixed(2), r.meas ?? null, Math.round(r.expected), r.ratio == null ? null : +r.ratio.toFixed(3)])) });
+  return ts;
 }
-const stamp = () => new Date().toISOString().slice(0, 10);
 function renderData() {
   const ts = tables();
-  $('dsTable').innerHTML = `<table class="t"><thead><tr><th>Sheet</th><th>What it holds</th><th class="n">Rows</th><th class="n">Charts</th><th></th></tr></thead><tbody>${ts.map(t => `<tr><td><b>${esc(t.name)}</b></td><td class="muted">${esc(t.title)}</td><td class="n">${t.rows.length - 1}</td><td class="n">${(t.charts || []).length || '—'}</td><td class="n"><button class="btn sm" data-copy="${t.key}" type="button">Copy</button> <button class="btn sm" data-csv="${t.key}" type="button">CSV</button></td></tr>`).join('')}</tbody></table>`;
-  const tl = R.runTables(lastRun, lastRun.label)[1].rows;
-  $('tlCount').textContent = `${esc(lastRun.label)} · ${tl.length - 1} rows, one every 5 minutes · raw model output in technical units`;
-  $('tlTable').innerHTML = `<table class="t raw"><thead><tr>${tl[0].map(hh => `<th class="n">${esc(hh)}</th>`).join('')}</tr></thead><tbody>${tl.slice(1).map(r => `<tr>${r.map(v => `<td class="n">${v == null ? '' : v}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  $('dsTable').innerHTML = ts.length ? `<thead><tr><th>Table</th><th>Contents</th><th class="n">Rows</th><th class="n">Charts in workbook</th><th></th></tr></thead><tbody>${ts.map(t => `<tr><td>${esc(t.name)}</td><td class="muted">${esc(t.title)}</td><td class="n">${t.rows.length - 1}</td><td class="n">${(t.charts || []).length || '—'}</td><td class="n"><button class="btn" data-copy="${t.key}" type="button">Copy</button> <button class="btn" data-csv="${t.key}" type="button">CSV</button></td></tr>`).join('')}</tbody>` : '<tbody><tr><td class="muted">No data.</td></tr></tbody>';
+  const a = A(); if (!a) { $('tlTable').innerHTML = ''; $('tlNote').textContent = ''; return; }
+  const x = a.storms[selIndex()], tl = R.runTables(runFor(x), '')[1].rows;
+  $('tlNote').textContent = `${dateTxt(x.record.date)} · ${tl.length - 1} rows · select another storm in the storm log`;
+  $('tlTable').innerHTML = `<thead><tr>${tl[0].map(h => `<th class="n">${esc(h)}</th>`).join('')}</tr></thead><tbody>${tl.slice(1).map(r => `<tr>${r.map(v => `<td class="n">${v == null ? '' : v}</td>`).join('')}</tr>`).join('')}</tbody>`;
 }
-async function exportWorkbook() { try { const blob = await X.buildWorkbook(tables(), { title: 'Saltback export' }); await saveFile(`saltback-${stamp()}.xlsx`, blob); } catch (err) { toast(`Could not build the workbook: ${esc(err.message || err)}`); } }
-async function exportPng() {
-  const v = view(), svgs = [...$('v-' + v).querySelectorAll('.plot svg')], canv = v === 'try' ? [$('scene'), $('trace')] : [];
-  if (!svgs.length && !canv.length) { toast('There are no charts on this page.'); return; }
-  const width = 1000, pad = 24, imgs = [];
-  for (const svg of svgs) {
-    const host = svg.closest('figure, .card, .report'), title = host?.querySelector('h2, h3')?.textContent || '';
-    const w = +svg.getAttribute('width'), h = +svg.getAttribute('height'), clone = svg.cloneNode(true); clone.querySelectorAll('.hv,.hit').forEach(n => n.remove());
-    const img = new Image(); const src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(clone));
-    await new Promise(ok => { img.onload = ok; img.onerror = ok; img.src = src; }); imgs.push({ img, w, h, title });
-  }
-  canv.forEach(c => imgs.push({ img: c, w: c.getBoundingClientRect().width, h: c.getBoundingClientRect().height, title: '' }));
-  const heights = imgs.map(o => o.h * Math.min(1, (width - 2 * pad) / o.w) + (o.title ? 34 : 8) + 16), total = heights.reduce((a, b) => a + b, pad * 2);
-  const cnv = document.createElement('canvas'), sc = 2; cnv.width = width * sc; cnv.height = total * sc; const c2 = cnv.getContext('2d'); c2.scale(sc, sc);
-  c2.fillStyle = C.card; c2.fillRect(0, 0, width, total); let y = pad;
-  imgs.forEach((o, i) => { const k = Math.min(1, (width - 2 * pad) / o.w); if (o.title) { c2.fillStyle = C.text; c2.font = '600 16px "IBM Plex Sans", Arial, sans-serif'; c2.fillText(o.title, pad, y + 18); y += 30; }
-    try { c2.drawImage(o.img, pad, y, o.w * k, o.h * k); } catch {} y += o.h * k + (o.title ? 4 : 8) + 16 - (o.title ? 0 : 0); });
-  cnv.toBlob(b => (b ? saveFile(`saltback-${v}-charts-${stamp()}.png`, b) : toast('Could not create the image.')), 'image/png');
+$('tpl').textContent = E.CSV_COLUMNS.join(',') + '\n2027-01-06,Route 4,10,21,3.5,7,260,0.5,2,35,200,6150,0';
+$('copyTpl').addEventListener('click', () => copyText($('tpl').textContent, 'Template'));
+$('csvFile').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
+  rd.onload = () => { try { const recs = E.parseCSV(String(rd.result)); if (!recs.length) throw new Error('no rows');
+      records = [...records, ...recs].sort((p, q) => String(p.date).localeCompare(String(q.date))); save(); $('impMsg').className = 'msg'; $('impMsg').textContent = `Added ${recs.length} storms from ${f.name}.`; renderData();
+    } catch (err) { $('impMsg').className = 'msg err'; $('impMsg').textContent = `Could not read ${f.name}: ${err.message}.`; } e.target.value = ''; };
+  rd.readAsText(f); });
+
+/* ================= SETTINGS ================= */
+function renderSettings() {
+  $('s_price').value = prefs.price; $('s_probe').value = String(prefs.probe);
+  const rows = [['Freezing point of salt brine', 'CRC Handbook (NaCl)', 'fixed'], ['Conductivity of salt water', 'standard NaCl values', 'fixed'], ['Chloride share of salt', '60.7%', 'fixed'],
+    ['Stream limits for chloride', '230 / 860 mg/L', 'US EPA aquatic-life criteria'], ['Salt bouncing off the road', `${Math.round(S.SETTINGS.scatter_loss * 100)}% default, learned from drain data`, '15–38%'],
+    ['Brine needed to stop snow sticking', `${S.SETTINGS.brine_film_mm} mm`, '0.02–0.06 mm'], ['Snow packed into ice by traffic', `${S.SETTINGS.bond_per_h} per hour`, '0.25–1.0'],
+    ['Brine running off the road', `${S.SETTINGS.drain_per_h} per hour`, '0.15–0.5'], ['Drain water from unsalted ground', `${Math.round(S.SETTINGS.unsalted_share * 100)}%`, '15–50%'],
+    ['Icy road', 'over 0.05 mm of ice stuck to pavement', 'definition'], ['Model time step', '5 minutes', ''], ['Published state rate ranges', 'see rate card', E.PUBLISHED_SOURCE]];
+  $('assTable').innerHTML = `<thead><tr><th>Input</th><th>Value</th><th>Range or source</th></tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>`;
 }
-document.addEventListener('click', e => {
-  const st = e.target.closest('[data-storm]'); if (st) { pick = st.dataset.storm; store.set('saltback.pick', pick); }
-  const b = e.target.closest('[data-act],[data-copy],[data-csv]'); if (!b) return;
-  const menu = b.closest('details.menu'); if (menu) menu.removeAttribute('open');
-  if (b.dataset.copy) { const t = tables().find(x => x.key === b.dataset.copy); if (t) copyText(X.toTSV(t.rows), t.name); }
-  else if (b.dataset.csv) { const t = tables().find(x => x.key === b.dataset.csv); if (t) saveFile(`saltback-${t.key}-${stamp()}.csv`, X.toCSV(t.rows)); }
-  else if (b.dataset.act === 'xlsx') exportWorkbook();
-  else if (b.dataset.act === 'png') exportPng();
-  else if (b.dataset.act === 'report') downloadReport();
-  else if (b.dataset.act === 'gsheets') sendToSheets(b);
-});
-document.addEventListener('click', e => { document.querySelectorAll('details.menu[open]').forEach(d => { if (!d.contains(e.target)) d.removeAttribute('open'); }); });
+$('setForm').addEventListener('submit', e => { e.preventDefault(); prefs.price = +$('s_price').value || prefs.price; prefs.probe = +$('s_probe').value; store.set('saltback.prefs', prefs); dirty = true; $('setMsg').textContent = 'Saved.'; });
+$('loadSim').addEventListener('click', () => { records = [...records.filter(r => r.source !== 'simulated'), ...E.exampleSeason().map(r => ({ ...r, source: 'simulated' }))].sort((p, q) => String(p.date).localeCompare(String(q.date))); save(); $('dataMsg').textContent = 'Simulated season loaded.'; });
+$('clearAll').addEventListener('click', e => { const b = e.target; if (b.dataset.c !== '1') { b.dataset.c = '1'; b.textContent = 'Click again to clear all'; setTimeout(() => { b.dataset.c = ''; b.textContent = 'Clear all storms'; }, 3000); return; }
+  records = []; save(); b.dataset.c = ''; b.textContent = 'Clear all storms'; $('dataMsg').textContent = 'All storms cleared.'; });
+
+/* ================= EXPORTS ================= */
+async function exportWorkbook() { try { const ts = tables(); if (!ts.length) return toast('No data to export.'); await saveFile(`saltback-${stamp()}.xlsx`, await X.buildWorkbook(ts, { title: 'Saltback' })); } catch (err) { toast(`Could not build the workbook: ${esc(err.message || err)}`); } }
 async function sendToSheets(btn) {
   const mcp = await mcpP; if (!mcp) return; btn.disabled = true;
-  try {
-    const blob = await X.buildWorkbook(tables(), { title: 'Saltback export' });
+  try { const blob = await X.buildWorkbook(tables(), { title: 'Saltback' });
     const b64 = await new Promise((ok, bad) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.onerror = bad; fr.readAsDataURL(blob); });
     const res = await mcp.callTool('Google Drive', 'create_file', { title: `Saltback ${stamp()}`, contentMimeType: XLSX_MIME, base64Content: b64 });
     const p = (res && res.payload) || {}, f = p.file || p, id = f.id || f.fileId, link = f.webViewLink || f.alternateLink || f.url || (id ? `https://docs.google.com/spreadsheets/d/${id}/edit` : null);
-    toast(link ? `Created a Google Sheet in your Drive. <a href="${esc(link)}" target="_blank" rel="noopener">Open it</a>` : 'Created a Google Sheet in your Drive. Look for “Saltback” in Drive.', 9000);
-  } catch (e) {
-    const c = e && e.code;
-    toast(c === 'server_not_connected' ? 'Google Drive is not connected. Add it in claude.ai Settings → Connectors.' : c === 'needs_reauth' ? 'Reconnect Google Drive in claude.ai Settings → Connectors.'
-      : c === 'not_in_manifest' ? 'Google Drive is turned off for this page.' : c === 'approval_required' ? 'Sending to Drive needs your approval in claude.ai.' : c === 'blocked_by_policy' ? 'Your organization does not allow this.'
-      : c === 'tool_error' ? 'Google Drive refused the file.' : c === 'server_unavailable' || c === 'upstream_error' ? 'Google Drive did not answer. The file may still have been created; check Drive.' : 'Not available here. Download the workbook and import it in Google Sheets.', 9000);
-  } finally { btn.disabled = false; }
-}
-mcpP.then(m => { if (m) { $('gsItem').hidden = false; $('gsData').hidden = false; } });
-$('tpl').textContent = E.CSV_COLUMNS.join(',') + '\n2027-01-06,Route 4,10,21,3.5,7,260,0.5,2,35,200,6150,0\n2027-01-15,Route 4,10,14,8,14,360,0.75,2,34,200,14200,0';
-$('copyTpl').addEventListener('click', () => copyText($('tpl').textContent, 'Template'));
-$('loadEx').addEventListener('click', () => { records = [...E.exampleSeason(), ...records.filter(r => r.source === 'simulator')]; sourceNote = 'example'; saveRecords(); dirty = true; toast('Example season loaded.'); });
-$('csvFile').addEventListener('change', e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
-  rd.onload = () => { try { const recs = E.parseCSV(String(rd.result)); if (!recs.length) throw new Error('the file has a header but no storms');
-      records = [...recs, ...records.filter(r => r.source === 'simulator')]; sourceNote = 'csv'; saveRecords(); dirty = true; pick = 'season:0';
-      $('impMsg').textContent = `Loaded ${recs.length} storms from ${f.name}.`; toast(`Imported ${recs.length} storms. <a href="#overview">See the overview</a>`, 6000);
-    } catch (err) { $('impMsg').textContent = `Could not read ${f.name}: ${err.message}. Check it against the template.`; } e.target.value = ''; };
-  rd.readAsText(f); });
+    toast(link ? `Created in Google Drive. <a href="${esc(link)}" target="_blank" rel="noopener">Open</a>` : 'Created in Google Drive.', 8000);
+  } catch (e) { const c = e && e.code;
+    toast(c === 'server_not_connected' ? 'Google Drive is not connected (claude.ai Settings → Connectors).' : c === 'needs_reauth' ? 'Reconnect Google Drive in claude.ai Settings → Connectors.' : c === 'not_in_manifest' ? 'Google Drive is turned off for this page.'
+      : c === 'approval_required' ? 'Needs your approval in claude.ai.' : c === 'server_unavailable' || c === 'upstream_error' ? 'Google Drive did not answer; check Drive before retrying.' : 'Not available here. Download the workbook instead.', 8000);
+  } finally { btn.disabled = false; } }
+mcpP.then(m => { if (m) document.querySelectorAll('.gs').forEach(b => { b.hidden = false; }); });
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act],[data-copy],[data-csv]'); if (!b) return;
+  const menu = b.closest('details.menu'); if (menu) menu.removeAttribute('open');
+  if (b.dataset.copy) { const t = tables().find(z => z.key === b.dataset.copy); if (t) copyText(X.toTSV(t.rows), t.name); }
+  else if (b.dataset.csv) { const t = tables().find(z => z.key === b.dataset.csv); if (t) saveFile(`saltback-${t.key}-${stamp()}.csv`, X.toCSV(t.rows)); }
+  else if (b.dataset.act === 'xlsx') exportWorkbook(); else if (b.dataset.act === 'report') downloadReport(); else if (b.dataset.act === 'gsheets') sendToSheets(b);
+});
+document.addEventListener('click', e => { document.querySelectorAll('details.menu[open]').forEach(d => { if (!d.contains(e.target)) d.removeAttribute('open'); }); });
 
 /* ================= ROUTING ================= */
-const VIEWS = ['overview', 'storms', 'recommendations', 'ratecard', 'try', 'how', 'data'];
-const view = () => (VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview');
-function renderView() {
-  const v = view();
-  if (v === 'overview') renderOverview(); else if (v === 'storms') renderStorms(); else if (v === 'recommendations') renderRecs();
-  else if (v === 'ratecard') renderRateCard(); else if (v === 'how') renderHow(); else if (v === 'data') renderData();
-  else if (v === 'try') { layout(); drawRoad(); hud(true); }
-  $('reportItem').hidden = v !== 'storms';
-}
-function show() {
-  const v = view();
-  VIEWS.forEach(n => { $('v-' + n).hidden = n !== v; });
-  document.querySelectorAll('.tabs a').forEach(a => { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-  renderView();
-}
+const VIEWS = ['log', 'report', 'recs', 'ratecard', 'sensors', 'data', 'settings'];
+const view = () => (VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'log');
+const RENDER = { log: renderLog, report: renderReport, recs: renderRecs, ratecard: renderRateCard, sensors: renderSensors, data: renderData, settings: renderSettings };
+function render() { RENDER[view()](); }
+function show() { const v = view(); VIEWS.forEach(n => { $('v-' + n).hidden = n !== v; }); document.querySelectorAll('nav.side a').forEach(a => { if (a.dataset.v === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }); render(); }
 window.addEventListener('hashchange', () => { show(); window.scrollTo(0, 0); });
 let lastW = 0;
-new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w === lastW) return; lastW = w; renderView(); }).observe(document.querySelector('main'));
-
-/* ---------- boot ---------- */
-loadScenario('heavyhand');
-lastRun = R.computeRun({ ...settings }); lastRun.label = scenario.name;
-current = lastRun;
+new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== lastW) { lastW = w; render(); } }).observe(document.querySelector('main'));
 show();
-if (!reduce) run(true); else { play.idx = current.rows.length - 1; }
-requestAnimationFrame(frame);
 })();
 </script>

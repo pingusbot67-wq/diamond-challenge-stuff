@@ -38,20 +38,21 @@ These replace the earlier "18% less salt, 15.6 → 4.3 h" claim. What changed an
 ## Two ways to run it
 
 **The website** (`web/index.html`, also published as a private claude.ai artifact): open the file in a browser; no build step.
+It is a plain data-collection tool: black and white, a text sidebar, tables first. It opens on the storm log.
 
 | Page | What it shows |
 |---|---|
-| Overview | The season headline, four numbers, the savings waterfall, the top 3 recommendations, the running total |
-| Storm reports | The one-page report a town receives after each storm (season storms, example storms, your own runs); downloadable as a printable HTML file |
-| Recommendations | Ranked actions, each with what to do, why, impact in tons / dollars / icy minutes, how sure we are, and its own chart |
-| Crew rate card | A printable card by road temperature and snowfall, checked against published state rate charts |
-| Try a storm | The particle simulation with 5 main settings, then "Run again with Saltback's rate" for a side-by-side comparison |
-| How it works | Method, safety rules, every assumption with source and range, the uncertainty and out-of-sample tests, model check |
-| Data | Every table as CSV or copy-paste, the raw 5-minute timeline, CSV import, and the Excel workbook |
+| Storm log (start page) | Every storm on record with weather, trucks, salt, chloride, sensor time at limit, icy time, status and next-storm rate; "Add storm" form; season totals in one line |
+| Storm reports | The report a town receives after each storm: status, salt spread, excess, runoff, next storm, icy time, actions, truck log, drain sensor log and salt-vs-icy-time chart; downloadable as HTML |
+| Recommendations | Ranked actions with impact, confidence and the storms behind them; savings by lever; change per storm |
+| Rate card | Salt per pass by road temperature and snowfall, flagged against published state ranges |
+| Sensors | The drain node, calibration learned from drain data, readings per storm |
+| Data | Every table as CSV or copy-paste, the raw 5-minute timeline of the selected storm, CSV import |
+| Settings | Salt price, sensor range, load the simulated season or clear all storms, decision rules, model assumptions |
 
-The **Export** menu builds an Excel workbook (15 sheets, native editable charts) that also opens in Google Sheets
-(File → Import → Upload), a PNG of the charts on the current page, and the printable storm report. Inside claude.ai
-there is also "Send to Google Sheets" through the Google Drive connector.
+Storms are kept in the browser (localStorage). The page starts with a simulated 12-storm season, marked as simulated.
+**Export** builds an Excel workbook with native charts that also opens in Google Sheets (File → Import → Upload);
+inside claude.ai there is also "Send to Google Sheets" through the Google Drive connector.
 
 **Google Colab** (the Python version, raw data files and a written report):
 
@@ -68,9 +69,9 @@ there is also "Send to Google Sheets" through the Google Drive connector.
 | `explain.py` | Turns that data into plain English (`results/report.txt`) and charts |
 | `build_notebook.py` | Packs the Python files into `Saltback.ipynb` |
 | `web/engine.js` | Season decisions: calibration from drain data, levers, state-chart baseline, recommendations, rate card |
-| `web/report.js` | Example storms and every table the site shows and exports |
+| `web/report.js` | Every table the site shows and exports |
 | `web/xlsx.js` | Writes .xlsx workbooks with native Excel charts (uses JSZip) |
-| `web/uncertainty.js` | `node web/uncertainty.js`: 200 uncertain seasons, sensitivity, out-of-sample test → `web/uncertainty-data.js` |
+| `web/uncertainty.js` | `node web/uncertainty.js`: 200 uncertain seasons, sensitivity, out-of-sample test → `web/uncertainty-data.js` (results quoted in this README) |
 | `screenshots/` | Before and after screenshots of every page, described in `screenshots/README.md` |
 
 ## How it decides

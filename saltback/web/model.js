@@ -8,7 +8,7 @@
     baseline_cl_mg_L: 50, water_temp_C: 1.0, probe_max_mS_cm: 20.0, probe_noise: 0.03, temp_probe_error_C: 0.5,
     use_temp_probe: true, salt_price_per_ton: 90, seed: 1,
     storm_hours: 8, snowfall_in: 4, snow_ratio: 12, first_pass_h: 0.5, plow_every_h: 2, salt_per_pass_lb: 220,
-    temp_after_F: 38, drain_per_h: 0.3, traffic_loss_per_h: 0.05, bond_per_h: 0.5, catchment_m2: 400,
+    temp_after_F: 38, drain_per_h: 0.3, traffic_loss_per_h: 0.05, bond_per_h: 0.5, brine_film_mm: 0.04, catchment_m2: 400,
     route_lane_miles: 10,
   };
 
@@ -26,7 +26,8 @@
 
   // Step 2 constants
   const DT_H = 5 / 60, EUTECTIC_C = FREEZE_C[FREEZE_C.length - 1], PLOW_CLEAR = 0.95;
-  const BRINE_FILM_G = 40, ICY_G = 50, NATURAL_MELT = 300, CL_LIMITS = [230, 860];
+  const ICY_G = 50, NATURAL_MELT = 300, CL_LIMITS = [230, 860];
+  const NEEDED_TOLERANCE_H = 0.25, SAFETY_SLACK_H = 0.1, CANT_FIX_H = 2.0, MAX_STEP_DOWN = 0.25, MAX_LB = 600;
 
   function interp(x, xs, ys) {            // same as numpy.interp (clamps at both ends)
     if (x <= xs[0]) return ys[0];
@@ -126,7 +127,7 @@
       }
       if (m >= 0) { const fromIce = Math.min(ice, m); ice -= fromIce; loose -= m - fromIce; water += m; }
       else { water += m; ice -= m; }
-      if (tc < 0 && water < BRINE_FILM_G) { const k = loose * (1 - Math.exp(-s.bond_per_h * DT_H)); loose -= k; ice += k; }
+      if (tc < 0 && water < s.brine_film_mm * 1000) { const k = loose * (1 - Math.exp(-s.bond_per_h * DT_H)); loose -= k; ice += k; }
       const qw = water * outF, qs = salt * outF, sw = water * sprayF, ss = salt * sprayF, sc = crystals * sprayF;
       water -= qw + sw; salt -= qs + ss; crystals -= sc; roadside += ss + sc; drained += qs;
       const flow = qw / 1000 / mix * s.catchment_m2 / DT_H;
@@ -172,32 +173,49 @@
     });
   }
 
-  function findNeeded(s, maxLb = 600, step = 10) {
+  function findNeeded(s, maxLb = MAX_LB, step = 10) {
     const sweep = [];
     for (let lb = 0; lb <= maxLb; lb += step) {
       const sm = stormTimeline(s, lb, false).summary;
       sweep.push({ salt_per_pass_lb: lb, total_lb_per_lane_mile: sm.salt_applied_lb_per_lane_mile, icy_hours: sm.icy_hours,
         chloride_released_lb_per_lane_mile: sm.salt_applied_lb_per_lane_mile * CL_SHARE });
     }
-    const best = sweep[sweep.length - 1].icy_hours + 0.5;
+    const best = sweep[sweep.length - 1].icy_hours + NEEDED_TOLERANCE_H;
     return { needed: sweep.find(r => r.icy_hours <= best).salt_per_pass_lb, sweep };
   }
-
-  function stormCard(s, summary, neededLb) {
-    const applied = summary.salt_per_pass_lb;
-    const excess = applied ? Math.max(0, 100 * (applied - neededLb) / applied) : 0;
-    const rec = Math.ceil(neededLb * 1.1 / 10) * 10;
-    const change = applied ? 100 * (rec - applied) / applied : 0;
-    const avg = summary.avg_cl_mg_L || 0;
-    return {
-      route_salt_lb: summary.salt_applied_lb_per_lane_mile * s.route_lane_miles, excess_pct: excess,
-      chloride_level: avg < CL_LIMITS[0] ? 'LOW' : avg < CL_LIMITS[1] ? 'MODERATE' : 'HIGH',
-      recommended_per_pass_lb: rec, recommended_change_pct: pyRound(change / 5) * 5, needed_per_pass_lb: neededLb,
-    };
+  function icyAt(s, sweep, lb) {
+    const hit = sweep.find(r => r.salt_per_pass_lb === lb);
+    return hit ? hit.icy_hours : stormTimeline(s, lb, false).summary.icy_hours;
+  }
+  /* Saltback's advice for one storm with the safety check built in (see recommend_rate in model.py). */
+  function recommendRate(s, sweep, needed, icyActual, applied) {
+    const best = sweep[sweep.length - 1].icy_hours;
+    if (best > CANT_FIX_H) return { cant_fix: true, target: null, next: null, icy_target: null, icy_next: null, best_icy: best };
+    const limit = icyActual + SAFETY_SLACK_H;
+    let target = Math.min(MAX_LB, Math.ceil(needed * 1.1 / 10) * 10);
+    while (target < MAX_LB && icyAt(s, sweep, target) > limit) target += 10;
+    if (icyAt(s, sweep, target) > limit && applied > 0) target = applied;
+    const next = target < applied ? Math.max(target, Math.ceil(applied * (1 - MAX_STEP_DOWN) / 10) * 10) : target;
+    return { cant_fix: false, target, next, icy_target: icyAt(s, sweep, target), icy_next: icyAt(s, sweep, next), best_icy: best };
+  }
+  function stormCard(s, summary, neededLb, sweep) {
+    const applied = summary.salt_per_pass_lb, rec = recommendRate(s, sweep, neededLb, summary.icy_hours, applied);
+    const route = summary.salt_applied_lb_per_lane_mile * s.route_lane_miles;
+    let excess = null, status = 'cant_fix';
+    if (!rec.cant_fix) {
+      excess = applied ? Math.max(0, 100 * (applied - rec.target) / applied) : 0;
+      status = rec.target > applied ? 'under' : excess >= 10 ? 'over' : 'ok';
+    }
+    const change = r => (applied && r != null ? pyRound(100 * (r - applied) / applied / 5) * 5 : null);
+    return { status, route_salt_lb: route, needed_per_pass_lb: neededLb, target_per_pass_lb: rec.target, next_per_pass_lb: rec.next,
+      excess_pct: excess, target_change_pct: change(rec.target), next_change_pct: change(rec.next),
+      icy_actual_h: summary.icy_hours, icy_target_h: rec.icy_target, icy_next_h: rec.icy_next, best_icy_h: rec.best_icy,
+      chloride_released_lb: route * CL_SHARE, chloride_to_drain_lb: route * summary.salt_to_drain_pct / 100 * CL_SHARE,
+      peak_x_stream_limit: (summary.peak_cl_mg_L || 0) / CL_LIMITS[1] };
   }
 
-  const api = { SETTINGS, CL_SHARE, LB_PER_LANE_MILE, DT_H, ICY_G, CL_LIMITS, fToC, brineStrengthNeeded, iceMeltedPerSalt,
-    chlorideToConductivity,
+  const api = { SETTINGS, CL_SHARE, LB_PER_LANE_MILE, DT_H, ICY_G, CL_LIMITS, MAX_LB, CANT_FIX_H, SAFETY_SLACK_H, MAX_STEP_DOWN, fToC, brineStrengthNeeded, iceMeltedPerSalt,
+    chlorideToConductivity, recommendRate, icyAt,
     equilibrium, stormTimeline, findNeeded, stormCard };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Saltback = api;

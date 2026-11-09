@@ -57,11 +57,13 @@ The first truck arrives after 0.5 h, then returns every 2 h:
 Afterwards the road warms to 38F and the leftover salt washes away.
 
 SALTBACK STORM CARD
-   Route (10 lane-mi) | Salt applied: 8,800 lb | Estimated excess: 45% | Chloride runoff: HIGH | Next comparable storm: -35%
+   Salt spread: 8,800 lb | Excess: 27% | Chloride released: 5,338 lb | Next storm: try 170 lb per pass (-25%)
 
 6) WAS THE ROAD SAFE?
    Icy (bonded ice on a freezing road) for 0.2 h. With no salt: 11.4 h.
-   Just 120 lb per pass would have kept it icy only 0.6 h. The other 45% of the salt bought only 25 extra minutes of bare road.
+   Icy time: 10 min as salted -> 15 min at Saltback's rate (160 lb per pass).
+   Saltback never recommends a rate that would leave the road more than 6 minutes icier than it was,
+   and it cuts at most 25% per storm, checking the result each time.
 
 7) WHERE THE SALT WENT
    67% washed into the storm drain, 33% was thrown onto the shoulder and soil
@@ -69,8 +71,9 @@ SALTBACK STORM CARD
 
 8) WHAT LEFT THROUGH THE DRAIN
    The drain ran for 32 h. Peak chloride 39,074 mg/L, storm average 10,930 mg/L.
-   For scale: the EPA's safe limit for fish and insects in streams is 860 mg/L short-term and
-   230 mg/L long-term. A stream dilutes drain water, but chloride never breaks down, so it builds up.
+   Drain water peaked at 45x the EPA short-term stream limit (860 mg/L) before dilution.
+   A stream dilutes drain water, but chloride never breaks down, so what matters is the total load:
+   5,338 lb of chloride from this storm.
 
 9) DID THE SENSOR KEEP UP?
    The probe was maxed out for 9.9 h, so Saltback only saw 48% of the salt.
@@ -78,8 +81,6 @@ SALTBACK STORM CARD
    A high-range K=10 probe fixes this: set probe_max_mS_cm to 200 and run again.
 
 NOT IN THE MODEL YET (coming in later steps):
-   - a whole winter of storms, and Saltback learning from each one
-   - uncertainty: what if our guesses (ice, runoff, bonding speed) are wrong?
-   - real lab data from Experiments 1 and 2
+   - real lab data from Experiments 1 and 2 (the season analysis and uncertainty tests are on the website)
 
 All inputs are typical published values, not real town data. See results/settings_used.json.

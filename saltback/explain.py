@@ -78,23 +78,30 @@ def write_report(sweep, temps, check, s):
 
 def step2_report(tl, sw, summ, card, s):
     n_pass = round(summ["salt_applied_lb_per_lane_mile"] / max(summ["salt_per_pass_lb"], 1e-9))
-    at_need = closest(sw, "salt_per_pass_lb", card["needed_per_pass_lb"])
     flowing = tl.dropna(subset=["cl_true_mg_L"])
     L = ["", "", "STEP 2: THE SAME KIND OF STORM, HOUR BY HOUR", "=" * 60, ""]
     L += [f"THE STORM: {s['snowfall_in']} in of snow over {s['storm_hours']} h with the road at {s['pavement_temp_F']}F.",
           f"The first truck arrives after {s['first_pass_h']} h, then returns every {s['plow_every_h']} h:",
           f"{n_pass} passes x {summ['salt_per_pass_lb']:.0f} lb = {summ['salt_applied_lb_per_lane_mile']:.0f} lb per lane-mile.",
           f"Afterwards the road warms to {s['temp_after_F']}F and the leftover salt washes away.", ""]
-    L += ["SALTBACK STORM CARD",
-          f"   Route ({s['route_lane_miles']} lane-mi) | Salt applied: {card['route_salt_lb']:,.0f} lb | "
-          f"Estimated excess: {card['excess_pct']:.0f}% | Chloride runoff: {card['chloride_level']} | "
-          f"Next comparable storm: {card['recommended_change_pct']:+.0f}%", ""]
+    if card["status"] == "cant_fix":
+        verdict = ("Salt alone couldn't keep this road clear (still icy "
+                   f"{card['best_icy_h']:.1f} h at the maximum rate). Pre-treat with brine, time a pass just before the freeze,"
+                   " or use sand or a stronger chemical when it is very cold.")
+        card_line = f"   Salt spread: {card['route_salt_lb']:,.0f} lb | Salt alone couldn't fix this storm"
+    else:
+        verdict = (f"Icy time: {card['icy_actual_h'] * 60:.0f} min as salted -> {card['icy_target_h'] * 60:.0f} min at "
+                   f"Saltback's rate ({card['target_per_pass_lb']} lb per pass).")
+        card_line = (f"   Salt spread: {card['route_salt_lb']:,.0f} lb | Excess: {card['excess_pct']:.0f}% | "
+                     f"Chloride released: {card['chloride_released_lb']:,.0f} lb | "
+                     f"Next storm: try {card['next_per_pass_lb']} lb per pass ({card['next_change_pct']:+.0f}%)")
+    L += ["SALTBACK STORM CARD", card_line, ""]
     L += ["6) WAS THE ROAD SAFE?",
           f"   Icy (bonded ice on a freezing road) for {summ['icy_hours']:.1f} h. With no salt: "
           f"{sw.icy_hours.iloc[0]:.1f} h.",
-          f"   Just {card['needed_per_pass_lb']:.0f} lb per pass would have kept it icy only "
-          f"{at_need.icy_hours:.1f} h. The other {card['excess_pct']:.0f}% of the salt bought only "
-          f"{max(0, at_need.icy_hours - summ['icy_hours']) * 60:.0f} extra minutes of bare road.", ""]
+          f"   {verdict}",
+          "   Saltback never recommends a rate that would leave the road more than 6 minutes icier than it was,",
+          "   and it cuts at most 25% per storm, checking the result each time.", ""]
     L += ["7) WHERE THE SALT WENT",
           f"   {summ['salt_to_drain_pct']:.0f}% washed into the storm drain, {summ['salt_to_roadside_pct']:.0f}% was "
           "thrown onto the shoulder and soil",
@@ -102,8 +109,9 @@ def step2_report(tl, sw, summ, card, s):
     L += ["8) WHAT LEFT THROUGH THE DRAIN",
           f"   The drain ran for {summ['hours_drain_flowing']:.0f} h. Peak chloride {summ['peak_cl_mg_L']:,.0f} mg/L, storm average "
           f"{summ['avg_cl_mg_L']:,.0f} mg/L.",
-          "   For scale: the EPA's safe limit for fish and insects in streams is 860 mg/L short-term and",
-          "   230 mg/L long-term. A stream dilutes drain water, but chloride never breaks down, so it builds up.", ""]
+          f"   Drain water peaked at {card['peak_x_stream_limit']:.0f}x the EPA short-term stream limit (860 mg/L) before dilution.",
+          "   A stream dilutes drain water, but chloride never breaks down, so what matters is the total load:",
+          f"   {card['chloride_released_lb']:,.0f} lb of chloride from this storm.", ""]
     L += ["9) DID THE SENSOR KEEP UP?",
           f"   The probe was maxed out for {summ['hours_probe_maxed']:.1f} h, so Saltback only saw "
           f"{summ['salt_seen_vs_true_pct']:.0f}% of the salt."]
@@ -113,9 +121,7 @@ def step2_report(tl, sw, summ, card, s):
     else:
         L += ["   The probe stayed in range: the drain measurement is trustworthy for this storm."]
     L += ["", "NOT IN THE MODEL YET (coming in later steps):",
-          "   - a whole winter of storms, and Saltback learning from each one",
-          "   - uncertainty: what if our guesses (ice, runoff, bonding speed) are wrong?",
-          "   - real lab data from Experiments 1 and 2",
+          "   - real lab data from Experiments 1 and 2 (the season analysis and uncertainty tests are on the website)",
           "", "All inputs are typical published values, not real town data. See results/settings_used.json."]
     return L
 
@@ -195,9 +201,12 @@ def draw_step2_chart(tl, sw, card, s):
     ax = axes[2]
     style(ax, "F. Salt per pass vs. icy hours", "Salt per pass (lb per lane-mile)", "Hours the road was icy")
     ax.plot(sw.salt_per_pass_lb, sw.icy_hours, color=BLUE, linewidth=2)
-    for lb, label, off in [(card["needed_per_pass_lb"], "needed", (10, 22)), (s["salt_per_pass_lb"], "used", (10, -18))]:
+    marks = [(s["salt_per_pass_lb"], "used", (10, -18))]
+    if card["target_per_pass_lb"] is not None:
+        marks.insert(0, (card["target_per_pass_lb"], "Saltback", (10, 22)))
+    for lb, label, off in marks:
         r = closest(sw, "salt_per_pass_lb", lb)
-        ax.plot([r.salt_per_pass_lb], [r.icy_hours], "o", color=BLUE if label == "needed" else ORANGE,
+        ax.plot([r.salt_per_pass_lb], [r.icy_hours], "o", color=BLUE if label == "Saltback" else ORANGE,
                 markersize=8, markeredgecolor=BG, markeredgewidth=2)
         ax.annotate(f"{label}: {r.salt_per_pass_lb:.0f} lb", (r.salt_per_pass_lb, r.icy_hours),
                     xytext=off, textcoords="offset points", color=INK, fontsize=9)

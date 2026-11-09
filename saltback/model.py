@@ -38,6 +38,7 @@ SETTINGS = dict(
     drain_per_h=0.3,          # share of liquid brine that runs off the road each hour    (0.1 to 0.8)
     traffic_loss_per_h=0.05,  # share of brine/salt that tires throw onto the shoulder /h (0.02 to 0.15)
     bond_per_h=0.5,           # how fast traffic packs unprotected snow into bonded ice /h (0.2 to 1)
+    brine_film_mm=0.04,       # brine layer that stops snow bonding to pavement, mm (0.02 to 0.06; tuned to state rate charts)
     catchment_m2=400,         # road area draining to the monitored storm drain           (100 to 2000)
     route_lane_miles=10,      # size of the route, for the storm card                     (1 to 50)
 )
@@ -159,7 +160,6 @@ def storm(dose_g_m2, s, rng):
 DT_H = 5 / 60            # time step: 5 minutes
 EUTECTIC_C = FREEZE_C[-1]
 PLOW_CLEAR = 0.95        # a plow pass scrapes off 95% of LOOSE snow (it cannot lift ice bonded to pavement)
-BRINE_FILM_G = 40        # a brine layer of at least 0.04 mm stops snow from bonding (tuned to published rate charts)
 ICY_G = 50               # bonded ice thicker than 0.05 mm counts as an icy, slippery road
 NATURAL_MELT = 300       # g/m^2 per hour per degree C above freezing (pavement thaw rate)
 CL_LIMITS = (230, 860)   # US EPA chloride criteria for aquatic life: long-term and short-term (mg/L)
@@ -221,7 +221,7 @@ def storm_timeline(s, per_pass_lb=None, with_sensor=True):
         else:                            # refreezing: brine too weak -> black ice
             water += m; ice -= m
         # 5) traffic packs unprotected snow into bonded ice
-        if tc < 0 and water < BRINE_FILM_G:
+        if tc < 0 and water < s["brine_film_mm"] * 1000:
             k = loose * (1 - math.exp(-s["bond_per_h"] * DT_H)); loose -= k; ice += k
         # 6) brine runs off to the drain, or tires spray it (and loose crystals) onto the shoulder
         qw, qs = water * out_f, salt * out_f
@@ -272,8 +272,15 @@ def add_sensor_trace(rows, summary, s):
                    salt_seen_vs_true_pct=100 * seen_load / true_load if true_load else 100.0)
 
 
-def find_needed(s, max_lb=600, step=10):
-    """Smallest salt-per-pass that keeps the road about as safe as a very heavy dose would.
+NEEDED_TOLERANCE_H = 0.25   # "needed" = the smallest rate within 15 minutes of the best icy time any rate reaches
+SAFETY_SLACK_H = 0.1        # a recommendation may never add more than 6 minutes of icy road
+CANT_FIX_H = 2.0            # still icy this long at the maximum rate: salt alone can't fix this storm
+MAX_STEP_DOWN = 0.25        # next-storm advice cuts at most 25% at a time (no cap on safety increases)
+MAX_LB = 600                # highest salt rate the search tries, lb per lane-mile per pass
+
+
+def find_needed(s, max_lb=MAX_LB, step=10):
+    """Smallest salt-per-pass that keeps the road within 15 minutes of the safest result any amount reaches.
     Returns (needed_lb_per_pass, sweep) where sweep lists icy hours and chloride for each dose tried."""
     sweep = []
     for lb in range(0, max_lb + 1, step):
@@ -281,19 +288,51 @@ def find_needed(s, max_lb=600, step=10):
         sweep.append(dict(salt_per_pass_lb=lb, total_lb_per_lane_mile=sm["salt_applied_lb_per_lane_mile"],
                           icy_hours=sm["icy_hours"],
                           chloride_released_lb_per_lane_mile=sm["salt_applied_lb_per_lane_mile"] * CL_SHARE))
-    best = sweep[-1]["icy_hours"] + 0.5           # within 30 minutes of the safest possible result
+    best = sweep[-1]["icy_hours"] + NEEDED_TOLERANCE_H
     needed = next(r["salt_per_pass_lb"] for r in sweep if r["icy_hours"] <= best)
     return needed, sweep
 
 
-def storm_card(s, summary, needed_lb):
-    """Saltback's one-line verdict for the storm, like the pitch's storm card."""
+def icy_at(s, sweep, lb):
+    """Hours icy at a given salt rate (from the sweep when it has that rate)."""
+    hit = next((r for r in sweep if r["salt_per_pass_lb"] == lb), None)
+    return hit["icy_hours"] if hit else storm_timeline(s, lb, with_sensor=False)[1]["icy_hours"]
+
+
+def recommend_rate(s, sweep, needed, icy_actual, applied):
+    """Saltback's advice for one storm, with the safety check built in.
+    target = the rate Saltback would have used (need + 10%, raised until it is no icier than the crew's result + 6 min)
+    next   = the step to try next storm (cuts capped at 25%; safety increases are not capped)
+    cant_fix = True when the road stays icy > 2 h even at the maximum rate: no excess or cut is computed."""
+    best = sweep[-1]["icy_hours"]
+    if best > CANT_FIX_H:
+        return dict(cant_fix=True, target=None, next=None, icy_target=None, icy_next=None, best_icy=best)
+    limit = icy_actual + SAFETY_SLACK_H
+    target = min(MAX_LB, math.ceil(needed * 1.1 / 10) * 10)
+    while target < MAX_LB and icy_at(s, sweep, target) > limit:
+        target += 10
+    if icy_at(s, sweep, target) > limit and applied > 0:
+        target = applied                                   # nothing safer found: keep the crew's rate
+    nxt = max(target, math.ceil(applied * (1 - MAX_STEP_DOWN) / 10) * 10) if target < applied else target
+    return dict(cant_fix=False, target=target, next=nxt, icy_target=icy_at(s, sweep, target),
+                icy_next=icy_at(s, sweep, nxt), best_icy=best)
+
+
+def storm_card(s, summary, needed_lb, sweep):
+    """Saltback's verdict for the storm: the four items in the pitch plus the safety check."""
     applied = summary["salt_per_pass_lb"]
-    excess = max(0.0, 100 * (applied - needed_lb) / applied) if applied else 0.0
-    rec = math.ceil(needed_lb * 1.1 / 10) * 10                 # recommend the need plus a 10% safety margin
-    change = 100 * (rec - applied) / applied if applied else 0.0
-    avg = summary.get("avg_cl_mg_L", 0)
-    level = "LOW" if avg < CL_LIMITS[0] else "MODERATE" if avg < CL_LIMITS[1] else "HIGH"
-    return dict(route_salt_lb=summary["salt_applied_lb_per_lane_mile"] * s["route_lane_miles"],
-                excess_pct=excess, chloride_level=level, recommended_per_pass_lb=rec,
-                recommended_change_pct=round(change / 5) * 5, needed_per_pass_lb=needed_lb)
+    rec = recommend_rate(s, sweep, needed_lb, summary["icy_hours"], applied)
+    route = summary["salt_applied_lb_per_lane_mile"] * s["route_lane_miles"]
+    if rec["cant_fix"]:
+        excess, status = None, "cant_fix"
+    else:
+        excess = max(0.0, 100 * (applied - rec["target"]) / applied) if applied else 0.0
+        status = "under" if rec["target"] > applied else "over" if excess >= 10 else "ok"
+    change = lambda r: round(100 * (r - applied) / applied / 5) * 5 if applied and r is not None else None
+    return dict(status=status, route_salt_lb=route, needed_per_pass_lb=needed_lb,
+                target_per_pass_lb=rec["target"], next_per_pass_lb=rec["next"], excess_pct=excess,
+                target_change_pct=change(rec["target"]), next_change_pct=change(rec["next"]),
+                icy_actual_h=summary["icy_hours"], icy_target_h=rec["icy_target"], icy_next_h=rec["icy_next"],
+                best_icy_h=rec["best_icy"], chloride_released_lb=route * CL_SHARE,
+                chloride_to_drain_lb=route * summary["salt_to_drain_pct"] / 100 * CL_SHARE,
+                peak_x_stream_limit=summary.get("peak_cl_mg_L", 0) / CL_LIMITS[1])

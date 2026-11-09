@@ -22,6 +22,7 @@
   "drain_per_h": 0.3,
   "traffic_loss_per_h": 0.05,
   "bond_per_h": 0.5,
+  "brine_film_mm": 0.04,
   "catchment_m2": 400,
   "route_lane_miles": 10
 }

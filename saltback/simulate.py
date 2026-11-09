@@ -48,7 +48,7 @@ def run(overrides=None):
     # 4) Step 2: the same storm over time (5-minute steps), plus the salt dose it really needed
     rows, summary = model.storm_timeline(s)
     needed, sweep2 = model.find_needed(s)
-    card = model.storm_card(s, summary, needed)
+    card = model.storm_card(s, summary, needed, sweep2)
     pd.DataFrame(rows).round(4).to_csv(OUT / "timeline.csv", index=False)
     pd.DataFrame(sweep2).round(3).to_csv(OUT / "timeline_dose_sweep.csv", index=False)
     (OUT / "storm_summary.json").write_text(json.dumps(dict(summary=summary, card=card), indent=2, default=float))

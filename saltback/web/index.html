@@ -356,7 +356,7 @@ footer.foot { padding-block: 24px 40px; border-top: 1px solid var(--line); }
     </div>
     <div class="grid2">
       <figure class="card" style="margin:0"><div class="card-h"><div><h2>Snow is plowed off; ice that sticks is what makes the road icy</h2><p class="sub">Thickness on the road over the storm, in millimeters of water. The road counts as icy when stuck ice is thicker than 0.05 mm.</p></div></div><div class="plot" id="chRoad"></div></figure>
-      <figure class="card" style="margin:0"><div class="card-h"><div><h2>What the drain sensor read</h2><p class="sub">Dark dots: the sensor reading. Light dots: the true value. Red dotted line: the most this sensor can read. Units: millisiemens per centimeter (mS/cm), a measure of how salty the water is.</p></div></div><canvas id="trace" aria-label="Drain sensor reading over the storm"></canvas></figure>
+      <figure class="card" style="margin:0"><div class="card-h"><div><h2>What the drain sensor read</h2><p class="sub">Dark dots: the sensor reading. Light dots: the true value. Grey dotted line: the most this sensor can read. Units: millisiemens per centimeter (mS/cm), a measure of how salty the water is.</p></div></div><canvas id="trace" aria-label="Drain sensor reading over the storm"></canvas></figure>
     </div>
   </section>
 
@@ -926,7 +926,7 @@ function draw() {
   for (const p of P.pool) { ctx.globalAlpha = Math.min(1, p.a); ctx.fillRect(p.x, p.y, 1.3, 1.3); } ctx.globalAlpha = 1;
   const read = r.reading_mS_cm, level = Number.isNaN(read) ? 0 : Math.min(1, read / s.probe_max_mS_cm), py = G.chamberB - 14;
   ctx.fillStyle = rgba(C.text, 0.55); for (let y = G.chamberT - 8; y < py; y += 3) ctx.fillRect(G.probeX, y, 1, 1);
-  ctx.fillStyle = r.probe_maxed ? C.risk : C.water; const Rr = 3 + level * 9; for (let i = 0; i < 22; i++) { const a = i / 22 * Math.PI * 2 + performance.now() / 2400; ctx.fillRect(G.probeX + Math.cos(a) * Rr, py + Math.sin(a) * Rr, 1.4, 1.4); }
+  ctx.fillStyle = r.probe_maxed ? C['text-2'] : C.water; const Rr = 3 + level * 9; for (let i = 0; i < 22; i++) { const a = i / 22 * Math.PI * 2 + performance.now() / 2400; ctx.fillRect(G.probeX + Math.cos(a) * Rr, py + Math.sin(a) * Rr, 1.4, 1.4); }
   for (const f of P.flakes) { if (f.rain) { ctx.fillStyle = rgba(C.water, 0.6); ctx.fillRect(f.x, f.y, 1, 4); } else { ctx.fillStyle = rgba(C.snow, 0.8); ctx.fillRect(f.x, f.y, f.s, f.s); } }
   ctx.font = '500 12px "IBM Plex Sans", Arial, sans-serif';
   for (const p of passes) { if (p.x == null) continue; ctx.fillStyle = rgba(C.text, 0.45); for (let y = 0; y < G.ground; y += 4) ctx.fillRect(p.x, y, 1, 1); ctx.fillStyle = C.text; ctx.textAlign = 'left'; ctx.fillText(`Truck pass ${p.n}: ${s.salt_per_pass_lb} lb`, Math.min(p.x + 6, CW - 140), G.ground - 46); }
@@ -943,7 +943,7 @@ function drawTrace() {
   tctx.textAlign = 'right'; for (const v of ticks(0, top, 3)) { tctx.fillStyle = rgba(C.text, 0.08); tctx.fillRect(L, Math.round(Y(v)), TW - L, 1); tctx.fillStyle = C['text-2']; tctx.fillText(int(v), L - 6, Y(v) + 4); }
   tctx.save(); tctx.translate(11, (TH - B) / 2); tctx.rotate(-Math.PI / 2); tctx.textAlign = 'center'; tctx.fillText('mS/cm', 0, 0); tctx.restore();
   tctx.textAlign = 'center'; const hrsT = rows[n - 1].hour; for (let hh = 0; hh <= hrsT; hh += hrsT > 24 ? 8 : 4) tctx.fillText(`${hh} h`, X(hh / S.DT_H), TH - 5);
-  tctx.fillStyle = C.risk; for (let x = L; x < TW; x += 5) tctx.fillRect(x, Y(s.probe_max_mS_cm), 1.6, 1.6);
+  tctx.fillStyle = C['text-2']; for (let x = L; x < TW; x += 5) tctx.fillRect(x, Y(s.probe_max_mS_cm), 1.6, 1.6);
   const upto = Math.floor(play.idx);
   tctx.fillStyle = rgba(C.text, 0.3); for (let i = 0; i <= upto; i++) { const v = rows[i].ec_true; if (!Number.isNaN(v)) tctx.fillRect(X(i), Y(v), 1.6, 1.6); }
   tctx.fillStyle = C.text; for (let i = 0; i <= upto; i++) { const v = rows[i].reading_mS_cm; if (!Number.isNaN(v)) tctx.fillRect(X(i), Y(v) - 0.5, 2, 2); }
@@ -958,7 +958,7 @@ function hud(force) {
   const cond = r.icy ? '<span class="chip risk">Icy</span>' : r.loose_snow_mm > 0.3 ? '<span class="chip">Snow covered</span>' : r.brine_mm > 0.02 ? '<span class="chip water">Wet, salted</span>' : '<span class="chip save">Bare</span>';
   const wet = !Number.isNaN(r.reading_mS_cm);
   $('readouts').innerHTML = [['Road condition', cond], ['Icy right now?', r.icy ? '<span class="chip risk">Yes</span>' : 'No'], ['Salt used so far', `${int(appliedSoFar)} lb per lane-mile`],
-    ['Runoff saltiness', esc(saltiness(r.cl_true_mg_L))], ['Drain sensor', !wet ? 'Dry' : r.probe_maxed ? '<span class="chip risk">At its limit</span>' : 'Reading normally']].map(([k, v]) => `<div><span>${k}</span><span>${v}</span></div>`).join('');
+    ['Runoff saltiness', esc(saltiness(r.cl_true_mg_L))], ['Drain sensor', !wet ? 'Dry' : r.probe_maxed ? '<span class="chip">At its limit</span>' : 'Reading normally']].map(([k, v]) => `<div><span>${k}</span><span>${v}</span></div>`).join('');
 }
 let last = performance.now();
 function frame(now) {

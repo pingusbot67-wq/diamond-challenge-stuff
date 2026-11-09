@@ -11,12 +11,14 @@ The original developer console: monospaced readouts, ALL-CAPS labels, an "Export
 
 Black and white, system font, a text sidebar, thin rules, no cards. Colour is used only for the small status
 squares (amber over-salted, green about right, red under-salted or late) and for red icy times.
-The landing page is the storm log; the overview, example-storm library and "Try a storm" animation are gone.
+The landing page is the storm log; the overview, example-storm library and "Try a storm" page are gone. A simple
+one-colour dot replay of each storm sits at the top of its storm report.
 
 | File | Page |
 |---|---|
 | `desk-log.png` | Storm log (start page): season totals line and one row per storm |
 | `desk-report.png` | Storm report: verdict, key facts, actions, truck log, drain sensor log, salt rate vs icy time |
+| `desk-replay.png`, `phone-replay.png` | Storm replay mid-storm: snow, second truck pass, sensor at its limit |
 | `desk-recs.png` | Recommendations table, savings by lever, change per storm |
 | `desk-ratecard.png` | Rate card with state-range flags and chart |
 | `desk-sensors.png` | Drain node, calibration, readings by storm |

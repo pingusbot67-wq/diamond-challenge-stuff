@@ -43,7 +43,7 @@ It is a plain data-collection tool: black and white, a text sidebar, tables firs
 | Page | What it shows |
 |---|---|
 | Storm log (start page) | Every storm on record with weather, trucks, salt, chloride, sensor time at limit, icy time, status and next-storm rate; "Add storm" form; season totals in one line |
-| Storm reports | The report a town receives after each storm: status, salt spread, excess, runoff, next storm, icy time, actions, truck log, drain sensor log and salt-vs-icy-time chart; downloadable as HTML |
+| Storm reports | A small dot replay of the storm (snow, truck passes, salt landing on the road or bouncing onto the shoulder, runoff into the drain sensor) with play/pause and a time slider; then the report a town receives: status, salt spread, excess, runoff, next storm, icy time, actions, truck log, drain sensor log and salt-vs-icy-time chart; downloadable as HTML |
 | Recommendations | Ranked actions with impact, confidence and the storms behind them; savings by lever; change per storm |
 | Rate card | Salt per pass by road temperature and snowfall, flagged against published state ranges |
 | Sensors | The drain node, calibration learned from drain data, readings per storm |

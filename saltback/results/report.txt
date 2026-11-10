@@ -1,0 +1,87 @@
+SALTBACK SIMULATION - STEP 1: ONE STORM, IN PLAIN ENGLISH
+============================================================
+
+THE STORM: road surface at 22F (-6C), with a 0.2 mm ice film
+stuck to the road after plowing. 20% of the salt bounces off the road.
+
+1) HOW MUCH SALT THIS STORM NEEDED
+   About 307 lb per lane-mile. Any less leaves some ice; any more melts nothing extra.
+
+   Salt spread      Ice cleared   Salt wasted   Money wasted (per lane-mile)
+     100 lb/lane-mi      33%           0%        $ 0.00
+     200 lb/lane-mi      65%           0%        $ 0.00
+     300 lb/lane-mi      98%           0%        $ 0.00
+     400 lb/lane-mi     100%          23%        $ 4.17
+     500 lb/lane-mi     100%          39%        $ 8.67
+     600 lb/lane-mi     100%          49%        $13.17
+     700 lb/lane-mi     100%          56%        $17.67
+     800 lb/lane-mi     100%          62%        $22.17
+
+   At double the needed amount (~620 lb), 50% of the salt does nothing but pollute.
+
+2) TEMPERATURE CHANGES EVERYTHING
+   At 30F: 1 lb of salt melts 52.5 lb of ice -> this storm needs   62 lb/lane-mile
+   At 25F: 1 lb of salt melts 14.9 lb of ice -> this storm needs  217 lb/lane-mile
+   At 20F: 1 lb of salt melts  8.9 lb of ice -> this storm needs  366 lb/lane-mile
+   At 15F: 1 lb of salt melts  6.4 lb of ice -> this storm needs  504 lb/lane-mile
+   At 10F: 1 lb of salt melts  5.1 lb of ice -> this storm needs  632 lb/lane-mile
+   Same storm, very different salt needs. A fixed 'one rate for everything' habit wastes salt
+   on mild days and under-treats cold ones. That is why Saltback starts from pavement temperature.
+
+3) CAN THE CHEAP SENSOR SEE IT?
+   Storm-average runoff: the probe stayed in range 40 of 40 times, and
+   Saltback's chloride estimate was off by 5% on average. It found 95% of the salt
+   that actually reached the road.  -> The DFR0300 works IF it measures well-mixed storm water
+   (for example, a collection bucket). Step 2 shows what happens when it logs live in the drain.
+   Without the temperature probe, readings would be 52% too low (cold water conducts
+   less electricity). -> The $5 DS18B20 is essential, not optional.
+
+4) WARNING FOR THE HARDWARE PLAN
+   The first rush of brine off the road maxed out the probe in 40 of 40 runs (it is
+   far saltier than the 20 mS/cm limit). So the DFR0300 cannot measure the first flush. Options:
+   measure the storm-average water (works, see #3), or add a higher-range (K=10) probe later.
+
+5) IS THE MODEL TRUSTWORTHY?
+   It was checked against the widely published 'ice melted per pound of salt' chart: within
+   5% from 0F to 25F. (Near 30F it reads higher, because tiny temperature changes
+   near freezing matter a lot.) The model never reads that chart; it uses freezing-point physics.
+
+
+
+STEP 2: THE SAME KIND OF STORM, HOUR BY HOUR
+============================================================
+
+THE STORM: 4 in of snow over 8 h with the road at 22F.
+The first truck arrives after 0.5 h, then returns every 2 h:
+4 passes x 220 lb = 880 lb per lane-mile.
+Afterwards the road warms to 38F and the leftover salt washes away.
+
+SALTBACK STORM CARD
+   Salt spread: 8,800 lb | About the right amount | Chloride released: 5,338 lb | Next storm: try 220 lb per pass (+0%)
+
+6) WAS THE ROAD SAFE?
+   Icy (bonded ice on a freezing road) for 0.2 h. With no salt: 11.4 h.
+   Icy time: 10 min as salted -> 10 min at Saltback's rate (220 lb per pass).
+   Saltback never recommends a rate that would leave the road more than 6 minutes icier than it was,
+   either with its best-estimate physics or in a pessimistic case (brine runs off faster, more brine is
+   needed, snow bonds faster). It cuts at most 25% per storm, checking the result each time.
+
+7) WHERE THE SALT WENT
+   67% washed into the storm drain, 33% was thrown onto the shoulder and soil
+   (bounce, tires, wind). None of it disappears: it all ends up in streams or groundwater.
+
+8) WHAT LEFT THROUGH THE DRAIN
+   The drain ran for 32 h. Peak chloride 39,074 mg/L, storm average 10,930 mg/L.
+   Drain water peaked at 45x the EPA short-term stream limit (860 mg/L) before dilution.
+   A stream dilutes drain water, but chloride never breaks down, so what matters is the total load:
+   5,338 lb of chloride from this storm.
+
+9) DID THE SENSOR KEEP UP?
+   The probe was maxed out for 9.9 h, so Saltback only saw 48% of the salt.
+   The brine coming off a freezing road is far too salty for the DFR0300 (20 mS/cm max).
+   A high-range K=10 probe fixes this: set probe_max_mS_cm to 200 and run again.
+
+NOT IN THE MODEL YET (coming in later steps):
+   - real lab data from Experiments 1 and 2 (the season analysis and uncertainty tests are on the website)
+
+All inputs are typical published values, not real town data. See results/settings_used.json.

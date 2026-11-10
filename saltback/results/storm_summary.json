@@ -1,0 +1,32 @@
+{
+  "summary": {
+    "salt_per_pass_lb": 220.0,
+    "salt_applied_lb_per_lane_mile": 880.0,
+    "icy_hours": 0.16666666666666666,
+    "salt_to_drain_pct": 66.97365368437272,
+    "salt_to_roadside_pct": 33.02079627201381,
+    "salt_left_on_road_pct": 0.005550043613481545,
+    "peak_cl_mg_L": 39074.38191000529,
+    "avg_cl_mg_L": 10929.533681360339,
+    "hours_probe_maxed": 9.916666666666666,
+    "hours_drain_flowing": 31.5,
+    "salt_seen_vs_true_pct": 47.88727685723886
+  },
+  "card": {
+    "status": "ok",
+    "route_salt_lb": 8800.0,
+    "needed_per_pass_lb": 140,
+    "target_per_pass_lb": 220,
+    "next_per_pass_lb": 220,
+    "excess_pct": 0.0,
+    "target_change_pct": 0,
+    "next_change_pct": 0,
+    "icy_actual_h": 0.16666666666666666,
+    "icy_target_h": 0.16666666666666666,
+    "icy_next_h": 0.16666666666666666,
+    "best_icy_h": 0.16666666666666666,
+    "chloride_released_lb": 5338.124572210815,
+    "chloride_to_drain_lb": 3575.1370642328743,
+    "peak_x_stream_limit": 45.435327802331734
+  }
+}

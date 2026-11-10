@@ -236,6 +236,11 @@ tr.psel td { background: var(--sel); }
         <div class="row"><button class="btn pri big" type="submit" id="simRun">Run 30 simulations</button><button class="btn" type="button" id="simStop" hidden>Stop</button><progress id="simProg" max="1" value="0" hidden></progress><span class="msg" id="simMsg" aria-live="polite"></span></div>
       </form>
       <div id="simOut"></div>
+      <section class="block"><h2>Real salt use, as published</h2>
+        <p class="note">What real agencies spread in past winters, in pounds per lane-mile for the whole winter, next to the crew in your last simulation. Totals are as each agency reported them; check the source before quoting. State highways get far more passes than town streets, so they sit higher.</p>
+        <div class="plot" id="chReal" style="margin-top:8px"></div>
+        <div class="tw" style="margin-top:12px"><table id="realTable"></table></div>
+        <p class="note" id="realMsg" style="margin-top:6px"></p></section>
     </section>
 
     <!-- STORM REPORT -->
@@ -356,6 +361,7 @@ tr.psel td { background: var(--sel); }
 <script src="report.js"></script>
 <script src="xlsx.js"></script>
 <script src="winters.js"></script>
+<script src="realdata.js"></script>
 <script>
 (() => {
 'use strict';
@@ -862,6 +868,7 @@ function renderSim() {
     y: { min: 0, max: maxI * 1.08, label: 'hours icy' },
     series: [{ dots: true, color: C.chart2, pts: ord.map((w, i) => [i + 1, w.icyCrew, C.chart2, `Winter ${w.k + 1}: crew ${hrs(w.icyCrew)}`]) },
              { dots: true, color: C.fg, pts: ord.map((w, i) => [i + 1, w.icyPlan, C.fg, `Winter ${w.k + 1}: Saltback ${hrs(w.icyPlan)}`]) }] });
+  renderReal();
   const rows = simTables()[0].rows;
   $('simTable').innerHTML = `<thead><tr>${rows[0].map((c, i) => `<th${i ? ' class="n"' : ''}>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows.slice(1).map(r => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${c == null ? '—' : esc(typeof c === 'number' ? c.toLocaleString('en-US') : c)}</td>`).join('')}</tr>`).join('')}</tbody>`;
 }
@@ -877,6 +884,26 @@ function simTables() {
       .concat(s.recs.map((r, i) => [i + 1, r.kind, r.title, r.lines.join(' '), r.impact, r.sure, r.why])) },
   ];
 }
+
+function renderReal() {
+  const R0 = window.SaltbackReal || [], perLM = r => (r.laneMiles ? r.tons * 2000 / r.laneMiles : null);
+  const simLM = sim && sim.winters && sim.winters.length ? W.mean(sim.winters.map(w => w.crewLb)) / sim.cfg.laneMiles : null;
+  const rows = R0.filter(r => r.laneMiles).map(r => ({ label: `${r.who.replace(/ \(.*\)/, '')} ${r.season}`, v: perLM(r) / 1000, color: C.fg, text: `${int(perLM(r))} lb` }));
+  if (simLM) rows.push({ label: `Your simulation (${sim.cfg.place.name})`, v: simLM / 1000, color: C.chart2, text: `${int(simLM)} lb` });
+  bars($('chReal'), { aria: 'Salt per lane-mile per winter, real agencies and the simulation', fmt: v => `${int(v)}k`, rows });
+  $('realTable').innerHTML = `<thead><tr><th>Who</th><th>Winter</th><th class="n">Salt (tons)</th><th class="n">Lane-miles</th><th class="n">lb per lane-mile per winter</th><th>Source</th><th></th></tr></thead><tbody>${R0.map((r, i) => `<tr><td>${esc(r.who)}</td><td>${esc(r.season)}</td><td class="n">${int(r.tons)}</td>
+    <td class="n">${r.laneMiles ? int(r.laneMiles) : `${int(r.routeMiles)} route miles`}</td><td class="n">${r.laneMiles ? int(perLM(r)) : `${int(r.tons * 2000 / r.routeMiles)} per route mile`}</td>
+    <td><a href="${esc(r.src)}" target="_blank" rel="noopener">source</a></td><td class="n">${r.laneMiles ? `<button class="btn" type="button" data-real="${i}">Simulate at this level</button>` : ''}</td></tr>`).join('')}</tbody>`;
+}
+$('realTable').addEventListener('click', e => {
+  const b = e.target.closest('[data-real]'); if (!b || simBusy || !sim) return;
+  const r = window.SaltbackReal[+b.dataset.real], target = r.tons * 2000 / r.laneMiles;
+  const simLM = W.mean(sim.winters.map(w => w.crewLb)) / sim.cfg.laneMiles, cur = sim.cfg.crewRate || crewOf(sim.cfg.crew).base || 230;
+  const rate = Math.max(80, Math.min(600, Math.round(cur * target / simLM / 10) * 10));
+  $('sim_place').value = r.place; $('sim_crew').value = 'habit'; $('sim_rate').value = rate; syncSimForm();
+  $('realMsg').textContent = `Set the crew to about ${rate} lb per pass so the simulated crew spreads roughly what ${r.who} reported for ${r.season} (${int(target)} lb per lane-mile per winter; ${rate === 600 || rate === 80 ? 'capped, so only approximate' : 'approximate, since the number of passes varies'}). Running…`;
+  window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }); runSim();
+});
 
 /* ================= DEVICE ================= */
 let dev = null, devLoading = false, devSel = null, devMod = null;

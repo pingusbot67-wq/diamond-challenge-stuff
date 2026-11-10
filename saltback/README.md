@@ -115,6 +115,14 @@ icy road 45 h → 24 h a winter, no winter icier overall, but one storm more tha
 In cold places (Minneapolis) Saltback uses more salt than a typical crew, mostly because getting the first truck out
 on time means more passes, in exchange for much less icy road; the page says so instead of hiding it.
 
+## Real salt use (published data)
+
+`web/realdata.js` lists real winters reported by MassDOT (2017–20 and its 20-year average), MnDOT (2017–25), the City
+of Toronto (10-year average) and the City of Madison (route miles only), with source links. The Simulate page shows them
+in pounds per lane-mile per winter next to the simulated crew, and "Simulate at this level" scales the crew's rate per
+pass so the simulated crew spreads about the same amount. State highways get many more passes than town streets, so
+matching a highway total by raising the rate per pass overstates the savings; use these as a scale check.
+
 ## The device
 
 The Device page shows the drain node in 3D at real size: a 3D-printed box (150 × 100 × 70 mm) on a stainless bracket

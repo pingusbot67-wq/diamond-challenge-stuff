@@ -74,8 +74,9 @@ inside claude.ai there is also "Send to Google Sheets" through the Google Drive 
 | `web/report.js` | Every table the site shows and exports |
 | `web/xlsx.js` | Writes .xlsx workbooks with native Excel charts (uses JSZip) |
 | `web/winters.js` | Many-winters simulator: storms drawn from a place's typical weather, crew habits, random true road physics, Saltback judged in the true world, pooled recommendations |
-| `web/device.js` | The 3D drain-node model (three.js, loaded only on the Device page) and the parts list |
-| `device/build_parts.py` | Builds the printable parts as STL files into `web/device/` (`pip install manifold3d numpy`) |
+| `device/cad/saltback_node.py` | The drain node in CadQuery: every part as a solid, exported as STEP, STL and GLB to `device/out/` |
+| `device/cad/check_exports.py` | Re-opens every exported file and checks it (valid solids, watertight meshes, part nodes) |
+| `device/viewer/` | The 3D viewer page (published as its own artifact); reads the same GLB people download |
 | `web/uncertainty.js` | `node web/uncertainty.js`: 200 uncertain seasons, sensitivity, out-of-sample test → `web/uncertainty-data.js` (results quoted in this README) |
 | `screenshots/` | Before and after screenshots of every page, described in `screenshots/README.md` |
 
@@ -123,13 +124,28 @@ in pounds per lane-mile per winter next to the simulated crew, and "Simulate at 
 pass so the simulated crew spreads about the same amount. State highways get many more passes than town streets, so
 matching a highway total by raising the rate per pass overstates the savings; use these as a scale check.
 
-## The device
+## The device (Rev A)
 
-The Device page shows the drain node in 3D at real size: a 3D-printed box (150 × 100 × 70 mm) on a stainless bracket
-just below the grate, with an ESP32, an LTE-M modem, a clock, a memory card and three 18650 cells inside, and three
-probes (standard and high-range conductivity, temperature) in a drilled PVC guard tube in the sump. The box, lid and
-probe holder are real printable STL files made by `device/build_parts.py`; measure your probes before printing the
-holder. Prices are approximate; check before buying.
+Viewer: https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd (each part has its own link, e.g. `#sb-401` for the probe head).
+
+28 part numbers in five sub-assemblies, about $353 in parts:
+
+| Sub-assembly | Parts |
+|---|---|
+| SB-100 Housing | printed ASA box (gasket groove, heat-set insert bosses, tray posts, slotted ears), lid, printed TPU gasket, 3 PG7 glands, M12 pressure vent, M3 screws, desiccant |
+| SB-200 Electronics | printed tray, ESP32-DevKitC-32E, SIM7080G Cat-M/NB-IoT modem, 2 conductivity signal boards, DS3231 clock, microSD, flat LTE antenna |
+| SB-300 Power | printed battery sled, 3 Keystone 1043 holders, 3 protected 18650 cells |
+| SB-400 Probe guard | printed probe head and silt cap, drilled 1½" PVC tube, K=1 and K=10 conductivity probes, DS18B20, cables |
+| SB-500 Mounting | laser-cut stainless wall bracket, M8 wedge anchors, M5 bolts, stainless tether |
+
+Files in `device/out/`: one STEP and one STL per part, the assembly as STEP (with names and colours) and GLB
+(glTF 2.0, metres, Y-up, part numbers stored on each node), and `parts.json`. Rebuild with
+`python device/cad/saltback_node.py` (needs `pip install cadquery trimesh`), then check with
+`python device/cad/check_exports.py`. Checked: every STEP re-imports as valid solids, every STL is watertight with the
+same volume as the CAD, and the GLB passes the Khronos glTF validator with no errors or warnings.
+
+Printed parts are the real design; bought parts are simplified to their outside shape and mounting points from the
+datasheets linked in `parts.json`. Measure the probes before printing the probe head. Prices are approximate.
 
 ## How confident are we?
 

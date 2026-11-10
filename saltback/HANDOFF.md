@@ -24,9 +24,11 @@ or Google Colab.
 - Start page = Storm log. Pages: Storm log, Simulate winters, Storm reports, Recommendations, Rate card, Sensors, Device, Data, Settings.
 - Simulate winters (`web/winters.js`): owner wanted a Run button for N winters in a city / preset / random, charts, and
   recommendations that are easy to read (big numbered list, one impact line each). Auto-runs Boston on first visit.
-- Device (`web/device.js`, three.js 0.160.0 from jsDelivr via an import map): 3D drain node with take-apart, see-inside,
-  click-a-part, parts list (~$313), STL/GLB downloads. Printable parts come from `device/build_parts.py` into
-  `web/device/*.stl` and `web/device/stl-data.js` (base64, because artifacts cannot serve .stl). Publish stl-data.js with the artifact, not the .stl files.
+- Device: the CAD model lives in `device/cad/saltback_node.py` (CadQuery). Its viewer is a separate artifact,
+  https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd, published from `device/viewer/` with `viewer.js`, `node-glb.js`
+  (the GLB as base64; artifacts can't serve .glb/.stl/.step) and `parts.js`. The main site's Device page only links to it
+  and shows the parts list from `web/device/parts-data.js`. After changing the CAD: run saltback_node.py, then
+  check_exports.py, then republish both artifacts. File links in parts.json point at this branch on GitHub.
 - Storm reports open with a simple one-colour dot replay of the storm (owner asked to keep this).
 - Owner explicitly asked to remove examples, overview/pitch content and "vibe coded" styling. Don't bring them back.
 - Storms are stored in browser localStorage (`saltback.records.v4`); starts with a 12-storm simulated season.

@@ -285,33 +285,12 @@ tr.psel td { background: var(--sel); }
 
     <!-- DEVICE -->
     <section id="v-device" hidden>
-      <div class="head"><div><h1>Device</h1><p class="sub">The Saltback drain node at real size. Drag to turn, scroll or pinch to zoom, click a part.</p></div>
-        <div class="actions"><details class="menu"><summary class="btn">Download</summary><div class="menu-list"><button type="button" data-stl="enclosure_body.stl">Box, for 3D printing (.stl)</button><button type="button" data-stl="enclosure_lid.stl">Lid, for 3D printing (.stl)</button><button type="button" data-stl="probe_holder.stl">Probe holder, for 3D printing (.stl)</button><button type="button" data-act="glb">Whole 3D model (.glb)</button><button type="button" data-csv="parts">Parts list (.csv)</button></div></details></div></div>
-      <div class="toolbar" role="group" aria-label="3D view">
-        <button class="btn" type="button" data-view="all" aria-pressed="true">Whole node</button><button class="btn" type="button" data-view="box" aria-pressed="false">Electronics box</button><button class="btn" type="button" data-view="probes" aria-pressed="false">Probes</button>
-        <span class="sep" aria-hidden="true"></span>
-        <button class="btn" type="button" id="dvExplode" aria-pressed="false">Take apart</button><button class="btn" type="button" id="dvSee" aria-pressed="false">See inside the box</button><button class="btn" type="button" id="dvCtx" aria-pressed="true">Show storm drain</button>
-      </div>
-      <div class="devgrid">
-        <div class="viewer" id="dvView"><div class="vmsg" id="dvMsg">Loading 3D model…</div></div>
-        <aside class="partinfo" id="dvInfo" aria-live="polite"></aside>
-      </div>
-      <section class="block"><h2>Parts list</h2><p class="note">Approximate retail prices in US dollars; check before buying. Click a row to find the part in the model.</p><div class="tw"><table id="partsTable"></table></div></section>
-      <div class="cols">
-        <section class="block"><h2>How it works</h2><ol class="plain muted" style="padding-left:18px">
-          <li>The box hangs on the inside wall of the catch basin, just below the grate and out of the water.</li>
-          <li>The probes sit in the sump inside a drilled PVC tube that keeps out leaves and grit.</li>
-          <li>Every 5 minutes the ESP32 wakes, reads conductivity and water temperature, and corrects for temperature.</li>
-          <li>Readings are saved to the memory card and sent over the cell network after each storm.</li>
-          <li>Saltback turns conductivity into chloride, matches it with the truck log and weather, and builds the storm report.</li>
-        </ol></section>
-        <section class="block"><h2>Building it</h2><ul class="plain muted">
-          <li>Print the box, lid and probe holder in PETG or ASA (PLA softens in summer heat). 3 walls, 25% infill, no supports.</li>
-          <li>Measure your probes before printing the holder; hole sizes are at the top of device/build_parts.py.</li>
-          <li>Coat the soldered board with conformal coating; drain air is wet and salty.</li>
-          <li>Ask the town's public works department before putting anything in a storm drain.</li>
-        </ul></section>
-      </div>
+      <div class="head"><div><h1>Device</h1><p class="sub" id="devSub">Saltback drain node, Rev A</p></div>
+        <div class="actions"><a class="btn pri" href="https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd" target="_blank" rel="noopener">Open the 3D model</a>
+          <a class="btn" href="https://github.com/pingusbot67-wq/diamond-challenge-stuff/tree/claude/clever-fermi-0by41q/saltback/device/out" target="_blank" rel="noopener">All CAD files</a>
+          <details class="menu"><summary class="btn">Export</summary><div class="menu-list"><button type="button" data-csv="parts">Parts list (.csv)</button><button type="button" data-copy="parts">Copy parts list</button></div></details></div></div>
+      <p class="note" style="max-width:80ch">The full CAD model (every part as a STEP and STL file, the assembly as STEP and GLB) opens in its own page with an exploded view, a section view and a link for every part. Below is the same parts list.</p>
+      <section class="block"><h2>Parts list</h2><div class="tw"><table id="partsTable"></table></div></section>
     </section>
 
     <!-- DATA -->
@@ -354,7 +333,6 @@ tr.psel td { background: var(--sel); }
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="model.js"></script>
 <script src="engine.js"></script>
@@ -362,6 +340,7 @@ tr.psel td { background: var(--sel); }
 <script src="xlsx.js"></script>
 <script src="winters.js"></script>
 <script src="realdata.js"></script>
+<script src="device/parts-data.js"></script>
 <script>
 (() => {
 'use strict';
@@ -906,43 +885,19 @@ $('realTable').addEventListener('click', e => {
 });
 
 /* ================= DEVICE ================= */
-let dev = null, devLoading = false, devSel = null, devMod = null;
-const devPart = id => (devMod ? devMod.PARTS.find(p => p.id === id) : null);
-function devInfo() {
-  const p = devPart(devSel), total = devMod ? devMod.PARTS.reduce((a, q) => a + q.usd, 0) : 0;
-  $('dvInfo').innerHTML = p ? `<h2>${esc(p.name)}</h2><p>${esc(p.job)}</p><p class="muted">${esc(p.buy)}</p><p class="price">${p.usd ? `About $${p.usd}` : 'Included'}${p.qty > 1 ? ` for ${p.qty}` : ''}</p>${p.print ? `<p><button class="btn" type="button" data-stl="${esc(p.print)}">Download ${esc(p.print)}</button></p>` : ''}`
-    : `<h2>Saltback drain node</h2><p>A conductivity and temperature sensor that hangs in a storm drain and measures the salt washing off the road after each storm.</p><p class="muted">Click any part in the model or the list to see what it does and what it costs.</p>${devMod ? `<p class="price">About $${total} in parts with both probes</p>` : ''}`;
-  document.querySelectorAll('#partsTable tr[data-part]').forEach(tr => tr.classList.toggle('psel', tr.dataset.part === devSel));
+const NODE = window.SaltbackNode;
+function renderDevice() {
+  if (!NODE) { $('partsTable').innerHTML = '<tbody><tr><td class="muted">Parts list unavailable.</td></tr></tbody>'; return; }
+  $('devSub').textContent = `Saltback drain node, Rev ${NODE.rev} · ${NODE.parts.length} part numbers · about $${NODE.total_usd} in parts`;
+  const link = (u, t) => (u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>` : '');
+  $('partsTable').innerHTML = `<thead><tr><th>Part</th><th>Name</th><th class="n">Qty</th><th>Made by</th><th>Material</th><th class="n">Size (mm)</th><th class="n">Cost</th><th>Files</th><th>Buy</th></tr></thead><tbody>${
+    Object.entries(NODE.subassemblies).map(([sub, name]) => `<tr><td colspan="9" style="padding-top:14px"><b>${esc(name)}</b> <span class="muted">${sub}</span></td></tr>${
+      NODE.parts.filter(p => p.sub === sub).map(p => `<tr><td class="n" style="text-align:left">${link(`https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd#${p.pn.toLowerCase()}`, p.pn)}</td><td>${esc(p.name)}</td><td class="n">${p.qty}</td><td>${esc(p.kind)}</td><td>${esc(p.material)}</td>
+        <td class="n">${p.size_mm.map(v => Math.round(v)).join(' × ')}</td><td class="n">${p.usd ? `$${p.usd}` : '—'}</td><td>${link(p.files.step, 'STEP')} ${link(p.files.stl, 'STL')}</td><td>${link(p.buy, 'buy')}</td></tr>`).join('')}`).join('')}
+    <tr><td colspan="6"><b>Total, approximate</b></td><td class="n"><b>$${NODE.total_usd}</b></td><td colspan="2"></td></tr></tbody>`;
 }
-function devTable() {
-  const P = devMod.PARTS, groups = [...new Set(P.map(p => p.group))], total = P.reduce((a, p) => a + p.usd, 0);
-  $('partsTable').innerHTML = `<thead><tr><th>Part</th><th class="n">Qty</th><th>What it does</th><th class="n">Cost</th></tr></thead><tbody>${groups.map(g => `<tr><td colspan="4" style="padding-top:14px"><b>${esc(g)}</b></td></tr>${P.filter(p => p.group === g).map(p => `<tr class="click" data-part="${p.id}" tabindex="0"><td>${esc(p.name)}${p.print ? ' <span class="muted">· printable</span>' : ''}</td><td class="n">${p.qty}</td><td class="muted">${esc(p.job)}</td><td class="n">${p.usd ? `$${p.usd}` : '—'}</td></tr>`).join('')}`).join('')}
-    <tr><td colspan="3"><b>Total, approximate</b></td><td class="n"><b>$${total}</b></td></tr></tbody>`;
-}
-async function renderDevice() {
-  if (dev || devLoading) { if (devMod) devInfo(); return; }
-  devLoading = true;
-  try {
-    devMod = await import('./device.js');
-    devTable(); devInfo();
-    dev = await devMod.mountDevice($('dvView'), { onSelect: id => { devSel = id; devInfo(); } });
-    $('dvMsg').remove();
-  } catch (err) {
-    $('dvMsg').textContent = `The 3D viewer could not load (${err.message || err}). It needs an internet connection for the 3D library. The parts list below still works.`;
-    if (!devMod) $('partsTable').innerHTML = '<tbody><tr><td class="muted">Parts list unavailable.</td></tr></tbody>';
-  } finally { devLoading = false; }
-}
-const press = (b, on) => b.setAttribute('aria-pressed', on ? 'true' : 'false');
-document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => { if (!dev) return; dev.setView(b.dataset.view); document.querySelectorAll('[data-view]').forEach(x => press(x, x === b)); }));
-$('dvExplode').addEventListener('click', e => { if (!dev) return; const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; press(e.currentTarget, on); dev.setExplode(on); });
-$('dvSee').addEventListener('click', e => { if (!dev) return; const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; press(e.currentTarget, on); dev.setSeeThrough(on); });
-$('dvCtx').addEventListener('click', e => { if (!dev) return; const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; press(e.currentTarget, on); dev.setContext(on); });
-$('partsTable').addEventListener('click', e => { const tr = e.target.closest('tr[data-part]'); if (!tr || !dev) return; devSel = tr.dataset.part === devSel ? null : tr.dataset.part; dev.select(devSel); devInfo(); $('dvView').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
-$('partsTable').addEventListener('keydown', e => { if (e.key === 'Enter') { const tr = e.target.closest('tr[data-part]'); if (tr) tr.click(); } });
-async function downloadSTL(name) { try { const m = devMod || await import('./device.js'); await saveFile(`saltback-${name}`, m.stlBlob(name)); } catch (err) { toast(`Could not get ${esc(name)}: ${esc(err.message || err)}`); } }
-async function downloadGLB() { if (!dev) return toast('Open the Device page and wait for the model to load first.'); try { await saveFile('saltback-drain-node.glb', await dev.exportGLB()); } catch (err) { toast(`Could not export the model: ${esc(err.message || err)}`); } }
-function partsTable() { if (!devMod) return []; return [{ key: 'parts', name: 'Parts list', title: 'Saltback drain node: parts list', rows: [['Group', 'Part', 'Qty', 'What it does', 'Where to get it', 'Approx. cost ($)', 'Print file']]
-  .concat(devMod.PARTS.map(p => [p.group, p.name, p.qty, p.job, p.buy, p.usd, p.print || ''])) }]; }
+function partsTable() { if (!NODE) return []; return [{ key: 'parts', name: 'Parts list', title: 'Saltback drain node, Rev A: parts list', rows: [['Part number', 'Name', 'Sub-assembly', 'Qty', 'Made by', 'Material', 'Size x (mm)', 'Size y (mm)', 'Size z (mm)', 'Volume (cm3)', 'Mass (g)', 'Approx. cost ($)', 'Buy', 'STEP', 'STL', 'Note']]
+  .concat(NODE.parts.map(p => [p.pn, p.name, p.subName, p.qty, p.kind, p.material, ...p.size_mm, p.volume_cm3, p.mass_g, p.usd, p.buy || '', p.files.step, p.files.stl, p.note || ''])) }]; }
 
 /* ================= DATA ================= */
 function tables() {
@@ -998,12 +953,11 @@ async function sendToSheets(btn) {
   } finally { btn.disabled = false; } }
 mcpP.then(m => { if (m) document.querySelectorAll('.gs').forEach(b => { b.hidden = false; }); });
 document.addEventListener('click', e => {
-  const b = e.target.closest('[data-act],[data-copy],[data-csv],[data-stl]'); if (!b) return;
+  const b = e.target.closest('[data-act],[data-copy],[data-csv]'); if (!b) return;
   const menu = b.closest('details.menu'); if (menu) menu.removeAttribute('open');
   if (b.dataset.copy) { const t = tables().find(z => z.key === b.dataset.copy); if (t) copyText(X.toTSV(t.rows), t.name); }
   else if (b.dataset.csv) { const t = tables().find(z => z.key === b.dataset.csv); if (t) saveFile(`saltback-${t.key}-${stamp()}.csv`, X.toCSV(t.rows)); }
   else if (b.dataset.act === 'xlsx') exportWorkbook(); else if (b.dataset.act === 'report') downloadReport(); else if (b.dataset.act === 'gsheets') sendToSheets(b);
-  else if (b.dataset.stl) downloadSTL(b.dataset.stl); else if (b.dataset.act === 'glb') downloadGLB();
 });
 document.addEventListener('click', e => { document.querySelectorAll('details.menu[open]').forEach(d => { if (!d.contains(e.target)) d.removeAttribute('open'); }); });
 

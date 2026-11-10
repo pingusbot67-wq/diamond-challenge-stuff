@@ -1,0 +1,135 @@
+<meta charset="utf-8">
+<title>Saltback Drain Node</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Saltback drain node, Rev A: interactive CAD model, part breakdown, files and buy links.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: an engineering spec sheet. The model fills a calm grey stage on the left; a narrow panel on the right lists
+   the parts by sub-assembly and opens a spec card for the selected part. One accent: plow orange, the colour of the
+   printed TPU/ASA accent parts. Mono for part numbers and measurements. */
+:root {
+  --bg: #eef0f2; --stage: #e6e9ec; --panel: #ffffff; --ink: #14171a; --muted: #5f6770; --faint: #8a929b;
+  --line: #e0e3e7; --line2: #cfd4d9; --accent: #e8590c; --accent-ink: #ffffff; --hover: #f5f6f7; --sel: #fff3ec;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0f1113; --stage: #14171a; --panel: #181b1f; --ink: #eceef0; --muted: #9aa3ad; --faint: #6f7780;
+    --line: #262b30; --line2: #343a40; --accent: #ff7a33; --accent-ink: #14171a; --hover: #1e2226; --sel: #2a1f18; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0f1113; --stage: #14171a; --panel: #181b1f; --ink: #eceef0; --muted: #9aa3ad; --faint: #6f7780;
+  --line: #262b30; --line2: #343a40; --accent: #ff7a33; --accent-ink: #14171a; --hover: #1e2226; --sel: #2a1f18; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.app { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: 100%; }
+.stage { position: relative; background: radial-gradient(120% 90% at 50% 35%, var(--panel) 0%, var(--stage) 70%); min-height: 0; overflow: hidden; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.brand { position: absolute; top: 18px; left: max(20px, env(safe-area-inset-left, 0px)); display: flex; align-items: baseline; gap: 10px; pointer-events: none; }
+.brand b { font-weight: 600; font-size: 15px; letter-spacing: .01em; }
+.brand .rev { font: 500 11px var(--mono); color: var(--muted); border: 1px solid var(--line2); padding: 1px 6px; border-radius: 3px; letter-spacing: .04em; }
+.hint { position: absolute; top: 20px; right: 20px; font-size: 12px; color: var(--faint); pointer-events: none; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line2); padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; transform: translate(12px, -50%); z-index: 3; box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+.tip .mono { color: var(--accent); margin-right: 6px; }
+.dock { position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; gap: 4px; padding: 4px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; box-shadow: 0 6px 24px rgba(0,0,0,.08); max-width: calc(100% - 32px); overflow-x: auto; }
+.dock button { border: 0; background: none; padding: 7px 13px; border-radius: 999px; font-size: 13px; white-space: nowrap; color: var(--muted); }
+.dock button:hover { color: var(--ink); background: var(--hover); }
+.dock button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.dock .sep { width: 1px; background: var(--line); margin: 6px 2px; }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 13px; }
+
+aside { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; min-height: 0; padding-block: 20px 40px; }
+.pad { padding-left: max(22px, env(safe-area-inset-left, 0px)); padding-right: max(22px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: 20px; font-weight: 600; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.lede { color: var(--muted); margin: 6px 0 0; max-width: 46ch; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin-top: 16px; }
+.facts div { background: var(--panel); padding: 9px 11px; }
+.facts .k { font-size: 11px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.facts .v { font: 500 15px var(--mono); margin-top: 2px; white-space: nowrap; }
+.files { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line2); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; text-decoration: none; background: var(--panel); }
+.chip:hover { border-color: var(--ink); }
+.chip.solid { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.chip .ext { font: 500 11px var(--mono); color: var(--muted); }
+.chip.solid .ext { color: inherit; opacity: .7; }
+
+.card { margin: 18px 0 4px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.card .top { padding: 14px 16px 12px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, var(--sel), var(--panel)); }
+.card .pn { font: 500 12px var(--mono); color: var(--accent); letter-spacing: .03em; }
+.card h2 { font-size: 17px; font-weight: 600; margin: 2px 0 0; }
+.card .note { color: var(--muted); margin: 6px 0 0; font-size: 13px; }
+.card dl { display: grid; grid-template-columns: 96px minmax(0, 1fr); margin: 0; padding: 10px 16px; gap: 5px 12px; font-size: 13px; }
+.card dt { color: var(--muted); } .card dd { margin: 0; }
+.card .acts { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 14px; }
+.close { float: right; border: 0; background: none; color: var(--muted); font-size: 18px; line-height: 1; padding: 2px 4px; }
+
+.group { margin-top: 22px; }
+.group h3 { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.group h3 .mono { font-weight: 400; letter-spacing: .02em; }
+.row { display: grid; grid-template-columns: 10px 58px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; text-align: left; border: 0; background: none;
+  padding: 7px 8px; margin: 0 -8px; border-radius: 5px; width: calc(100% + 16px); }
+.row:hover { background: var(--hover); }
+.row[aria-current="true"] { background: var(--sel); }
+.row .sw { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(0,0,0,.15); }
+.row .pn { font: 400 12px var(--mono); color: var(--muted); }
+.row[aria-current="true"] .pn { color: var(--accent); }
+.row .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .tag { font: 400 11px var(--mono); color: var(--faint); }
+.row .tag.p { color: var(--accent); }
+.foot { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
+.foot p + p { margin-top: 6px; }
+.toast { position: fixed; left: 50%; bottom: max(80px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--panel); padding: 7px 12px; border-radius: 6px; font-size: 13px; z-index: 30; }
+
+@media (max-width: 900px) {
+  html, body { height: auto; }
+  .app { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .stage { height: 62vh; min-height: 380px; }
+  aside { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
+  .hint, .brand .rev { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="app">
+  <section class="stage" id="stage" aria-label="3D model of the Saltback drain node">
+    <div class="brand"><b>Saltback</b><span class="rev">DRAIN NODE · REV A</span></div>
+    <div class="hint">Drag to turn · scroll to zoom · click a part</div>
+    <div class="loading" id="loading">Loading model…</div>
+    <div class="tip" id="tip" hidden></div>
+    <nav class="dock" aria-label="View">
+      <button type="button" data-mode="assembled" aria-pressed="true">Assembled</button>
+      <button type="button" data-mode="exploded" aria-pressed="false">Exploded</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" id="bSection" aria-pressed="false">Section</button>
+      <button type="button" id="bXray" aria-pressed="false">X-ray</button>
+      <button type="button" id="bIsolate" aria-pressed="false">Isolate</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" id="bReset">Reset</button>
+    </nav>
+  </section>
+  <aside class="pad" id="panel">
+    <h1>Saltback drain node</h1>
+    <p class="lede">Hangs inside a storm-drain catch basin and measures the salt washing off the road after each storm. Every part below is a real CAD solid you can open, print, simulate or buy.</p>
+    <div class="facts" id="facts"></div>
+    <div class="files" id="files"></div>
+    <div id="card"></div>
+    <div id="groups"></div>
+    <div class="foot">
+      <p>STEP opens in Fusion 360, SolidWorks, Onshape, FreeCAD and simulation tools such as Ansys. STL is for slicers and meshing. GLB opens in Blender and any glTF viewer.</p>
+      <p>Bought parts are simplified to their outside shape and mounting points from the maker's datasheet. Measure the probes before printing the probe head. Prices are approximate.</p>
+    </div>
+  </aside>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
+<script type="module" src="viewer.js"></script>

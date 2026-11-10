@@ -898,7 +898,7 @@ async function renderDevice() {
   try {
     devMod = await import('./device.js');
     devTable(); devInfo();
-    dev = await devMod.mountDevice($('dvView'), { base: 'device/', onSelect: id => { devSel = id; devInfo(); } });
+    dev = await devMod.mountDevice($('dvView'), { onSelect: id => { devSel = id; devInfo(); } });
     $('dvMsg').remove();
   } catch (err) {
     $('dvMsg').textContent = `The 3D viewer could not load (${err.message || err}). It needs an internet connection for the 3D library. The parts list below still works.`;
@@ -912,7 +912,7 @@ $('dvSee').addEventListener('click', e => { if (!dev) return; const on = e.curre
 $('dvCtx').addEventListener('click', e => { if (!dev) return; const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; press(e.currentTarget, on); dev.setContext(on); });
 $('partsTable').addEventListener('click', e => { const tr = e.target.closest('tr[data-part]'); if (!tr || !dev) return; devSel = tr.dataset.part === devSel ? null : tr.dataset.part; dev.select(devSel); devInfo(); $('dvView').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
 $('partsTable').addEventListener('keydown', e => { if (e.key === 'Enter') { const tr = e.target.closest('tr[data-part]'); if (tr) tr.click(); } });
-async function downloadSTL(name) { try { const r = await fetch(`device/${name}`); if (!r.ok) throw new Error(r.status); await saveFile(`saltback-${name}`, new Blob([await r.arrayBuffer()], { type: 'model/stl' })); } catch (err) { toast(`Could not get ${esc(name)}.`); } }
+async function downloadSTL(name) { try { const m = devMod || await import('./device.js'); await saveFile(`saltback-${name}`, m.stlBlob(name)); } catch (err) { toast(`Could not get ${esc(name)}: ${esc(err.message || err)}`); } }
 async function downloadGLB() { if (!dev) return toast('Open the Device page and wait for the model to load first.'); try { await saveFile('saltback-drain-node.glb', await dev.exportGLB()); } catch (err) { toast(`Could not export the model: ${esc(err.message || err)}`); } }
 function partsTable() { if (!devMod) return []; return [{ key: 'parts', name: 'Parts list', title: 'Saltback drain node: parts list', rows: [['Group', 'Part', 'Qty', 'What it does', 'Where to get it', 'Approx. cost ($)', 'Print file']]
   .concat(devMod.PARTS.map(p => [p.group, p.name, p.qty, p.job, p.buy, p.usd, p.print || ''])) }]; }

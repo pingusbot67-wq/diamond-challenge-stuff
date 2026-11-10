@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { STL } from './device/stl-data.js';
 
 /* ---------- parts list: the single source for the 3D labels, the table and the costs ---------- */
 export const PARTS = [
@@ -74,10 +75,12 @@ function board(w, d, mat, x, y, z, extras = []) {   // a module: PCB plate + par
 function pins(n, x0, z, y = 1.6, pitch = 2.54) { const g = new THREE.Group(); for (let i = 0; i < n; i++) g.add(box(0.8, 3, 0.8, MAT.gold, x0 + i * pitch, y + 1.5, z)); return g; }
 
 /* ---------- the model ---------- */
-async function loadSTL(url) { const geo = new STLLoader().parse(await (await fetch(url)).arrayBuffer()); geo.computeVertexNormals(); return geo; }
+/* The printable parts ship as base64 in device/stl-data.js (made by device/build_parts.py). */
+const stlBytes = name => { const b = atob(STL[name]), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+export const stlBlob = name => new Blob([stlBytes(name)], { type: 'model/stl' });
+function loadSTL(name) { const geo = new STLLoader().parse(stlBytes(name).buffer); geo.computeVertexNormals(); return geo; }
 
 export async function mountDevice(host, opts = {}) {
-  const base = opts.base || 'device/';
   const W = () => Math.max(280, host.clientWidth), H = () => Math.max(320, Math.min(640, Math.round(host.clientWidth * 0.68)));
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.setSize(W(), H()); renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -94,7 +97,7 @@ export async function mountDevice(host, opts = {}) {
   const parts = {};   // id -> Group, each with .userData.home and .userData.explode
   const part = (id, explode = [0, 0, 0]) => { const g = new THREE.Group(); g.userData = { partId: id, explode: new THREE.Vector3(...explode) }; root.add(g); parts[id] = g; return g; };
 
-  const [bodyGeo, lidGeo, holderGeo] = await Promise.all(['enclosure_body.stl', 'enclosure_lid.stl', 'probe_holder.stl'].map(f => loadSTL(base + f)));
+  const [bodyGeo, lidGeo, holderGeo] = ['enclosure_body.stl', 'enclosure_lid.stl', 'probe_holder.stl'].map(loadSTL);
   // STL is Z-up (print orientation); the scene is Y-up. Box: floor at y = 0, front of the box toward +z.
   const BOX_H = 70;
   { const m = new THREE.Mesh(bodyGeo, MAT.print.clone()); m.rotation.x = -Math.PI / 2; part('body').add(m); }

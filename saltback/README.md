@@ -37,7 +37,12 @@ These replace the earlier "18% less salt, 15.6 → 4.3 h" claim. What changed an
 
 ## Website
 
-Hosted with GitHub Pages from this branch (Settings → Pages → Deploy from a branch → `claude/clever-fermi-0by41q`, `/ (root)`):
+**Live: https://saltback.netlify.app** (Netlify site `saltback`): front page `/`, app `/web/`, 3D device
+`/device/viewer/` (one part: `/device/viewer/#sb-401`), CAD files `/device/out/`. To update it, zip `index.html`,
+`web/`, `device/viewer/` and `device/out/` with those paths at the top level of the zip, and drag the zip onto the
+site's Deploys page on Netlify (or POST it to the Netlify deploy API).
+
+Also works with GitHub Pages from this branch (Settings → Pages → Deploy from a branch → `claude/clever-fermi-0by41q`, `/ (root)`):
 
 - Front page: https://pingusbot67-wq.github.io/diamond-challenge-stuff/saltback/
 - App: https://pingusbot67-wq.github.io/diamond-challenge-stuff/saltback/web/

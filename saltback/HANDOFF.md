@@ -12,6 +12,10 @@ The owner is a student with no coding experience and a weak laptop: explain simp
 or Google Colab.
 
 ## Where things are
+- Public website: https://saltback.netlify.app (Netlify site `saltback`, id 67cf378c-49f8-47c8-a061-2d612d5529e1).
+  Deployed by zipping index.html, web/, device/viewer/, device/out/ (paths at the zip root) and POSTing to
+  /api/v1/sites/<id>/deploys. The owner's Netlify token is saved as a network secret on the `diamond-challenge-stuff`
+  cloud environment (api.netlify.com), not in the repo.
 - Repo `pingusbot67-wq/diamond-challenge-stuff`, branch `claude/blissful-wright-uey5ta`, folder `saltback/`.
 - Live site (private claude.ai artifact): https://claude.ai/artifact/AH6wXhn5TmQdTVGgkWpHCx, published from
   `saltback/web/index.html` with `model.js`, `engine.js`, `report.js`, `xlsx.js` as extra files. Republish to the

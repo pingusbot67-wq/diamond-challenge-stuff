@@ -286,7 +286,7 @@ tr.psel td { background: var(--sel); }
     <!-- DEVICE -->
     <section id="v-device" hidden>
       <div class="head"><div><h1>Device</h1><p class="sub" id="devSub">Saltback drain node, Rev A</p></div>
-        <div class="actions"><a class="btn pri" href="https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd" target="_blank" rel="noopener">Open the 3D model</a>
+        <div class="actions"><a class="btn pri" id="viewerLink" href="https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd" target="_blank" rel="noopener">Open the 3D model</a>
           <a class="btn" href="https://github.com/pingusbot67-wq/diamond-challenge-stuff/tree/claude/clever-fermi-0by41q/saltback/device/out" target="_blank" rel="noopener">All CAD files</a>
           <details class="menu"><summary class="btn">Export</summary><div class="menu-list"><button type="button" data-csv="parts">Parts list (.csv)</button><button type="button" data-copy="parts">Copy parts list</button></div></details></div></div>
       <p class="note" style="max-width:80ch">The full CAD model (every part as a STEP and STL file, the assembly as STEP and GLB) opens in its own page with an exploded view, a section view and a link for every part. Below is the same parts list.</p>
@@ -886,13 +886,17 @@ $('realTable').addEventListener('click', e => {
 
 /* ================= DEVICE ================= */
 const NODE = window.SaltbackNode;
+/* On a normal website (GitHub Pages, or a local copy) the 3D viewer sits next to this site; inside claude.ai it is
+   its own artifact. */
+const VIEWER = /claude\.ai|claudeusercontent|anthropic/.test(location.hostname) || location.ancestorOrigins?.length ? 'https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd' : '../device/viewer/';
+$('viewerLink').href = VIEWER;
 function renderDevice() {
   if (!NODE) { $('partsTable').innerHTML = '<tbody><tr><td class="muted">Parts list unavailable.</td></tr></tbody>'; return; }
   $('devSub').textContent = `Saltback drain node, Rev ${NODE.rev} · ${NODE.parts.length} part numbers · about $${NODE.total_usd} in parts`;
   const link = (u, t) => (u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>` : '');
   $('partsTable').innerHTML = `<thead><tr><th>Part</th><th>Name</th><th class="n">Qty</th><th>Made by</th><th>Material</th><th class="n">Size (mm)</th><th class="n">Cost</th><th>Files</th><th>Buy</th></tr></thead><tbody>${
     Object.entries(NODE.subassemblies).map(([sub, name]) => `<tr><td colspan="9" style="padding-top:14px"><b>${esc(name)}</b> <span class="muted">${sub}</span></td></tr>${
-      NODE.parts.filter(p => p.sub === sub).map(p => `<tr><td class="n" style="text-align:left">${link(`https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd#${p.pn.toLowerCase()}`, p.pn)}</td><td>${esc(p.name)}</td><td class="n">${p.qty}</td><td>${esc(p.kind)}</td><td>${esc(p.material)}</td>
+      NODE.parts.filter(p => p.sub === sub).map(p => `<tr><td class="n" style="text-align:left">${link(`${VIEWER}#${p.pn.toLowerCase()}`, p.pn)}</td><td>${esc(p.name)}</td><td class="n">${p.qty}</td><td>${esc(p.kind)}</td><td>${esc(p.material)}</td>
         <td class="n">${p.size_mm.map(v => Math.round(v)).join(' × ')}</td><td class="n">${p.usd ? `$${p.usd}` : '—'}</td><td>${link(p.files.step, 'STEP')} ${link(p.files.stl, 'STL')}</td><td>${link(p.buy, 'buy')}</td></tr>`).join('')}`).join('')}
     <tr><td colspan="6"><b>Total, approximate</b></td><td class="n"><b>$${NODE.total_usd}</b></td><td colspan="2"></td></tr></tbody>`;
 }

@@ -35,6 +35,16 @@ These replace the earlier "18% less salt, 15.6 → 4.3 h" claim. What changed an
    labeled as such, with no "excess" or cut.
 5. **Late first trucks** are counted as their own lever, not as under-salting.
 
+## Website
+
+Hosted with GitHub Pages from this branch (Settings → Pages → Deploy from a branch → `claude/clever-fermi-0by41q`, `/ (root)`):
+
+- Front page: https://pingusbot67-wq.github.io/diamond-challenge-stuff/saltback/
+- App: https://pingusbot67-wq.github.io/diamond-challenge-stuff/saltback/web/
+- 3D device: https://pingusbot67-wq.github.io/diamond-challenge-stuff/saltback/device/viewer/ (one part: add `#sb-401`, etc.)
+
+No build step: the pages are the files in `saltback/`. `.nojekyll` at the repo root tells Pages to serve them as they are.
+
 ## Two ways to run it
 
 **The website** (`web/index.html`, also published as a private claude.ai artifact): open the file in a browser; no build step.

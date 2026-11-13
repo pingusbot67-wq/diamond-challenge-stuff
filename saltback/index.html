@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Saltback</title>
+<meta name="description" content="Saltback: storm-drain sensors and simulations that help towns use less road salt without making roads less safe.">
+<style>
+/* Front door of the hosted site: same plain black-and-white look as the app, two ways in. */
+:root { --bg: #ffffff; --fg: #111111; --fg2: #555555; --line: #e4e4e4; --hover: #f5f5f5; --accent: #e8590c; color-scheme: light;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121212; --fg: #ececec; --fg2: #b0b0b0; --line: #2a2a2a; --hover: #1b1b1b; --accent: #ff7a33; color-scheme: dark; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font); }
+main { max-width: 760px; margin: 0 auto; padding: max(48px, env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) 64px max(20px, env(safe-area-inset-left, 0px)); }
+h1 { font-size: 28px; margin: 0; letter-spacing: -.01em; }
+p.lede { color: var(--fg2); margin: 8px 0 0; max-width: 60ch; }
+.ways { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin-top: 32px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.ways a { display: block; padding: 20px 20px 22px 0; text-decoration: none; color: inherit; }
+.ways a + a { border-left: 1px solid var(--line); padding-left: 20px; }
+.ways a:hover b { text-decoration: underline; }
+.ways b { font-size: 17px; }
+.ways b::after { content: " →"; color: var(--accent); }
+.ways span { display: block; color: var(--fg2); margin-top: 4px; font-size: 14px; }
+.more { margin-top: 20px; color: var(--fg2); font-size: 13.5px; }
+.more a { color: var(--fg); }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+@media (max-width: 560px) { .ways { grid-template-columns: minmax(0, 1fr); } .ways a + a { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Saltback</h1>
+  <p class="lede">A low-cost sensor in a storm drain measures the salt washing off the road after each storm. Saltback combines it with truck logs and the weather and tells a town how much salt each storm really needed. All data on this site is simulated.</p>
+  <nav class="ways" aria-label="Open">
+    <a href="web/"><b>The app</b><span>Storm log, storm reports, recommendations, and "Simulate winters" for any city or type of winter.</span></a>
+    <a href="device/viewer/"><b>The device</b><span>Interactive 3D model of the drain sensor: 28 parts, exploded and section views, files and buy links.</span></a>
+  </nav>
+  <p class="more">Source code and CAD files (STEP, STL, GLB): <a href="https://github.com/pingusbot67-wq/diamond-challenge-stuff/tree/claude/clever-fermi-0by41q/saltback">GitHub</a>. A Diamond Challenge project.</p>
+</main>
+</body>
+</html>

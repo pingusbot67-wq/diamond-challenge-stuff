@@ -7,7 +7,9 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLB } from './node-glb.js';
 import { NODE } from './parts.js';
 
-const PAGE_URL = 'https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd';   // so "Copy link" gives the claude.ai address
+const IN_CLAUDE = /claude\.ai|claudeusercontent|anthropic/.test(location.hostname) || !!location.ancestorOrigins?.length;
+const PAGE_URL = IN_CLAUDE ? 'https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd' : '';   // "Copy link": claude.ai address inside claude.ai, else this page
+const APP_URL = IN_CLAUDE ? 'https://claude.ai/artifact/AH6wXhn5TmQdTVGgkWpHCx' : '../../web/';
 const GH_TREE = 'https://github.com/pingusbot67-wq/diamond-challenge-stuff/tree/claude/clever-fermi-0by41q/saltback/device/out';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -23,7 +25,8 @@ $('facts').innerHTML = [['Part numbers', PARTS.length], [`Printed · ${Math.roun
   .map(([k, v]) => `<div><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
 $('files').innerHTML = `<a class="chip solid" href="${esc(NODE.assembly.step)}" target="_blank" rel="noopener">Assembly <span class="ext">STEP</span></a>
   <a class="chip" href="${esc(NODE.assembly.glb)}" target="_blank" rel="noopener">Assembly <span class="ext">GLB</span></a>
-  <a class="chip" href="${GH_TREE}" target="_blank" rel="noopener">Every part <span class="ext">STEP · STL</span></a>`;
+  <a class="chip" href="${GH_TREE}" target="_blank" rel="noopener">Every part <span class="ext">STEP · STL</span></a>
+  <a class="chip" href="${APP_URL}" target="_blank" rel="noopener">Saltback app <span class="ext">↗</span></a>`;
 const tagOf = p => (p.printed ? 'print' : p.kind === 'Purchased' ? 'buy' : 'make');
 function renderGroups() {
   $('groups').innerHTML = Object.entries(NODE.subassemblies).map(([sub, name]) => {

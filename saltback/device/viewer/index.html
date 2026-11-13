@@ -51,6 +51,10 @@ aside { background: var(--panel); border-left: 1px solid var(--line); overflow-y
 .pad { padding-left: max(22px, env(safe-area-inset-left, 0px)); padding-right: max(22px, env(safe-area-inset-right, 0px)); }
 h1 { font-size: 20px; font-weight: 600; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
 .lede { color: var(--muted); margin: 6px 0 0; max-width: 46ch; }
+.revs { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; margin-bottom: 14px; }
+.revs button { border: 0; background: none; padding: 4px 11px; border-radius: 999px; font-size: 12.5px; color: var(--muted); }
+.revs button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+.revnote { margin: 4px 0 0; font: 400 12px var(--mono); color: var(--accent); }
 .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin-top: 16px; }
 .facts div { background: var(--panel); padding: 9px 11px; }
 .facts .k { font-size: 11px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
@@ -101,7 +105,7 @@ h1 { font-size: 20px; font-weight: 600; margin: 0; letter-spacing: -.01em; text-
 
 <div class="app">
   <section class="stage" id="stage" aria-label="3D model of the Saltback drain node">
-    <div class="brand"><b>Saltback</b><span class="rev">DRAIN NODE · REV A</span></div>
+    <div class="brand"><b>Saltback</b><span class="rev" id="brandRev">DRAIN NODE</span></div>
     <div class="hint">Drag to turn · scroll to zoom · click a part</div>
     <div class="loading" id="loading">Loading model…</div>
     <div class="tip" id="tip" hidden></div>
@@ -117,7 +121,9 @@ h1 { font-size: 20px; font-weight: 600; margin: 0; letter-spacing: -.01em; text-
     </nav>
   </section>
   <aside class="pad" id="panel">
+    <div class="revs" role="group" aria-label="Revision"><button type="button" data-rev="b" aria-pressed="true">Rev B · low-cost</button><button type="button" data-rev="a" aria-pressed="false">Rev A · DFRobot</button></div>
     <h1>Saltback drain node</h1>
+    <p class="revnote" id="revNote"></p>
     <p class="lede">Hangs inside a storm-drain catch basin and measures the salt washing off the road after each storm. Every part below is a real CAD solid you can open, print, simulate or buy.</p>
     <div class="facts" id="facts"></div>
     <div class="files" id="files"></div>

@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Saltback Build Guide</title>
+<meta name="description" content="How to build the Saltback drain node, Rev B: parts, wiring, assembly, firmware, calibration and installation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a workshop manual. Narrow reading column with a sticky contents list on wide screens; numbered steps because
+   order matters; tables for anything you check off. Same palette as the 3D viewer: ink, quiet greys, plow orange. */
+:root {
+  --bg: #f3f4f5; --paper: #ffffff; --ink: #14171a; --muted: #5f6770; --faint: #8a929b; --line: #e0e3e7; --line2: #cfd4d9;
+  --accent: #e8590c; --accent-soft: #fff3ec; --rail: #1f7a4d; --warn-bg: #fff8e6; --warn-line: #f0c36d;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0f1113; --paper: #16191c; --ink: #eceef0; --muted: #9aa3ad; --faint: #6f7780; --line: #262b30; --line2: #343a40;
+    --accent: #ff7a33; --accent-soft: #2a1f18; --rail: #5cc48a; --warn-bg: #2a2416; --warn-line: #7a6326; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0f1113; --paper: #16191c; --ink: #eceef0; --muted: #9aa3ad; --faint: #6f7780; --line: #262b30; --line2: #343a40;
+  --accent: #ff7a33; --accent-soft: #2a1f18; --rail: #5cc48a; --warn-bg: #2a2416; --warn-line: #7a6326; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15.5px/1.62 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration-color: var(--line2); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono, code, kbd { font-family: var(--mono); font-size: .9em; }
+code { background: var(--accent-soft); padding: 1px 5px; border-radius: 3px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 max(20px, env(safe-area-inset-right, 0px)) 80px max(20px, env(safe-area-inset-left, 0px));
+  display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; }
+nav.toc { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; padding-top: 40px; font-size: 13.5px; }
+nav.toc b { display: block; font-size: 15px; margin-bottom: 2px; }
+nav.toc .rev { font: 500 11px var(--mono); color: var(--muted); letter-spacing: .04em; }
+nav.toc ol { list-style: none; padding: 0; margin: 18px 0 0; counter-reset: t; }
+nav.toc li { counter-increment: t; }
+nav.toc a { display: block; padding: 4px 0 4px 26px; position: relative; text-decoration: none; color: var(--muted); }
+nav.toc a::before { content: counter(t, decimal-leading-zero); position: absolute; left: 0; font: 400 11px var(--mono); top: 7px; color: var(--faint); }
+nav.toc a:hover { color: var(--ink); }
+nav.toc .links { margin-top: 18px; display: grid; gap: 6px; }
+nav.toc .links a { padding: 0; color: var(--ink); }
+nav.toc .links a::before { content: none; }
+main { min-width: 0; padding-top: 40px; }
+header.top h1 { font-size: 34px; line-height: 1.15; margin: 0; letter-spacing: -.015em; text-wrap: balance; }
+header.top .kicker { font: 500 12px var(--mono); color: var(--accent); letter-spacing: .06em; text-transform: uppercase; }
+header.top p { color: var(--muted); max-width: 64ch; margin: 10px 0 0; font-size: 17px; }
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 22px 0 0; }
+.facts div { background: var(--paper); padding: 12px 14px; }
+.facts .k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.facts .v { font: 500 18px var(--mono); margin-top: 2px; white-space: nowrap; }
+figure { margin: 22px 0 0; }
+.shots { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 10px; }
+.shots img { width: 100%; height: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; background: var(--paper); border: 1px solid var(--line); display: block; }
+figcaption { color: var(--faint); font-size: 13px; margin-top: 8px; }
+section { margin-top: 56px; }
+section > h2 { font-size: 23px; margin: 0 0 4px; letter-spacing: -.01em; display: flex; gap: 12px; align-items: baseline; text-wrap: balance; }
+section > h2 .n { font: 500 13px var(--mono); color: var(--accent); }
+section > p, section > ul { max-width: 70ch; }
+h3 { font-size: 16px; margin: 26px 0 6px; }
+.tw { overflow-x: auto; margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; font-weight: 500; color: var(--muted); background: var(--bg); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; white-space: nowrap; font-family: var(--mono); font-size: 13px; }
+td .s { display: block; color: var(--muted); font-size: 12.5px; }
+tr.sub td { background: var(--bg); font-weight: 600; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+tr.add td:first-child::before { content: "added"; font: 500 10px var(--mono); color: var(--accent); border: 1px solid var(--accent); border-radius: 3px; padding: 0 4px; margin-right: 6px; vertical-align: 2px; }
+tr.total td { font-weight: 600; background: var(--bg); }
+.note { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 16px 0 0; max-width: 72ch; }
+.warn { border-left: 3px solid var(--warn-line); background: var(--warn-bg); padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 16px 0 0; max-width: 72ch; }
+.note b, .warn b { display: block; margin-bottom: 2px; }
+ol.steps { list-style: none; padding: 0; margin: 14px 0 0; counter-reset: s; max-width: 74ch; }
+ol.steps > li { counter-increment: s; position: relative; padding: 14px 0 14px 46px; border-top: 1px solid var(--line); }
+ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 13px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  font: 500 13px var(--mono); background: var(--ink); color: var(--paper); }
+ol.steps > li b:first-child { display: block; }
+ol.steps ul { margin: 6px 0 0; padding-left: 18px; }
+.diagram { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; margin-top: 14px; padding: 8px; overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.diagram .box { fill: var(--paper); stroke: var(--line2); }
+.diagram .boxk { fill: var(--accent-soft); stroke: var(--accent); }
+.diagram text { font-family: var(--sans); fill: var(--ink); font-size: 13px; }
+.diagram .t2 { fill: var(--muted); font-size: 11.5px; }
+.diagram .pin { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.diagram .pw { stroke: var(--accent); stroke-width: 2.4; fill: none; }
+.diagram .r3 { stroke: var(--rail); stroke-width: 2.4; fill: none; }
+.diagram .sg { stroke: var(--ink); stroke-width: 1.4; fill: none; }
+.diagram .lpw { fill: var(--accent); font-family: var(--mono); font-size: 11px; }
+.diagram .lr3 { fill: var(--rail); font-family: var(--mono); font-size: 11px; }
+.diagram .dot { fill: var(--accent); }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 18px; height: 3px; vertical-align: 4px; margin-right: 6px; border-radius: 2px; }
+.check { list-style: none; padding: 0; max-width: 72ch; }
+.check li { padding-left: 28px; position: relative; margin: 6px 0; }
+.check li::before { content: ""; position: absolute; left: 0; top: 5px; width: 14px; height: 14px; border: 1.5px solid var(--line2); border-radius: 3px; }
+pre { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font: 13px/1.5 var(--mono); max-width: 74ch; }
+footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--faint); font-size: 13px; max-width: 74ch; }
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  nav.toc { position: static; padding-top: 24px; }
+  nav.toc ol { display: none; }
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .shots { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .shots img:first-child { grid-column: 1 / -1; }
+  header.top h1 { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="toc" aria-label="Contents">
+    <b>Saltback</b><span class="rev">BUILD GUIDE · REV B</span>
+    <ol>
+      <li><a href="#parts">Parts</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#wiring">Wiring</a></li>
+      <li><a href="#prep">Prepare the modules</a></li>
+      <li><a href="#board">Build the board</a></li>
+      <li><a href="#box">Build the box</a></li>
+      <li><a href="#firmware">Firmware</a></li>
+      <li><a href="#bench">Bench test and calibrate</a></li>
+      <li><a href="#install">Install in a drain</a></li>
+      <li><a href="#data">Collect the data</a></li>
+      <li><a href="#power">Battery life</a></li>
+    </ol>
+    <div class="links"><a href="../device/viewer/#b-201">3D model ↗</a><a href="../web/">Saltback app ↗</a>
+      <a href="https://github.com/pingusbot67-wq/diamond-challenge-stuff/tree/claude/clever-fermi-0by41q/saltback">Source on GitHub ↗</a></div>
+  </nav>
+
+  <main>
+    <header class="top">
+      <div class="kicker">Build guide · Rev B</div>
+      <h1>Build a Saltback drain node</h1>
+      <p>A battery sensor that hangs in a storm-drain catch basin and logs how salty the runoff is, every few minutes, all winter. This guide builds it from the AliExpress parts list: two field nodes plus a bench kit for calibration.</p>
+      <div class="facts">
+        <div><div class="k">Cost, 2 nodes + bench kit</div><div class="v">$151–242</div></div>
+        <div><div class="k">Build time</div><div class="v">≈ 1 day / node</div></div>
+        <div><div class="k">Battery</div><div class="v">months*</div></div>
+        <div><div class="k">Skills</div><div class="v">soldering</div></div>
+      </div>
+      <figure>
+        <div class="shots">
+          <img src="img/assembled.png" alt="The assembled node: junction box on a wall plate, guard tube with the conductivity sensor hanging below." width="900" height="900">
+          <img src="img/exploded.png" alt="Exploded view showing the box, lid, perfboard with modules, battery holder and probe parts." width="900" height="900">
+          <img src="img/section.png" alt="Section view through the box: perfboard with modules above two 18650 cells." width="900" height="900">
+        </div>
+        <figcaption>One node, from the <a href="../device/viewer/#b-201">3D model</a>. *Estimated; measure it on the bench before deploying (section 11).</figcaption>
+      </figure>
+    </header>
+
+    <section id="parts">
+      <h2><span class="n">01</span>Parts</h2>
+      <p>Your list, grouped and totalled. Rows marked <b>added</b> aren't on it: they fix a power problem (see section 02) or are needed to mount the node. Prices are AliExpress ranges in US dollars.</p>
+      <div class="tw"><table>
+        <thead><tr><th>Part</th><th>Search for</th><th class="n">Qty</th><th class="n">Total ($)</th></tr></thead>
+        <tbody>
+          <tr class="sub"><td colspan="4">Field nodes (for two)</td></tr>
+          <tr><td>Conductivity + temperature sensor<span class="s">4-electrode or graphite, IP68, highest range (0–100 or 0–200 mS/cm), Modbus RTU, 5–24 V. Not the $3 TDS module.</span></td><td>RS485 conductivity sensor EC temperature water Modbus</td><td class="n">2</td><td class="n">70–120</td></tr>
+          <tr><td>ESP32-C3 SuperMini</td><td>ESP32-C3 SuperMini</td><td class="n">2</td><td class="n">4–6</td></tr>
+          <tr><td>RS485 interface, auto direction</td><td>TTL to RS485 module automatic flow control 3.3V</td><td class="n">2</td><td class="n">2–4</td></tr>
+          <tr><td>Real-time clock DS3231</td><td>DS3231 RTC module</td><td class="n">2</td><td class="n">2–4</td></tr>
+          <tr><td>DS18B20 probes, 5-pack<span class="s">2 per node: air + taped to the grate</span></td><td>DS18B20 waterproof stainless probe 1m</td><td class="n">1</td><td class="n">4–5</td></tr>
+          <tr><td>MT3608 boost converter</td><td>MT3608 boost converter module</td><td class="n">2</td><td class="n">1–2</td></tr>
+          <tr><td>AO3401 P-channel MOSFET (lot)</td><td>AO3401 P-channel MOSFET</td><td class="n">1</td><td class="n">1–2</td></tr>
+          <tr><td>18650 holder, 2 slot parallel</td><td>18650 battery holder 2 slot parallel</td><td class="n">2</td><td class="n">2–3</td></tr>
+          <tr><td>TP4056 USB-C charger with protection</td><td>TP4056 type-C charger module protection</td><td class="n">2</td><td class="n">1–2</td></tr>
+          <tr><td>IP67 ABS junction box 115 × 90 × 55</td><td>IP67 ABS waterproof junction box 115x90x55</td><td class="n">2</td><td class="n">8–12</td></tr>
+          <tr><td>PG7 cable glands, 10-pack</td><td>PG7 cable gland nylon</td><td class="n">1</td><td class="n">2–3</td></tr>
+          <tr><td>ePTFE breather vent M12</td><td>ePTFE breather vent M12 waterproof</td><td class="n">2</td><td class="n">2–4</td></tr>
+          <tr><td>Silica gel 5 g</td><td>silica gel packets 5g</td><td class="n">1</td><td class="n">2–3</td></tr>
+          <tr><td>SP13 waterproof connector, 4 pin</td><td>SP13 waterproof connector 4 pin</td><td class="n">2</td><td class="n">4–6</td></tr>
+          <tr><td>Perfboard, heat shrink, 22 AWG silicone wire</td><td>perfboard / heat shrink assortment / 22AWG silicone wire</td><td class="n">1</td><td class="n">5–8</td></tr>
+          <tr class="sub"><td colspan="4">Bench kit</td></tr>
+          <tr><td>ESP32 DevKitC (desk testing)</td><td>ESP32 DevKitC USB-C CP2102</td><td class="n">1</td><td class="n">4–5</td></tr>
+          <tr><td>Reference EC pen, reads to about 20 mS/cm</td><td>EC meter pen 0-19.99 mS/cm ATC</td><td class="n">1</td><td class="n">6–10</td></tr>
+          <tr><td>Calibration solutions 1413 µS/cm + 12.88 mS/cm</td><td>conductivity calibration solution 1413 12.88</td><td class="n">1</td><td class="n">3–5</td></tr>
+          <tr><td>Scale 0.01 g</td><td>digital pocket scale 0.01g 200g</td><td class="n">1</td><td class="n">5–6</td></tr>
+          <tr><td>Graduated cylinder set</td><td>plastic graduated cylinder set</td><td class="n">1</td><td class="n">3–4</td></tr>
+          <tr class="sub"><td colspan="4">Buy locally</td></tr>
+          <tr><td>18650 cells, Samsung 35E or Molicel<span class="s">AliExpress cells are often fake capacity</span></td><td>18650BatteryStore (US)</td><td class="n">4</td><td class="n">20–28</td></tr>
+          <tr class="total"><td colspan="3">Your list, required</td><td class="n">151–242</td></tr>
+          <tr class="sub"><td colspan="4">Added in this guide (for two nodes)</td></tr>
+          <tr class="add"><td>2N7002 N-MOSFET (lot)<span class="s">Needed so the ESP32 can fully switch off the 12 V supply (section 02)</span></td><td>2N7002 SOT-23</td><td class="n">1</td><td class="n">1–2</td></tr>
+          <tr class="add"><td>Resistor kit: 4.7 k, 10 k, 100 k, 220 k</td><td>1/4W resistor kit</td><td class="n">1</td><td class="n">2–3</td></tr>
+          <tr class="add"><td>SOT-23 to DIP adapter boards</td><td>SOT23 to DIP adapter</td><td class="n">1</td><td class="n">1–2</td></tr>
+          <tr class="add"><td>Screw terminals 5.08 mm, 3 and 4 pin</td><td>5.08mm PCB screw terminal</td><td class="n">4</td><td class="n">1–2</td></tr>
+          <tr class="add"><td>CR2032 coin cells (for the DS3231)</td><td>local</td><td class="n">2</td><td class="n">2–3</td></tr>
+          <tr class="add"><td>2" schedule 40 PVC pipe, 1 m (300 mm per node) + 2 hose clamps</td><td>hardware store</td><td class="n">1</td><td class="n">10–14</td></tr>
+          <tr class="add"><td>Concrete screws 6 × 45 mm, M4 screws + heat-set inserts</td><td>hardware store</td><td class="n">1</td><td class="n">6–9</td></tr>
+          <tr class="add"><td>Aluminium foil tape, 1.5 mm stainless wire rope + crimps</td><td>hardware store</td><td class="n">1</td><td class="n">8–12</td></tr>
+          <tr class="add"><td>PETG or ASA filament for 5 printed parts (about 170 g per node)</td><td>—</td><td class="n">—</td><td class="n">0–8</td></tr>
+          <tr class="total"><td colspan="3">With the additions</td><td class="n">182–297</td></tr>
+          <tr class="sub"><td colspan="4">Optional</td></tr>
+          <tr><td>RS485 water level sensor 0–1 m<span class="s">Turns concentration into load (concentration × volume)</span></td><td>RS485 water level sensor pressure 0-1m</td><td class="n">1</td><td class="n">30–50</td></tr>
+        </tbody>
+      </table></div>
+      <p style="margin-top:14px">Tools: soldering iron, multimeter (needed to set the boost converter), 12.5 mm and 13 mm step drill bits, wire stripper, small screwdrivers, hot glue, 3D printer (or a library or school printer). Printed-part files are in <a href="https://github.com/pingusbot67-wq/diamond-challenge-stuff/tree/claude/clever-fermi-0by41q/saltback/device/out-b/stl">device/out-b/stl</a>: mounting plate (B-107), sensor head (B-403), silt cap (B-404), wall plate (B-501).</p>
+    </section>
+
+    <section id="how">
+      <h2><span class="n">02</span>How it works</h2>
+      <p>The ESP32-C3 sleeps almost all the time. Every 15 minutes (every 2 during a storm) it wakes, switches on power to the sensors, waits three seconds, reads conductivity and water temperature from the probe over RS485, reads the two DS18B20s and the battery, writes one line to its flash memory and switches everything off again. Two switches make that possible:</p>
+      <ul>
+        <li><b>12 V switch</b> (AO3401 #1 + 2N7002). Cuts the battery to the MT3608 boost converter, so the probe and the boost draw nothing between readings.</li>
+        <li><b>3.3 V switch</b> (AO3401 #2). Powers the RS485 module, the clock module and the DS18B20s only while reading. The clock keeps time on its coin cell.</li>
+      </ul>
+      <div class="note"><b>Why the 2N7002 is added</b>The AO3401 sits on the battery, which is up to 4.2 V. If the 3.3 V ESP32 pin drove its gate directly, "off" would still leave 0.9 V across it, and an AO3401 can start to turn on at 0.5 V. The probe would keep draining the battery. The 2N7002 pulls the gate fully to ground for "on" and lets a 10 k resistor pull it to the battery for "off".</div>
+    </section>
+
+    <section id="wiring">
+      <h2><span class="n">03</span>Wiring</h2>
+      <p>All grounds connect together: battery −, TP4056 OUT−, ESP32 G, MT3608 IN− and OUT−, the RS485 and clock modules, the DS18B20 black wires and SP13 pin 2.</p>
+      <div class="diagram" role="img" aria-label="Wiring diagram: battery to charger to VBAT; VBAT to the ESP32 and through a switch to the 12 V boost and the probe; a switched 3.3 V rail to the RS485 module, clock and temperature probes.">
+        <svg viewBox="0 0 900 470" xmlns="http://www.w3.org/2000/svg">
+          <!-- power path -->
+          <rect class="box" x="16" y="26" width="140" height="56" rx="6"/><text x="28" y="50">2 × 18650</text><text class="t2" x="28" y="68">parallel, 3.0–4.2 V</text>
+          <rect class="box" x="196" y="26" width="150" height="56" rx="6"/><text x="208" y="50">TP4056</text><text class="t2" x="208" y="68">B+/B− in · OUT+/OUT− out</text>
+          <rect class="boxk" x="420" y="26" width="128" height="56" rx="6"/><text x="432" y="50">AO3401 #1</text><text class="t2" x="432" y="68">12 V switch</text>
+          <rect class="box" x="586" y="26" width="128" height="56" rx="6"/><text x="598" y="50">MT3608</text><text class="t2" x="598" y="68">set to 12 V</text>
+          <rect class="box" x="752" y="16" width="134" height="92" rx="6"/><text x="764" y="40">SP13 → probe</text><text class="pin" x="764" y="60">1 V+   2 GND</text><text class="pin" x="764" y="76">3 A    4 B</text><text class="t2" x="764" y="96">RS485 EC sensor</text>
+          <path class="pw" d="M156 54 H196"/><path class="pw" d="M346 54 H420"/><path class="pw" d="M548 54 H586"/><path class="pw" d="M714 54 H752"/>
+          <circle class="dot" cx="382" cy="54" r="4"/><text class="lpw" x="356" y="44">VBAT</text><text class="lpw" x="722" y="44">12 V</text>
+          <!-- ESP32 -->
+          <rect class="box" x="16" y="140" width="190" height="300" rx="6"/><text x="28" y="164">ESP32-C3</text><text class="t2" x="28" y="182">SuperMini</text>
+          <text class="pin" x="198" y="174" text-anchor="end">5V</text>
+          <text class="pin" x="198" y="219" text-anchor="end">GPIO10</text>
+          <text class="pin" x="198" y="262" text-anchor="end">3V3</text>
+          <text class="pin" x="198" y="304" text-anchor="end">GPIO1</text>
+          <text class="pin" x="198" y="330" text-anchor="end">GPIO20 RX · 21 TX</text>
+          <text class="pin" x="198" y="356" text-anchor="end">GPIO6 SDA · 7 SCL</text>
+          <text class="pin" x="198" y="400" text-anchor="end">GPIO4 1-Wire</text>
+          <text class="pin" x="198" y="428" text-anchor="end">GPIO0 ← VBAT ÷ 2</text>
+          <path class="pw" d="M382 54 V170 H206"/>
+          <!-- switches -->
+          <rect class="boxk" x="420" y="194" width="128" height="46" rx="6"/><text x="432" y="214">2N7002</text><text class="t2" x="432" y="231">gate ← GPIO10, 100k to G</text>
+          <path class="sg" d="M206 216 H420"/><path class="sg" d="M484 194 V82"/><text class="pin" x="490" y="140">gate, 10k to VBAT</text>
+          <rect class="boxk" x="250" y="240" width="130" height="46" rx="6"/><text x="262" y="260">AO3401 #2</text><text class="t2" x="262" y="277">3.3 V switch</text>
+          <path class="r3" d="M206 259 H250"/><path class="sg" d="M206 300 H315 V286"/><text class="pin" x="322" y="300">gate, 10k to 3V3</text>
+          <path class="r3" d="M380 263 H690"/><text class="lr3" x="560" y="256">3.3 V switched rail</text>
+          <!-- 3.3 V loads -->
+          <rect class="box" x="420" y="330" width="130" height="46" rx="6"/><text x="432" y="350">DS3231</text><text class="t2" x="432" y="367">+ CR2032</text>
+          <rect class="box" x="586" y="300" width="150" height="52" rx="6"/><text x="598" y="320">RS485 module</text><text class="t2" x="598" y="338">auto direction</text>
+          <rect class="box" x="420" y="392" width="200" height="46" rx="6"/><text x="432" y="412">DS18B20 × 2</text><text class="t2" x="432" y="429">air + grate, 4.7k data → 3.3 V sw</text>
+          <path class="r3" d="M485 263 V330"/><path class="r3" d="M660 263 V300"/><path class="r3" d="M568 263 V392"/>
+          <path class="sg" d="M206 326 H586"/><path class="sg" d="M206 352 H420"/><path class="sg" d="M206 396 H420"/>
+          <path class="sg" d="M736 326 H819 V108"/><text class="pin" x="742" y="318">A / B</text>
+        </svg>
+      </div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>battery and 12 V power</span><span><i style="background:var(--rail)"></i>switched 3.3 V</span><span><i style="background:var(--ink)"></i>signals</span></div>
+
+      <h3>Connection table</h3>
+      <div class="tw"><table>
+        <thead><tr><th>From</th><th>To</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Cells + / −</td><td>TP4056 B+ / B−</td><td>Through the 2-slot holder; cells in parallel</td></tr>
+          <tr><td>TP4056 OUT+</td><td>VBAT net</td><td>Use OUT, not B+, so the protection chip guards the cells</td></tr>
+          <tr><td>VBAT</td><td>ESP32-C3 <code>5V</code> pin</td><td>Its on-board regulator makes 3.3 V from the battery</td></tr>
+          <tr><td>VBAT</td><td>AO3401 #1 source</td><td>10 k from its gate to VBAT keeps it off</td></tr>
+          <tr><td>AO3401 #1 drain</td><td>MT3608 IN+</td><td></td></tr>
+          <tr><td>AO3401 #1 gate</td><td>2N7002 drain</td><td>2N7002 source to GND, gate to GPIO10 with 100 k to GND</td></tr>
+          <tr><td>MT3608 OUT+</td><td>Screw terminal → SP13 pin 1</td><td>12 V to the probe. Check the probe's colour code in its manual</td></tr>
+          <tr><td>ESP32 <code>3V3</code></td><td>AO3401 #2 source</td><td>Gate to GPIO1 with 10 k to 3V3 (LOW = on)</td></tr>
+          <tr><td>AO3401 #2 drain</td><td>Switched 3.3 V rail</td><td>Feeds the RS485 module, DS3231 and DS18B20s</td></tr>
+          <tr><td>RS485 module TXD / RXD</td><td>GPIO20 / GPIO21</td><td>Module TXD → ESP RX (20); ESP TX (21) → module RXD</td></tr>
+          <tr><td>RS485 module A / B</td><td>Screw terminal → SP13 pins 3 / 4</td><td>If the sensor doesn't answer, swap A and B</td></tr>
+          <tr><td>DS3231 SDA / SCL</td><td>GPIO6 / GPIO7</td><td>The module has its own pull-ups</td></tr>
+          <tr><td>DS18B20 yellow (data), both</td><td>GPIO4</td><td>4.7 k from data to switched 3.3 V; red to switched 3.3 V; black to GND</td></tr>
+          <tr><td>VBAT</td><td>220 k → GPIO0 → 220 k → GND</td><td>Battery voltage; add a 100 nF cap across the lower resistor if readings jump</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="prep">
+      <h2><span class="n">04</span>Prepare the modules</h2>
+      <ol class="steps">
+        <li><b>Remove two LEDs.</b> On the ESP32-C3 SuperMini, desolder (or flick off with a hot iron) the red power LED. On the DS3231 (ZS-042), remove its power LED too. Each draws a couple of milliamps all the time, which alone would empty the battery in a few months.</li>
+        <li><b>Make the DS3231 safe for a CR2032.</b> The ZS-042 tries to charge its coin cell. With a normal CR2032, remove the charging resistor (marked 201, near the diode) or the diode. Then fit the CR2032.</li>
+        <li><b>Set the MT3608 to 12 V before it touches the probe.</b> Power its input from a cell or a USB supply, put the multimeter on OUT, and turn the brass screw until it reads 12.0 V (many turns counter-clockwise lowers it). Check your probe's manual: if it says 5–24 V, 12 V is a safe middle.</li>
+        <li><b>Give the sensor an address.</b> Most ship as Modbus address 1 at 9600 baud. Leave it, unless you add the level sensor: that one must be changed to address 2 with its own software or the vendor's command before both share the bus.</li>
+        <li><b>Match the cells.</b> Charge both 18650s fully (to 4.2 V) before putting them in the parallel holder, so one doesn't dump current into the other.</li>
+      </ol>
+    </section>
+
+    <section id="board">
+      <h2><span class="n">05</span>Build the board</h2>
+      <p>Everything inside the box sits on one 9 × 7 cm perfboard, held by four standoffs above the battery holder. The 3D model shows the layout: <a href="../device/viewer/#b-207">perfboard (B-207)</a>.</p>
+      <ol class="steps">
+        <li><b>Plan with headers.</b> Solder female headers for the ESP32-C3, RS485 module, DS3231 and MT3608, so modules can be swapped. Put the ESP32-C3 and the TP4056 with their USB-C ports at the same short edge.</li>
+        <li><b>Solder the switches.</b> Mount the two AO3401s and the 2N7002 on SOT-23 adapter boards, then onto the perfboard, with their resistors: 10 k gate pull-ups, 100 k from the 2N7002 gate to GND, the 4.7 k for the DS18B20 data line and the 220 k + 220 k battery divider.</li>
+        <li><b>Run the power wiring</b> in red and black 22 AWG silicone wire: TP4056 → VBAT → ESP32 5V, VBAT → AO3401 #1 → MT3608, ESP32 3V3 → AO3401 #2 → switched rail. Keep the 12 V and battery wires short and thick.</li>
+        <li><b>Add the screw terminals</b> at the edge nearest the bottom of the box: a 4-pin for the probe (12 V, GND, A, B) and a 3-pin for the DS18B20s (3.3 V sw, data, GND).</li>
+        <li><b>Check before power.</b> With no cells in: no short between VBAT and GND, or 3.3 V and GND. Insert the cells, measure 3.3 V on the ESP32, about 0 V on the switched rail and 0 V at the 12 V terminal.</li>
+        <li><b>Coat it.</b> Once it all works (section 08), brush conformal coating or clear nail polish over the solder side. Drain air is wet and salty; bare joints corrode in one winter.</li>
+      </ol>
+    </section>
+
+    <section id="box">
+      <h2><span class="n">06</span>Build the box</h2>
+      <ol class="steps">
+        <li><b>Print the parts</b> in PETG or ASA, 3 walls, 25% infill: mounting plate, sensor head, silt cap, wall plate. Press four M4 heat-set inserts into the wall plate with the soldering iron.</li>
+        <li><b>Drill the bottom wall</b> of the junction box (the short side that will face down), in a line 20 mm from the base: M12 vent (12.2 mm), SP13 socket (13.2 mm), and three PG7 glands (12.5 mm). The <a href="../device/viewer/#b-101">box (B-101)</a> in the 3D model shows the spacing. Deburr every hole.</li>
+        <li><b>Fit the vent, SP13 socket and glands</b> with their nuts inside. Blank the third gland with a short piece of rod until you add the level sensor.</li>
+        <li><b>Fit the SP13 plug to the probe cable.</b> Cut the probe's cable to length (enough to reach from the box to the bottom of the basin, plus 30 cm), and solder it to the plug: V+ to 1, GND to 2, A to 3, B to 4. Heat-shrink each wire.</li>
+        <li><b>Mount the inside.</b> Screw the mounting plate to the box's floor bosses, zip-tie the battery holder into its rails, fit the perfboard on the standoffs, wire the SP13 socket and DS18B20 leads to the screw terminals, add the silica gel packet.</li>
+        <li><b>Build the probe guard.</b> Cut 300 mm of 2" PVC and drill about 60 holes of 10 mm all round, leaving 30 mm solid at the top. Push the silt cap on the bottom. Thread the probe up through the sensor head so it hangs by its own shoulder, clamp the collar with a hose clamp, and push the head into the tube.</li>
+      </ol>
+      <div class="warn"><b>Before closing the lid</b>Check the lid gasket sits in its groove all the way round and the four lid screws are snug, not crushed. Mark which DS18B20 is the air probe (section 08 shows how to tell).</div>
+    </section>
+
+    <section id="firmware">
+      <h2><span class="n">07</span>Firmware</h2>
+      <p>Download <a href="https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/firmware/saltback_node_b/saltback_node_b.ino">saltback_node_b.ino</a>. In the Arduino IDE install the ESP32 boards package (Espressif, 3.x) and the libraries ModbusMaster, OneWire, DallasTemperature and RTClib. Choose the board <b>ESP32C3 Dev Module</b> and set <b>USB CDC On Boot: Enabled</b>, then upload over USB-C.</p>
+      <p>Settings at the top of the file to check first:</p>
+      <div class="tw"><table>
+        <thead><tr><th>Setting</th><th>Default</th><th>What to do</th></tr></thead>
+        <tbody>
+          <tr><td><code>REG_START</code>, <code>IDX_EC</code>, <code>IDX_TEMP</code>, scales</td><td>EC = register 1, temp = register 0 × 0.1</td><td>Look up your sensor's register map in its manual; the <b>Show raw registers</b> button helps you match them</td></tr>
+          <tr><td><code>WARMUP_MS</code></td><td>3000</td><td>Raise to 10000 if the first readings after power-on look low</td></tr>
+          <tr><td><code>SLOW_S</code> / <code>FAST_S</code></td><td>15 min / 2 min</td><td>Fast mode starts when conductivity rises 10% and lasts 6 hours</td></tr>
+          <tr><td><code>AP_PASSWORD</code></td><td>saltback-node</td><td>Change it</td></tr>
+          <tr><td><code>DAILY_AP_HOUR_UTC</code></td><td>21 (4 pm US Eastern)</td><td>When the download network opens every day, for 10 minutes</td></tr>
+          <tr><td><code>CAL_GAIN</code>, <code>CAL_OFFSET</code></td><td>1, 0</td><td>From the bench calibration below</td></tr>
+        </tbody>
+      </table></div>
+      <div class="warn"><b>Not yet run on real hardware</b>The firmware was written for these exact parts but hasn't been compiled or run on a board yet. Expect to fix small things on the bench. That's what the bench kit is for.</div>
+    </section>
+
+    <section id="bench">
+      <h2><span class="n">08</span>Bench test and calibrate</h2>
+      <ol class="steps">
+        <li><b>First power-up.</b> Insert the cells and press RESET. The blue LED blinks and a Wi-Fi network <code>Saltback-XXXX</code> appears. Join it, open <code>http://192.168.4.1</code>, tap <b>Set clock from this phone</b>, then <b>Read sensors now</b>.</li>
+        <li><b>Find the air probe.</b> Hold one DS18B20 in your hand and read again: the one that warms is the one the firmware calls <code>air</code> or <code>surface</code>. Label it, or swap the two in the code.</li>
+        <li><b>Two-point calibration.</b> Put the probe and the EC pen in the 1413 µS/cm solution, then the 12.88 mS/cm solution, at room temperature. Write down both readings from each. Then <code>CAL_GAIN = (12880 − 1413) / (probe_high − probe_low)</code> and <code>CAL_OFFSET = 1413 − CAL_GAIN × probe_low</code>.</li>
+        <li><b>Salt doses</b> (the Experiment 1 check). In 1 L of tap water, add 0, 5, 10, 20 and 40 g of table salt in turn, stirring well, and log each. Expect roughly 0.2–0.8, 9, 17, 33 and 61 mS/cm at 25 °C, the same freezing-point and conductivity tables the Saltback model uses. The pen only reaches about 20 mS/cm, so it checks the first three; the probe alone covers the rest.</li>
+        <li><b>Overnight battery test.</b> Leave the node running on the bench with fast mode forced (set <code>SLOW_S = FAST_S</code>), then download the log in the morning. The battery voltage column shows how fast it drains; use it to check the estimate in section 11.</li>
+      </ol>
+      <p>Upload the bench CSV into the <a href="../web/#data">Saltback app</a> to compare with the model.</p>
+    </section>
+
+    <section id="install">
+      <h2><span class="n">09</span>Install in a drain</h2>
+      <div class="warn"><b>Get permission first</b>Storm drains belong to the town. Ask the public works department: they choose the drain, lift the grate (it weighs 50 kg or more) and may install the node for you. Never climb into a catch basin: it's a confined space with bad air.</div>
+      <ol class="steps">
+        <li><b>Pick the drain.</b> A curb inlet on a salted road, with a sump (standing water at the bottom) and a grate you can stand next to safely. Note the road name and how many lane-miles drain to it, for the app.</li>
+        <li><b>Mount the wall plate</b> on the basin wall just below the grate, with four concrete screws. Screw the box to it with the M4 screws.</li>
+        <li><b>Hang the probe guard</b> so the probe sits in the sump water near the outlet pipe, with the bottom of the tube clear of the silt. Tie the stainless tether from the sensor head to a wall-plate screw, so the tube's weight hangs on the tether and never on the cable. Plug the SP13 in.</li>
+        <li><b>Place the temperature probes.</b> Air probe: hanging free below the box. Surface probe: flat against the underside of the grate, held with aluminium foil tape.</li>
+        <li><b>Check it works</b> before the grate goes back: use the hotspot trick in section 10 and tap <b>Read sensors now</b>.</li>
+      </ol>
+    </section>
+
+    <section id="data">
+      <h2><span class="n">10</span>Collect the data</h2>
+      <p>You never need to open the drain to get the data:</p>
+      <ol class="steps">
+        <li><b>Turn on your phone's hotspot named <code>saltback-collect</code></b> (rename the hotspot, or the phone, to that) and stand by the grate.</li>
+        <li><b>Wait for the node's next wake</b>: up to 15 minutes, or 2 during a storm. It sees your hotspot and opens its own network, <code>Saltback-XXXX</code>, for 10 minutes. Or come at the daily window (4 pm US Eastern by default).</li>
+        <li><b>Turn the hotspot off, join <code>Saltback-XXXX</code></b>, open <code>http://192.168.4.1</code> and tap <b>Download log (CSV)</b>.</li>
+      </ol>
+      <p>The log has one line per reading:</p>
+      <pre>time_utc,unix,ec_uS_cm,water_C,air_C,surface_C,level_cm,battery_V,flags
+2027-01-06T14:30:00,1799245800,2140,1.85,-3.12,-5.40,,3.981,</pre>
+      <p>Flags: <code>E</code> probe didn't answer, <code>A</code>/<code>S</code> a temperature probe missing, <code>T</code> the clock lost time, <code>R</code> no clock. Add the storm's truck log (salt per pass, timing) in the app's storm log, and its <b>Drain salt measured</b> comes from this file.</p>
+    </section>
+
+    <section id="power">
+      <h2><span class="n">11</span>Battery life</h2>
+      <p>An estimate from typical datasheet currents. Measure yours with the overnight bench test.</p>
+      <div class="tw"><table>
+        <thead><tr><th>What</th><th class="n">Current</th><th class="n">Per day</th></tr></thead>
+        <tbody>
+          <tr><td>Sleeping: ESP32-C3 + regulator, charger protection, divider (LEDs removed)</td><td class="n">≈ 70 µA</td><td class="n">≈ 1.7 mAh</td></tr>
+          <tr><td>One reading: 3.5 s awake, probe at 12 V through the boost</td><td class="n">≈ 140 mA</td><td class="n">0.14 mAh each</td></tr>
+          <tr><td>Normal day: 96 readings + 96 hotspot checks</td><td class="n"></td><td class="n">≈ 17 mAh</td></tr>
+          <tr><td>Storm: 6 hours at one reading every 2 minutes</td><td class="n"></td><td class="n">+ 25 mAh</td></tr>
+          <tr><td>Daily download window, 10 minutes of Wi-Fi</td><td class="n">≈ 80 mA</td><td class="n">+ 13 mAh</td></tr>
+          <tr class="total"><td>Two 3500 mAh cells, about 5000 mAh usable in the cold</td><td class="n"></td><td class="n">≈ 5–8 months</td></tr>
+        </tbody>
+      </table></div>
+      <div class="warn"><b>Charging</b>Li-ion cells must not be charged below 0 °C. Bring the node (or swap in two charged spare cells) and charge indoors through the TP4056's USB-C port. Never leave cells charging unattended.</div>
+      <h3>Before it goes in the drain</h3>
+      <ul class="check">
+        <li>LEDs removed from the ESP32-C3 and DS3231; DS3231 charging resistor removed</li>
+        <li>MT3608 measured at 12 V; 0 V at the probe terminal while asleep</li>
+        <li>Sensor answers on the raw-registers page; register map and scale checked against its manual</li>
+        <li>Two-point calibration entered; salt-dose readings look sensible</li>
+        <li>Air and surface probes identified</li>
+        <li>Clock set; log downloads; overnight battery test done</li>
+        <li>Board coated; gasket seated; vent, glands and SP13 tight; desiccant inside</li>
+        <li>Public works has approved the drain and is there to lift the grate</li>
+      </ul>
+    </section>
+
+    <footer>Saltback · Diamond Challenge project. Part sizes in the 3D model are typical listings: measure the parts you receive before printing. Module prices change; check before ordering.</footer>
+  </main>
+</div>
+</body>
+</html>

@@ -139,6 +139,20 @@ in pounds per lane-mile per winter next to the simulated crew, and "Simulate at 
 pass so the simulated crew spreads about the same amount. State highways get many more passes than town streets, so
 matching a highway total by raising the rate per pass overstates the savings; use these as a scale check.
 
+## The device (Rev B, low-cost build)
+
+Built from the AliExpress parts list. 3D model: https://saltback.netlify.app/device/viewer/ (Rev B by default, Rev A one
+click away). Build guide: https://saltback.netlify.app/build/ (`build/index.html`): parts and totals, how it works,
+wiring diagram and table, module prep, board, box, firmware, bench calibration, install, data collection, battery life.
+
+- CAD: `device/cad/node_b.py` -> `device/out-b/` (31 part numbers; STEP + STL per part, assembly STEP + GLB, parts.json).
+  Checked with `python device/cad/check_exports.py device/out-b` and the Khronos glTF validator (no errors or warnings).
+- Firmware: `firmware/saltback_node_b/saltback_node_b.ino` (ESP32-C3 SuperMini, Modbus RTU sensor, two DS18B20s,
+  DS3231, deep sleep, CSV log in flash, Wi-Fi download page opened by a phone hotspot named `saltback-collect`).
+  Not yet compiled or run on hardware; the sensor register map must be checked against the sensor's manual.
+- Added to the parts list: a 2N7002 so the 3.3 V ESP32 pin can fully switch off the AO3401 on the 4.2 V battery,
+  resistors, screw terminals, CR2032s, 2" PVC guard tube, mounting hardware, and four printed parts.
+
 ## The device (Rev A)
 
 Viewer: https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd (each part has its own link, e.g. `#sb-401` for the probe head).

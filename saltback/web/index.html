@@ -287,7 +287,8 @@ tr.psel td { background: var(--sel); }
     <section id="v-device" hidden>
       <div class="head"><div><h1>Device</h1><p class="sub" id="devSub">Saltback drain node, Rev A</p></div>
         <div class="actions"><a class="btn pri" id="viewerLink" href="https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd" target="_blank" rel="noopener">Open the 3D model</a>
-          <a class="btn" href="https://github.com/pingusbot67-wq/diamond-challenge-stuff/tree/claude/clever-fermi-0by41q/saltback/device/out" target="_blank" rel="noopener">All CAD files</a>
+          <a class="btn" id="buildLink" href="https://saltback.netlify.app/build/" target="_blank" rel="noopener">Build guide</a>
+          <a class="btn" href="https://github.com/pingusbot67-wq/diamond-challenge-stuff/tree/claude/clever-fermi-0by41q/saltback/device/out-b" target="_blank" rel="noopener">All CAD files</a>
           <details class="menu"><summary class="btn">Export</summary><div class="menu-list"><button type="button" data-csv="parts">Parts list (.csv)</button><button type="button" data-copy="parts">Copy parts list</button></div></details></div></div>
       <p class="note" style="max-width:80ch">The full CAD model (every part as a STEP and STL file, the assembly as STEP and GLB) opens in its own page with an exploded view, a section view and a link for every part. Below is the same parts list.</p>
       <section class="block"><h2>Parts list</h2><div class="tw"><table id="partsTable"></table></div></section>
@@ -890,6 +891,7 @@ const NODE = window.SaltbackNode;
    its own artifact. */
 const VIEWER = /claude\.ai|claudeusercontent|anthropic/.test(location.hostname) || location.ancestorOrigins?.length ? 'https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd' : '../device/viewer/';
 $('viewerLink').href = VIEWER;
+if (VIEWER.startsWith('..')) $('buildLink').href = '../build/';
 function renderDevice() {
   if (!NODE) { $('partsTable').innerHTML = '<tbody><tr><td class="muted">Parts list unavailable.</td></tr></tbody>'; return; }
   $('devSub').textContent = `Saltback drain node, Rev ${NODE.rev} · ${NODE.parts.length} part numbers · about $${NODE.total_usd} in parts`;

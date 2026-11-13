@@ -1,0 +1,1240 @@
+{
+ "name": "Saltback drain node",
+ "rev": "B",
+ "title": "Rev B \u00b7 low-cost build",
+ "units": "mm",
+ "total_usd": 111,
+ "subassemblies": {
+  "B-100": "Enclosure",
+  "B-200": "Electronics",
+  "B-300": "Power",
+  "B-400": "Sensors & probe guard",
+  "B-500": "Mounting"
+ },
+ "parts": [
+  {
+   "pn": "B-101",
+   "key": "box_base",
+   "name": "Junction box, IP67 ABS 115 x 90 x 55 (base)",
+   "sub": "B-100",
+   "kind": "Purchased",
+   "material": "ABS",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-IP67-ABS-waterproof-junction-box-115x90x55.html",
+   "search": "IP67 ABS waterproof junction box 115x90x55",
+   "note": "Drill five holes in the bottom wall: 12.2 mm vent, 13.2 mm SP13, three 12.5 mm PG7. Measure your box: sizes vary by seller.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Enclosure",
+   "color": "#ccd1d6",
+   "usd": 5.0,
+   "usd_low": 4,
+   "usd_high": 6,
+   "size_mm": [
+    115.0,
+    90.0,
+    40.0
+   ],
+   "volume_cm3": 68.8,
+   "mass_g": null,
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "nodes": [
+    "B-101"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-101_box_base.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-101_box_base.stl"
+   }
+  },
+  {
+   "pn": "B-102",
+   "key": "box_lid",
+   "name": "Junction box lid",
+   "sub": "B-100",
+   "kind": "Purchased",
+   "material": "ABS",
+   "qty": 1,
+   "buy": null,
+   "search": null,
+   "note": "Comes with the box, with its gasket and four screws.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Enclosure",
+   "color": "#edf0f2",
+   "usd": 0.0,
+   "usd_low": 0.0,
+   "usd_high": 0.0,
+   "size_mm": [
+    115.0,
+    90.0,
+    15.0
+   ],
+   "volume_cm3": 39.0,
+   "mass_g": null,
+   "explode": [
+    0,
+    -120,
+    0
+   ],
+   "nodes": [
+    "B-102"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-102_box_lid.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-102_box_lid.stl"
+   }
+  },
+  {
+   "pn": "B-103",
+   "key": "cable_gland",
+   "name": "Cable gland, PG7",
+   "sub": "B-100",
+   "kind": "Purchased",
+   "material": "Nylon",
+   "qty": 3,
+   "buy": "https://www.aliexpress.us/w/wholesale-PG7-cable-gland-nylon.html",
+   "search": "PG7 cable gland nylon",
+   "note": "Two for the DS18B20 cables, one for the optional level sensor (keep it plugged until then).",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Enclosure",
+   "color": "#17171a",
+   "usd": 1.2,
+   "usd_low": 1,
+   "usd_high": 1.5,
+   "size_mm": [
+    21.9,
+    19.0,
+    24.2
+   ],
+   "volume_cm3": 4.4,
+   "mass_g": null,
+   "explode": [
+    0,
+    0,
+    -40
+   ],
+   "nodes": [
+    "B-103-1",
+    "B-103-2",
+    "B-103-3"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-103_cable_gland.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-103_cable_gland.stl"
+   }
+  },
+  {
+   "pn": "B-104",
+   "key": "breather_vent",
+   "name": "Breather vent, ePTFE M12",
+   "sub": "B-100",
+   "kind": "Purchased",
+   "material": "PA + ePTFE",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-ePTFE-breather-vent-M12-waterproof.html",
+   "search": "ePTFE breather vent M12 waterproof",
+   "note": "Stops the box pumping in wet air as it warms and cools.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Enclosure",
+   "color": "#40454c",
+   "usd": 1.5,
+   "usd_low": 1,
+   "usd_high": 2,
+   "size_mm": [
+    19.6,
+    17.0,
+    13.0
+   ],
+   "volume_cm3": 2.4,
+   "mass_g": null,
+   "explode": [
+    0,
+    0,
+    -40
+   ],
+   "nodes": [
+    "B-104"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-104_breather_vent.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-104_breather_vent.stl"
+   }
+  },
+  {
+   "pn": "B-105",
+   "key": "sp13_connector",
+   "name": "SP13 waterproof connector, 4 pin (socket + plug)",
+   "sub": "B-100",
+   "kind": "Purchased",
+   "material": "Nylon + brass",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-SP13-waterproof-connector-4-pin.html",
+   "search": "SP13 waterproof connector 4 pin",
+   "note": "Socket in the bottom wall, plug on the probe cable: the probe unplugs without opening the box.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Enclosure",
+   "color": "#17171a",
+   "usd": 2.5,
+   "usd_low": 2,
+   "usd_high": 3,
+   "size_mm": [
+    20.0,
+    20.0,
+    62.0
+   ],
+   "volume_cm3": 12.1,
+   "mass_g": null,
+   "explode": [
+    0,
+    0,
+    -55
+   ],
+   "nodes": [
+    "B-105"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-105_sp13_connector.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-105_sp13_connector.stl"
+   }
+  },
+  {
+   "pn": "B-106",
+   "key": "desiccant",
+   "name": "Silica gel packet, 5 g",
+   "sub": "B-100",
+   "kind": "Purchased",
+   "material": "Silica gel",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-silica-gel-packets-5g.html",
+   "search": "silica gel packets 5g",
+   "note": "",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Enclosure",
+   "color": "#edf0f2",
+   "usd": 1.2,
+   "usd_low": 1,
+   "usd_high": 1.5,
+   "size_mm": [
+    40.0,
+    28.0,
+    6.0
+   ],
+   "volume_cm3": 6.6,
+   "mass_g": null,
+   "explode": [
+    0,
+    -60,
+    0
+   ],
+   "nodes": [
+    "B-106"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-106_desiccant.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-106_desiccant.stl"
+   }
+  },
+  {
+   "pn": "B-107",
+   "key": "mounting_plate",
+   "name": "Mounting plate",
+   "sub": "B-100",
+   "kind": "3D printed",
+   "material": "ASA",
+   "qty": 1,
+   "buy": null,
+   "search": null,
+   "note": "Screws to the box's floor bosses; locates the battery holder and carries the perfboard on four standoffs.",
+   "printed": true,
+   "optional": false,
+   "added": true,
+   "subName": "Enclosure",
+   "color": "#40454c",
+   "usd": 1.0,
+   "usd_low": 1,
+   "usd_high": 1,
+   "size_mm": [
+    104.0,
+    78.0,
+    27.5
+   ],
+   "volume_cm3": 23.2,
+   "mass_g": 24.8,
+   "explode": [
+    0,
+    -70,
+    0
+   ],
+   "nodes": [
+    "B-107"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-107_mounting_plate.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-107_mounting_plate.stl"
+   }
+  },
+  {
+   "pn": "B-201",
+   "key": "esp32_c3",
+   "name": "ESP32-C3 SuperMini",
+   "sub": "B-200",
+   "kind": "Purchased",
+   "material": "PCB",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-ESP32-C3-SuperMini.html",
+   "search": "ESP32-C3 SuperMini",
+   "note": "Remove the red power LED (draws about 2 mA all the time).",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Electronics",
+   "color": "#1a1c1f",
+   "usd": 2.5,
+   "usd_low": 2,
+   "usd_high": 3,
+   "size_mm": [
+    24.5,
+    18.0,
+    4.4
+   ],
+   "volume_cm3": 0.8,
+   "mass_g": null,
+   "explode": [
+    0,
+    -150,
+    0
+   ],
+   "nodes": [
+    "B-201"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-201_esp32_c3.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-201_esp32_c3.stl"
+   }
+  },
+  {
+   "pn": "B-202",
+   "key": "rs485",
+   "name": "TTL to RS485 module, auto direction, 3.3 V",
+   "sub": "B-200",
+   "kind": "Purchased",
+   "material": "PCB",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-TTL-to-RS485-module-automatic-flow-control-3.3V.html",
+   "search": "TTL to RS485 module automatic flow control 3.3V",
+   "note": "",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Electronics",
+   "color": "#1f408c",
+   "usd": 1.5,
+   "usd_low": 1,
+   "usd_high": 2,
+   "size_mm": [
+    44.0,
+    14.0,
+    12.7
+   ],
+   "volume_cm3": 1.6,
+   "mass_g": null,
+   "explode": [
+    0,
+    -150,
+    0
+   ],
+   "nodes": [
+    "B-202"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-202_rs485.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-202_rs485.stl"
+   }
+  },
+  {
+   "pn": "B-203",
+   "key": "ds3231",
+   "name": "DS3231 real-time clock (ZS-042)",
+   "sub": "B-200",
+   "kind": "Purchased",
+   "material": "PCB",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-DS3231-RTC-module.html",
+   "search": "DS3231 RTC module",
+   "note": "With a plain CR2032: remove the charging resistor (or diode) and the power LED.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Electronics",
+   "color": "#1f408c",
+   "usd": 1.5,
+   "usd_low": 1,
+   "usd_high": 2,
+   "size_mm": [
+    38.0,
+    22.0,
+    7.0
+   ],
+   "volume_cm3": 2.5,
+   "mass_g": null,
+   "explode": [
+    0,
+    -150,
+    0
+   ],
+   "nodes": [
+    "B-203"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-203_ds3231.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-203_ds3231.stl"
+   }
+  },
+  {
+   "pn": "B-204",
+   "key": "mt3608",
+   "name": "MT3608 boost converter",
+   "sub": "B-200",
+   "kind": "Purchased",
+   "material": "PCB",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-MT3608-boost-converter-module.html",
+   "search": "MT3608 boost converter module",
+   "note": "Set it to 12 V with a multimeter BEFORE connecting the probe.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Electronics",
+   "color": "#1f408c",
+   "usd": 0.8,
+   "usd_low": 0.5,
+   "usd_high": 1,
+   "size_mm": [
+    36.0,
+    17.0,
+    10.7
+   ],
+   "volume_cm3": 1.3,
+   "mass_g": null,
+   "explode": [
+    0,
+    -150,
+    0
+   ],
+   "nodes": [
+    "B-204"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-204_mt3608.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-204_mt3608.stl"
+   }
+  },
+  {
+   "pn": "B-205",
+   "key": "tp4056",
+   "name": "TP4056 USB-C charger with protection",
+   "sub": "B-200",
+   "kind": "Purchased",
+   "material": "PCB",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-TP4056-type-C-charger-module-protection.html",
+   "search": "TP4056 type-C charger module protection",
+   "note": "Charge only indoors, above 0 \u00b0C.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Electronics",
+   "color": "#1f408c",
+   "usd": 0.8,
+   "usd_low": 0.5,
+   "usd_high": 1,
+   "size_mm": [
+    29.0,
+    17.0,
+    4.4
+   ],
+   "volume_cm3": 0.8,
+   "mass_g": null,
+   "explode": [
+    0,
+    -150,
+    0
+   ],
+   "nodes": [
+    "B-205"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-205_tp4056.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-205_tp4056.stl"
+   }
+  },
+  {
+   "pn": "B-206",
+   "key": "power_switches",
+   "name": "Power switches: 2 x AO3401 + 1 x 2N7002 + resistors",
+   "sub": "B-200",
+   "kind": "Purchased",
+   "material": "SOT-23 parts",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-AO3401-P-channel-MOSFET.html",
+   "search": "AO3401 P-channel MOSFET",
+   "note": "One AO3401 switches the probe's 12 V supply (driven through the 2N7002), one switches the 3.3 V sensor rail.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Electronics",
+   "color": "#17171a",
+   "usd": 2.0,
+   "usd_low": 1.5,
+   "usd_high": 2.5,
+   "size_mm": [
+    26.0,
+    16.0,
+    1.3
+   ],
+   "volume_cm3": 0.1,
+   "mass_g": null,
+   "explode": [
+    0,
+    -120,
+    0
+   ],
+   "nodes": [
+    "B-206"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-206_power_switches.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-206_power_switches.stl"
+   }
+  },
+  {
+   "pn": "B-207",
+   "key": "perfboard",
+   "name": "Perfboard 9 x 7 cm + headers",
+   "sub": "B-200",
+   "kind": "Purchased",
+   "material": "FR4",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-perfboard-9x7-double-sided.html",
+   "search": "perfboard 9x7 double sided",
+   "note": "Holds every module; also heat shrink and 22 AWG silicone wire.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Electronics",
+   "color": "#b88c4c",
+   "usd": 3.2,
+   "usd_low": 2.5,
+   "usd_high": 4,
+   "size_mm": [
+    90.0,
+    70.0,
+    1.6
+   ],
+   "volume_cm3": 10.0,
+   "mass_g": null,
+   "explode": [
+    0,
+    -100,
+    0
+   ],
+   "nodes": [
+    "B-207"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-207_perfboard.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-207_perfboard.stl"
+   }
+  },
+  {
+   "pn": "B-208",
+   "key": "screw_terminals",
+   "name": "Screw terminals, 5.08 mm (4-pin + 3-pin)",
+   "sub": "B-200",
+   "kind": "Purchased",
+   "material": "PA + brass",
+   "qty": 2,
+   "buy": "https://www.aliexpress.us/w/wholesale-5.08mm-PCB-screw-terminal.html",
+   "search": "5.08mm PCB screw terminal",
+   "note": "Probe and temperature wires land here, so nothing outside is soldered to the board.",
+   "printed": false,
+   "optional": false,
+   "added": true,
+   "subName": "Electronics",
+   "color": "#218c4c",
+   "usd": 0.8,
+   "usd_low": 0.5,
+   "usd_high": 1,
+   "size_mm": [
+    20.3,
+    7.5,
+    10.0
+   ],
+   "volume_cm3": 1.4,
+   "mass_g": null,
+   "explode": [
+    0,
+    -120,
+    0
+   ],
+   "nodes": [
+    "B-208-1",
+    "B-208-2"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-208_screw_terminals.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-208_screw_terminals.stl"
+   }
+  },
+  {
+   "pn": "B-301",
+   "key": "battery_holder",
+   "name": "18650 holder, 2 slot parallel",
+   "sub": "B-300",
+   "kind": "Purchased",
+   "material": "PP",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-18650-battery-holder-2-slot-parallel.html",
+   "search": "18650 battery holder 2 slot parallel",
+   "note": "",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Power",
+   "color": "#17171a",
+   "usd": 1.2,
+   "usd_low": 1,
+   "usd_high": 1.5,
+   "size_mm": [
+    77.0,
+    41.0,
+    20.0
+   ],
+   "volume_cm3": 22.5,
+   "mass_g": null,
+   "explode": [
+    0,
+    -40,
+    -70
+   ],
+   "nodes": [
+    "B-301"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-301_battery_holder.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-301_battery_holder.stl"
+   }
+  },
+  {
+   "pn": "B-302",
+   "key": "cell_18650",
+   "name": "18650 cell (Samsung 35E or Molicel)",
+   "sub": "B-300",
+   "kind": "Buy locally",
+   "material": "Li-ion",
+   "qty": 2,
+   "buy": "https://www.18650batterystore.com/",
+   "search": null,
+   "note": "Buy from a real battery store: AliExpress cells are often fake capacity. Charge both to the same voltage before paralleling.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Power",
+   "color": "#2e5c9e",
+   "usd": 12.0,
+   "usd_low": 10,
+   "usd_high": 14,
+   "size_mm": [
+    66.2,
+    18.5,
+    18.5
+   ],
+   "volume_cm3": 17.5,
+   "mass_g": null,
+   "explode": [
+    0,
+    -60,
+    -80
+   ],
+   "nodes": [
+    "B-302-1",
+    "B-302-2"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-302_cell_18650.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-302_cell_18650.stl"
+   }
+  },
+  {
+   "pn": "B-401",
+   "key": "ec_sensor",
+   "name": "RS485 conductivity + temperature sensor",
+   "sub": "B-400",
+   "kind": "Purchased",
+   "material": "ABS + graphite / 316L",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-RS485-conductivity-sensor-EC-temperature-water-Modbus.html",
+   "search": "RS485 conductivity sensor EC temperature water Modbus",
+   "note": "4-electrode or graphite, IP68, highest range (0-100 or 0-200 mS/cm), Modbus RTU, 5-24 V. Shape drawn is typical: measure yours.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Sensors & probe guard",
+   "color": "#17171a",
+   "usd": 47.5,
+   "usd_low": 35,
+   "usd_high": 60,
+   "size_mm": [
+    30.0,
+    30.0,
+    192.0
+   ],
+   "volume_cm3": 102.1,
+   "mass_g": null,
+   "explode": [
+    0,
+    0,
+    70
+   ],
+   "nodes": [
+    "B-401"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-401_ec_sensor.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-401_ec_sensor.stl"
+   }
+  },
+  {
+   "pn": "B-402",
+   "key": "guard_tube",
+   "name": "Guard tube, 2\" PVC, drilled",
+   "sub": "B-400",
+   "kind": "Cut and drilled",
+   "material": "PVC",
+   "qty": 1,
+   "buy": "https://www.homedepot.com/s/2%20in%20pvc%20pipe%20schedule%2040",
+   "search": null,
+   "note": "300 mm of schedule 40, 60 holes of 10 mm. Keeps leaves and grit off the electrodes.",
+   "printed": false,
+   "optional": false,
+   "added": true,
+   "subName": "Sensors & probe guard",
+   "color": "#dbdedb",
+   "usd": 8.0,
+   "usd_low": 6,
+   "usd_high": 10,
+   "size_mm": [
+    60.3,
+    60.3,
+    300.0
+   ],
+   "volume_cm3": 188.9,
+   "mass_g": 264.4,
+   "explode": [
+    0,
+    0,
+    -60
+   ],
+   "nodes": [
+    "B-402"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-402_guard_tube.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-402_guard_tube.stl"
+   }
+  },
+  {
+   "pn": "B-403",
+   "key": "sensor_head",
+   "name": "Sensor head",
+   "sub": "B-400",
+   "kind": "3D printed",
+   "material": "ASA",
+   "qty": 1,
+   "buy": null,
+   "search": null,
+   "note": "Plugs into the tube; the sensor hangs from it by its own shoulder. Hose clamp around the collar.",
+   "printed": true,
+   "optional": false,
+   "added": true,
+   "subName": "Sensors & probe guard",
+   "color": "#e8590d",
+   "usd": 1.0,
+   "usd_low": 1,
+   "usd_high": 1,
+   "size_mm": [
+    66.3,
+    66.3,
+    32.0
+   ],
+   "volume_cm3": 39.8,
+   "mass_g": 42.6,
+   "explode": [
+    0,
+    0,
+    70
+   ],
+   "nodes": [
+    "B-403"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-403_sensor_head.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-403_sensor_head.stl"
+   }
+  },
+  {
+   "pn": "B-404",
+   "key": "silt_cap",
+   "name": "Silt cap",
+   "sub": "B-400",
+   "kind": "3D printed",
+   "material": "ASA",
+   "qty": 1,
+   "buy": null,
+   "search": null,
+   "note": "Slots let silt wash out.",
+   "printed": true,
+   "optional": false,
+   "added": true,
+   "subName": "Sensors & probe guard",
+   "color": "#e8590d",
+   "usd": 1.0,
+   "usd_low": 1,
+   "usd_high": 1,
+   "size_mm": [
+    66.7,
+    66.7,
+    28.0
+   ],
+   "volume_cm3": 23.4,
+   "mass_g": 25.1,
+   "explode": [
+    0,
+    0,
+    -140
+   ],
+   "nodes": [
+    "B-404"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-404_silt_cap.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-404_silt_cap.stl"
+   }
+  },
+  {
+   "pn": "B-405",
+   "key": "ds18b20_air",
+   "name": "DS18B20 probe, air",
+   "sub": "B-400",
+   "kind": "Purchased",
+   "material": "Stainless",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-DS18B20-waterproof-stainless-probe-1m.html",
+   "search": "DS18B20 waterproof stainless probe 1m",
+   "note": "From the 5-pack. Hangs in the air of the basin, out of the water.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Sensors & probe guard",
+   "color": "#b8bdc2",
+   "usd": 2.2,
+   "usd_low": 2,
+   "usd_high": 2.5,
+   "size_mm": [
+    6.0,
+    6.0,
+    62.0
+   ],
+   "volume_cm3": 1.6,
+   "mass_g": null,
+   "explode": [
+    0,
+    0,
+    -30
+   ],
+   "nodes": [
+    "B-405"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-405_ds18b20_air.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-405_ds18b20_air.stl"
+   }
+  },
+  {
+   "pn": "B-406",
+   "key": "ds18b20_surface",
+   "name": "DS18B20 probe, grate surface",
+   "sub": "B-400",
+   "kind": "Purchased",
+   "material": "Stainless",
+   "qty": 1,
+   "buy": null,
+   "search": null,
+   "note": "Second probe from the 5-pack, taped flat under the grate with aluminium tape.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Sensors & probe guard",
+   "color": "#b8bdc2",
+   "usd": 0.0,
+   "usd_low": 0,
+   "usd_high": 0,
+   "size_mm": [
+    62.0,
+    6.0,
+    6.0
+   ],
+   "volume_cm3": 1.6,
+   "mass_g": null,
+   "explode": [
+    0,
+    0,
+    40
+   ],
+   "nodes": [
+    "B-406"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-406_ds18b20_surface.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-406_ds18b20_surface.stl"
+   }
+  },
+  {
+   "pn": "B-407",
+   "key": "foil_tape",
+   "name": "Aluminium foil tape",
+   "sub": "B-400",
+   "kind": "Hardware store",
+   "material": "Aluminium",
+   "qty": 1,
+   "buy": null,
+   "search": null,
+   "note": "Holds the surface probe on the grate and spreads heat to it.",
+   "printed": false,
+   "optional": false,
+   "added": true,
+   "subName": "Sensors & probe guard",
+   "color": "#b8bdc2",
+   "usd": 2.5,
+   "usd_low": 2,
+   "usd_high": 3,
+   "size_mm": [
+    40.0,
+    25.0,
+    0.1
+   ],
+   "volume_cm3": 0.1,
+   "mass_g": null,
+   "explode": [
+    0,
+    0,
+    40
+   ],
+   "nodes": [
+    "B-407"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-407_foil_tape.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-407_foil_tape.stl"
+   }
+  },
+  {
+   "pn": "B-408",
+   "key": "level_sensor",
+   "name": "RS485 level sensor 0-1 m (optional)",
+   "sub": "B-400",
+   "kind": "Purchased",
+   "material": "316L",
+   "qty": 1,
+   "buy": "https://www.aliexpress.us/w/wholesale-RS485-water-level-sensor-pressure-0-1m.html",
+   "search": "RS485 water level sensor pressure 0-1m",
+   "note": "Optional. Measures how much water flows, so load = concentration x volume. Shares the RS485 bus at Modbus address 2.",
+   "printed": false,
+   "optional": true,
+   "added": false,
+   "subName": "Sensors & probe guard",
+   "color": "#b8bdc2",
+   "usd": 40.0,
+   "usd_low": 30,
+   "usd_high": 50,
+   "size_mm": [
+    27.0,
+    27.0,
+    99.0
+   ],
+   "volume_cm3": 45.6,
+   "mass_g": null,
+   "explode": [
+    80,
+    0,
+    -40
+   ],
+   "nodes": [
+    "B-408"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-408_level_sensor.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-408_level_sensor.stl"
+   }
+  },
+  {
+   "pn": "B-501",
+   "key": "wall_plate",
+   "name": "Wall plate",
+   "sub": "B-500",
+   "kind": "3D printed",
+   "material": "ASA",
+   "qty": 1,
+   "buy": null,
+   "search": null,
+   "note": "Screw this to the basin wall; the box screws to it with four M4 screws into heat-set inserts.",
+   "printed": true,
+   "optional": false,
+   "added": true,
+   "subName": "Mounting",
+   "color": "#e8590d",
+   "usd": 1.0,
+   "usd_low": 1,
+   "usd_high": 1,
+   "size_mm": [
+    150.0,
+    5.0,
+    112.0
+   ],
+   "volume_cm3": 70.0,
+   "mass_g": 74.9,
+   "explode": [
+    0,
+    60,
+    0
+   ],
+   "nodes": [
+    "B-501"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-501_wall_plate.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-501_wall_plate.stl"
+   }
+  },
+  {
+   "pn": "B-502",
+   "key": "concrete_screw",
+   "name": "Concrete screw 6 x 45 mm",
+   "sub": "B-500",
+   "kind": "Hardware store",
+   "material": "Stainless",
+   "qty": 4,
+   "buy": null,
+   "search": null,
+   "note": "",
+   "printed": false,
+   "optional": false,
+   "added": true,
+   "subName": "Mounting",
+   "color": "#b8bdc2",
+   "usd": 2.5,
+   "usd_low": 2,
+   "usd_high": 3,
+   "size_mm": [
+    12.0,
+    47.2,
+    12.0
+   ],
+   "volume_cm3": 1.5,
+   "mass_g": null,
+   "explode": [
+    0,
+    90,
+    0
+   ],
+   "nodes": [
+    "B-502-1",
+    "B-502-2",
+    "B-502-3",
+    "B-502-4"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-502_concrete_screw.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-502_concrete_screw.stl"
+   }
+  },
+  {
+   "pn": "B-503",
+   "key": "box_screw",
+   "name": "M4 x 12 pan-head + heat-set insert",
+   "sub": "B-500",
+   "kind": "Hardware store",
+   "material": "Stainless",
+   "qty": 4,
+   "buy": null,
+   "search": null,
+   "note": "",
+   "printed": false,
+   "optional": false,
+   "added": true,
+   "subName": "Mounting",
+   "color": "#b8bdc2",
+   "usd": 1.2,
+   "usd_low": 1,
+   "usd_high": 1.5,
+   "size_mm": [
+    7.2,
+    7.2,
+    14.6
+   ],
+   "volume_cm3": 0.3,
+   "mass_g": null,
+   "explode": [
+    0,
+    -40,
+    0
+   ],
+   "nodes": [
+    "B-503-1",
+    "B-503-2",
+    "B-503-3",
+    "B-503-4"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-503_box_screw.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-503_box_screw.stl"
+   }
+  },
+  {
+   "pn": "B-409",
+   "key": "probe_cables",
+   "name": "Probe cable + DS18B20 leads",
+   "sub": "B-400",
+   "kind": "Purchased",
+   "material": "PVC / silicone",
+   "qty": 1,
+   "buy": null,
+   "search": null,
+   "note": "The sensor's own cable, fitted with the SP13 plug; DS18B20 leads come through the PG7 glands.",
+   "printed": false,
+   "optional": false,
+   "added": false,
+   "subName": "Sensors & probe guard",
+   "color": "#17171a",
+   "usd": 0.0,
+   "usd_low": 0.0,
+   "usd_high": 0.0,
+   "size_mm": [
+    86.7,
+    22.2,
+    364.5
+   ],
+   "volume_cm3": 7.9,
+   "mass_g": null,
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "nodes": [
+    "B-409"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-409_probe_cables.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-409_probe_cables.stl"
+   }
+  },
+  {
+   "pn": "B-410",
+   "key": "level_cable",
+   "name": "Level sensor cable (optional)",
+   "sub": "B-400",
+   "kind": "Purchased",
+   "material": "PVC",
+   "qty": 1,
+   "buy": null,
+   "search": null,
+   "note": "",
+   "printed": false,
+   "optional": true,
+   "added": false,
+   "subName": "Sensors & probe guard",
+   "color": "#17171a",
+   "usd": 0.0,
+   "usd_low": 0.0,
+   "usd_high": 0.0,
+   "size_mm": [
+    21.2,
+    29.7,
+    451.8
+   ],
+   "volume_cm3": 9.6,
+   "mass_g": 13.5,
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "nodes": [
+    "B-410"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-410_level_cable.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-410_level_cable.stl"
+   }
+  },
+  {
+   "pn": "B-504",
+   "key": "tether",
+   "name": "Stainless tether, 1.5 mm wire rope",
+   "sub": "B-500",
+   "kind": "Hardware store",
+   "material": "Stainless",
+   "qty": 1,
+   "buy": null,
+   "search": null,
+   "note": "From the sensor head to a wall-plate screw: carries the tube's weight, never the cable.",
+   "printed": false,
+   "optional": false,
+   "added": true,
+   "subName": "Mounting",
+   "color": "#b8bdc2",
+   "usd": 5.0,
+   "usd_low": 4,
+   "usd_high": 6,
+   "size_mm": [
+    68.6,
+    66.9,
+    231.7
+   ],
+   "volume_cm3": 0.5,
+   "mass_g": null,
+   "explode": [
+    0,
+    0,
+    0
+   ],
+   "nodes": [
+    "B-504"
+   ],
+   "files": {
+    "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/step/B-504_tether.step",
+    "stl": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/stl/B-504_tether.stl"
+   }
+  }
+ ],
+ "assembly": {
+  "step": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/saltback-node.step",
+  "glb": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/blob/claude/clever-fermi-0by41q/saltback/device/out-b/saltback-node.glb"
+ },
+ "tree": "https://github.com/pingusbot67-wq/diamond-challenge-stuff/tree/claude/clever-fermi-0by41q/saltback/device/out-b"
+}

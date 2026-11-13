@@ -16,7 +16,7 @@ from pathlib import Path
 import cadquery as cq
 import trimesh
 
-OUT = Path(__file__).resolve().parents[1] / "out"
+OUT = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path(__file__).resolve().parents[1] / "out"
 meta = json.loads((OUT / "parts.json").read_text())
 bad = 0
 print(f"{'part':8s} {'STEP':>6s} {'solids':>6s} {'cm3':>8s} | {'STL':>4s} {'tris':>7s} {'watertight':>10s} {'cm3':>8s}")

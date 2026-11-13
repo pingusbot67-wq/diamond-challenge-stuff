@@ -28,6 +28,10 @@ or Google Colab.
 - Start page = Storm log. Pages: Storm log, Simulate winters, Storm reports, Recommendations, Rate card, Sensors, Device, Data, Settings.
 - Simulate winters (`web/winters.js`): owner wanted a Run button for N winters in a city / preset / random, charts, and
   recommendations that are easy to read (big numbered list, one impact line each). Auto-runs Boston on first visit.
+- Rev B (current, from the owner's AliExpress parts list): CAD `device/cad/node_b.py` -> `device/out-b/` and
+  `device/viewer/b/`; it also writes `web/device/parts-data.js` for the main site. Build guide `build/index.html` (images
+  in `build/img/` are screenshots of the viewer). Firmware `firmware/saltback_node_b/` is untested on hardware.
+  The viewer loads Rev B by default; `#sb-...` part links open Rev A, `#b-...` Rev B.
 - Device: the CAD model lives in `device/cad/saltback_node.py` (CadQuery). Its viewer is a separate artifact,
   https://claude.ai/artifact/83HRbmsx6TSDZJ3TNaD3Jd, published from `device/viewer/` with `viewer.js`, `node-glb.js`
   (the GLB as base64; artifacts can't serve .glb/.stl/.step) and `parts.js`. The main site's Device page only links to it

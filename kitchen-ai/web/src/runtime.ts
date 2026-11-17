@@ -34,7 +34,15 @@ export type WebProfile = {
   scan_model: 'claude-haiku-5-5' | 'claude-sonnet-5-5';
 };
 
-export type Recipe = BuiltRecipe & { id: string; fit?: number; fit_reason?: string; created_at: number };
+export type Recipe = BuiltRecipe & {
+  id: string;
+  fit?: number;
+  fit_reason?: string;
+  created_at: number;
+  origin?: 'fridge' | 'import' | 'house';
+  credit?: { name?: string; url?: string }; // original creator of an imported recipe
+  warnings?: string[]; // e.g. conflicts with the viewer's allergies on an imported recipe
+};
 export type Meal = { recipe_id: string; title: string; kcal: number; protein_g: number; carbs_g: number; fat_g: number; at: number };
 
 export type Store = {

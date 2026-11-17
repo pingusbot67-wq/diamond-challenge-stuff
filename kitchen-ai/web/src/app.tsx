@@ -3,140 +3,14 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { ALLERGY_OPTIONS, DIET_OPTIONS, GLP1_NOTE, clock, grams, minutesLabel } from '../../src/lib/format.ts';
 import { ftInToCm, kgToLb, lbToKg, suggestTargets } from '../../src/lib/targets.ts';
 import { FOOD_NAMES, MODEL_LABEL, aiMessage, canSendImages, getSample, makeRecipes, scanFridge, shrinkPhoto, type ScanItem, type ScanResult } from './ai.ts';
-import { cardImage } from './share.ts';
-import { dishSvg } from './dish.ts';
-import { dayKey, downloads, openStore, type Goal, type Meal, type Recipe, type Store, type WebProfile } from './runtime.ts';
+import { Banner, Btn, Chip, Dish, Empty, Field, Loading, MacroCard, TodayBars, saveCard } from './ui.tsx';
+import { Landing } from './landing.tsx';
+import { Feed, ImportScreen, PublishPanel } from './social.tsx';
+import { conflictsFor, wipeCommunity } from './community.ts';
+import { mountScene } from './scene3d.ts';
+import { dayKey, openStore, type Goal, type Meal, type Recipe, type Store, type WebProfile } from './runtime.ts';
 
 void Fragment;
-
-// ───────────────────────── small building blocks ─────────────────────────
-type BtnProps = { children: preact.ComponentChildren; onClick?: () => void; kind?: 'primary' | 'accent' | 'secondary' | 'ghost' | 'danger'; size?: 'lg' | 'md'; busy?: boolean; disabled?: boolean; full?: boolean; label?: string };
-function Btn({ children, onClick, kind = 'primary', size = 'lg', busy, disabled, full, label }: BtnProps) {
-  return (
-    <button type="button" class={`btn btn-${kind} btn-${size}${full ? ' full' : ''}`} onClick={onClick} disabled={disabled || busy} aria-busy={busy} aria-label={label}>
-      {busy ? <span class="spinner" aria-hidden="true" /> : children}
-    </button>
-  );
-}
-const Chip = ({ label, on, onClick, plus }: { label: string; on?: boolean; onClick?: () => void; plus?: boolean }) => (
-  <button type="button" class={`chip${on ? ' on' : ''}`} aria-pressed={on} onClick={onClick}>
-    {label}
-    {plus ? <span class="chip-plus">+</span> : null}
-  </button>
-);
-const Banner = ({ tone = 'info', children }: { tone?: 'info' | 'warn' | 'danger' | 'ok'; children: preact.ComponentChildren }) => (
-  <div class={`banner banner-${tone}`} role={tone === 'danger' ? 'alert' : 'status'}>{children}</div>
-);
-const Loading = ({ title, sub }: { title: string; sub?: string }) => (
-  <div class="state">
-    <span class="spinner big" aria-hidden="true" />
-    <p class="h-heading">{title}</p>
-    {sub ? <p class="soft">{sub}</p> : null}
-  </div>
-);
-const Empty = ({ icon, title, body, action }: { icon: string; title: string; body?: string; action?: { label: string; onClick: () => void } }) => (
-  <div class="state">
-    <p class="state-icon" aria-hidden="true">{icon}</p>
-    <p class="h-heading">{title}</p>
-    {body ? <p class="soft">{body}</p> : null}
-    {action ? <Btn size="md" onClick={action.onClick}>{action.label}</Btn> : null}
-  </div>
-);
-function Field({ id, label, value, onInput, suffix, placeholder, inputMode, type = 'text' }: { id: string; label?: string; value: string; onInput: (v: string) => void; suffix?: string; placeholder?: string; inputMode?: 'numeric' | 'decimal' | 'email' | 'text'; type?: string }) {
-  return (
-    <label class="field" for={id}>
-      {label ? <span class="field-label">{label}</span> : null}
-      <span class="field-box">
-        <input id={id} type={type} value={value} placeholder={placeholder} inputMode={inputMode} onInput={(e) => onInput((e.target as HTMLInputElement).value)} />
-        {suffix ? <span class="field-suffix">{suffix}</span> : null}
-      </span>
-    </label>
-  );
-}
-
-// ───────────────────────── the result card ─────────────────────────
-function Dish({ r, animated = true, cls = '' }: { r: Pick<Recipe, 'title' | 'ingredients' | 'steps'>; animated?: boolean; cls?: string }) {
-  const svg = useMemo(() => dishSvg(r, { animated }), [r.title, animated]);
-  return <div class={`dish ${cls}`} dangerouslySetInnerHTML={{ __html: svg }} />;
-}
-
-function MacroCard({ r, rank, showFit = true }: { r: Recipe; rank?: number; showFit?: boolean }) {
-  const a = r.macros_estimated ? '≈' : '';
-  return (
-    <article class="macro-card">
-      <div class="dish-panel">
-        <Dish r={r} />
-        <div class="badges">
-          {rank === 0 && showFit ? <span class="badge badge-accent">Best fit</span> : null}
-          {r.glp1_friendly ? <span class="badge">GLP-1 friendly</span> : null}
-          {r.macros_estimated ? <span class="badge badge-warn">Estimated</span> : null}
-        </div>
-      </div>
-      <div class="mc-body">
-        <h3 class="h-title">{r.title}</h3>
-        <p class="hero-num" aria-label={`${r.macros.protein_g} grams of protein`}>
-          {a}
-          {r.macros.protein_g}
-          <span class="hero-unit">g protein</span>
-        </p>
-        <dl class="mc-stats">
-          <div><dt>Calories</dt><dd>{a}{r.macros.kcal}</dd></div>
-          <div><dt>Time</dt><dd>{minutesLabel(r.minutes)}</dd></div>
-          <div><dt>Carbs</dt><dd>{a}{r.macros.carbs_g}g</dd></div>
-          <div><dt>Fat</dt><dd>{a}{r.macros.fat_g}g</dd></div>
-        </dl>
-        {showFit && r.fit_reason ? (
-          <p class="caption soft">
-            {typeof r.fit === 'number' ? <span class="fit">{r.fit}% fit</span> : null}
-            {r.fit_reason}
-            {r.servings > 1 ? ` · per serving, makes ${r.servings}` : ''}
-          </p>
-        ) : r.servings > 1 ? (
-          <p class="caption soft">Per serving · makes {r.servings}</p>
-        ) : null}
-      </div>
-    </article>
-  );
-}
-
-function TodayBars({ eaten, p }: { eaten: { kcal: number; protein_g: number }; p: WebProfile }) {
-  const col = (label: string, v: number, t: number, unit: string, cls: string) => {
-    const left = Math.max(0, Math.round(t - v));
-    return (
-      <div class="today-col">
-        <p class="overline faint">{label} left</p>
-        <p class="today-num num">
-          {left.toLocaleString()}
-          <span class="today-unit">{unit}</span>
-        </p>
-        <div class="bar thin" role="progressbar" aria-label={`${label} eaten`} aria-valuemin={0} aria-valuemax={t} aria-valuenow={Math.round(v)}>
-          <div class={`bar-fill ${cls}`} style={{ width: `${Math.min(100, (v / Math.max(1, t)) * 100)}%` }} />
-        </div>
-        <p class="caption faint num">of {t.toLocaleString()}{unit}</p>
-      </div>
-    );
-  };
-  return (
-    <div class="today">
-      {col('Protein', eaten.protein_g, p.protein_target_g, 'g', 'fill-accent')}
-      {col('Calories', eaten.kcal, p.calorie_target, '', 'fill-ink')}
-    </div>
-  );
-}
-
-async function saveCard(r: Recipe, setMsg: (m: { tone: 'ok' | 'danger'; text: string } | null) => void) {
-  try {
-    const dl = await downloads();
-    if (!dl) return setMsg({ tone: 'danger', text: 'Saving images isn’t available here. Take a screenshot of the card instead.' });
-    const blob = await cardImage(r);
-    await dl.save({ filename: `${r.title.replace(/[^\w ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'recipe'}.png`, data: blob });
-    setMsg({ tone: 'ok', text: 'Card saved.' });
-  } catch (e) {
-    const code = (e as { code?: string })?.code;
-    if (code === 'cancelled' || code === 'declined') return;
-    setMsg({ tone: 'danger', text: 'The card wasn’t saved. Try again, or take a screenshot.' });
-  }
-}
 
 // ───────────────────────── onboarding / edit profile ─────────────────────────
 const GOALS: { id: Goal; title: string; body: string }[] = [
@@ -361,51 +235,72 @@ function greeting() {
   return hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
 }
 
-const HERO_DISH = {
-  title: 'hero bowl',
-  ingredients: [
-    { name: 'white rice', grams: 150 }, { name: 'chicken breast', grams: 180 }, { name: 'broccoli', grams: 90 },
-    { name: 'carrots', grams: 60 }, { name: 'avocado', grams: 50 }, { name: 'sesame seeds', grams: 5 },
-  ] as Recipe['ingredients'],
-  steps: [{ text: 'Sear the chicken.', timer_seconds: null }],
-};
+/** A small live 3D scene: produce orbiting a tomato. Drag to spin. Falls back to nothing if 3D is unavailable. */
+function Orbit3D({ cls = '' }: { cls?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    const scene = mountScene(ref.current, { mode: 'orbit' });
+    return () => scene.destroy();
+  }, []);
+  return <div class={`orbit3d ${cls}`} ref={ref} aria-hidden="true" />;
+}
 
-function Home({ p, eaten, aiOk, imagesOk, onPhoto, onType }: { p: WebProfile; eaten: { kcal: number; protein_g: number }; aiOk: boolean | null; imagesOk: boolean; onPhoto: (f: File) => void; onType: () => void }) {
+function Home({ p, eaten, aiOk, imagesOk, onPhoto, onType, onImport }: { p: WebProfile; eaten: { kcal: number; protein_g: number }; aiOk: boolean | null; imagesOk: boolean; onPhoto: (f: File) => void; onType: () => void; onImport: () => void }) {
   const cam = useRef<HTMLInputElement>(null);
   const lib = useRef<HTMLInputElement>(null);
+  const hero = useRef<HTMLElement>(null);
   const pick = (e: Event) => {
     const input = e.target as HTMLInputElement;
     const f = input.files?.[0];
     input.value = '';
     if (f) onPhoto(f);
   };
+  // a soft light inside the card follows your finger
+  const light = (e: PointerEvent) => {
+    const el = hero.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--lx', `${e.clientX - r.left}px`);
+    el.style.setProperty('--ly', `${e.clientY - r.top}px`);
+  };
   return (
     <div class="content stack-xl">
       <header class="home-head">
-        <span class="brand"><span class="brand-dot" aria-hidden="true" />Kitchen AI</span>
+        <span class="brand"><span class="brand-dot" aria-hidden="true" />Kitchen <em>AI</em></span>
         <span class="caption faint">{new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
       </header>
-      <h1 class="h-display">{greeting()}</h1>
+      <h1 class="h-display">{greeting()}, <em>chef.</em></h1>
       <section aria-label="Today">
         <TodayBars eaten={eaten} p={p} />
       </section>
-      <section class="hero stack-lg">
-        <div class="hero-top">
-          <div class="stack-xs">
-            <h2 class="h-title hero-title">What can I cook?</h2>
-            <p class="hero-soft">Snap your fridge. Get 3 high-protein meals that fit what’s left today.</p>
-          </div>
-          <Dish r={HERO_DISH} cls="hero-dish" />
+      <section class="hero" ref={hero} onPointerMove={light}>
+        <Orbit3D cls="hero-3d" />
+        <div class="hero-copy">
+          <h2 class="h-title hero-title">What can I <em>cook?</em></h2>
+          <p class="hero-soft">Snap your fridge. Get 3 high-protein meals that fit what’s left today.</p>
         </div>
         <input ref={cam} type="file" accept="image/*" capture="environment" hidden onChange={pick} />
         <input ref={lib} type="file" accept="image/*" hidden onChange={pick} />
-        <Btn kind="accent" full disabled={!imagesOk} onClick={() => cam.current?.click()}>Take a photo</Btn>
-        <div class="row-2">
-          <Btn kind="secondary" size="md" disabled={!imagesOk} onClick={() => lib.current?.click()}>Upload</Btn>
-          <Btn kind="secondary" size="md" onClick={onType}>Type it in</Btn>
+        <div class="stack-sm hero-actions">
+          <Btn kind="accent" full disabled={!imagesOk} onClick={() => cam.current?.click()}>Take a photo</Btn>
+          <div class="row-2">
+            <Btn kind="secondary" size="md" disabled={!imagesOk} onClick={() => lib.current?.click()}>Upload</Btn>
+            <Btn kind="secondary" size="md" onClick={onType}>Type it in</Btn>
+          </div>
         </div>
       </section>
-      {aiOk === false ? <Banner tone="warn">AI features work when this page is open on claude.ai while you’re signed in. You can still browse and cook your saved recipes.</Banner> : null}
+      <button type="button" class="import-card" onClick={onImport}>
+        <span class="import-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></svg>
+        </span>
+        <span class="import-text">
+          <span class="body-strong">Saw a recipe online?</span>
+          <span class="caption soft">Paste it in and get a full walkthrough with macros.</span>
+        </span>
+        <span class="chev faint" aria-hidden="true">›</span>
+      </button>
+      {aiOk === false ? <Banner tone="warn">AI features work when this page is open on claude.ai while you’re signed in. You can still browse the feed and cook saved recipes.</Banner> : null}
       {aiOk && !imagesOk ? <Banner tone="warn">Photo scanning isn’t available in this view. Type your ingredients instead.</Banner> : null}
       {p.goal === 'glp1' ? <Banner>{GLP1_NOTE}</Banner> : null}
     </div>
@@ -460,12 +355,23 @@ function Confirm({ flow, setItems, onRescan, onCompare, onGenerate }: { flow: Fl
   if (flow.phase === 'scanning') {
     return (
       <div class="content stack-lg">
-        {flow.photoUrl ? <img class="photo" src={flow.photoUrl} alt="Your fridge photo" /> : null}
+        {flow.photoUrl ? (
+          <div class="scan-photo">
+            <img class="photo" src={flow.photoUrl} alt="Your fridge photo" />
+            <span class="scan-line" aria-hidden="true" />
+          </div>
+        ) : null}
         <Loading title="Looking in your fridge…" sub="Usually takes a few seconds." />
       </div>
     );
   }
-  if (flow.generating) return <div class="content"><Loading title="Building your recipes…" sub="Picking meals that fit your macros, then checking nutrition, allergies and food safety." /></div>;
+  if (flow.generating)
+    return (
+      <div class="content">
+        <Orbit3D cls="loader-3d" />
+        <Loading title="Building your recipes…" sub="Picking meals that fit your macros, then checking nutrition, allergies and food safety." />
+      </div>
+    );
 
   const scanned = !!flow.scan && flow.phase === 'ready';
   const cmp = flow.compare;
@@ -620,6 +526,13 @@ function RecipeView({ r, p, saved, onToggleSave, onCook, onAte }: { r: Recipe; p
         <Btn kind="secondary" size="md" onClick={() => saveCard(r, setMsg)}>Save image</Btn>
       </div>
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
+      {r.warnings?.length ? <Banner tone="danger">Heads up: this recipe conflicts with your profile ({r.warnings.join(', ')}). Check the ingredients before you cook it.</Banner> : null}
+      {r.credit?.name || r.credit?.url ? (
+        <p class="caption soft credit">
+          Recipe by {r.credit.name ?? 'the original creator'}, rewritten in our own words.{' '}
+          {r.credit.url ? <a href={r.credit.url} target="_blank" rel="noopener noreferrer">See the original</a> : null}
+        </p>
+      ) : null}
       {r.summary ? <p class="soft">{r.summary}</p> : null}
       <section class="stack-md">
         <h2 class="h-heading">Ingredients{r.servings > 1 ? ` · makes ${r.servings}` : ''}</h2>
@@ -645,6 +558,7 @@ function RecipeView({ r, p, saved, onToggleSave, onCook, onAte }: { r: Recipe; p
         <h2 class="h-heading">Steps</h2>
         <ol class="steps-list">{r.steps.map((s, i) => <li key={i}>{s.text}</li>)}</ol>
       </section>
+      <PublishPanel r={r} />
       {r.glp1_friendly || p.goal === 'glp1' ? <Banner>{GLP1_NOTE}</Banner> : null}
     </div>
   );
@@ -783,7 +697,7 @@ function Cook({ r, onClose, onLog }: { r: Recipe; onClose: () => void; onLog: ()
 function Saved({ list, onOpen, onScan }: { list: Recipe[]; onOpen: (r: Recipe) => void; onScan: () => void }) {
   return (
     <div class="content stack-lg">
-      <h1 class="h-title">My recipes</h1>
+      <div class="page-head"><h1 class="h-display">Saved <em>recipes.</em></h1></div>
       {list.length === 0 ? (
         <Empty icon="📌" title="No saved recipes yet" body="Tap Save on any recipe and it will live here." action={{ label: 'Scan my fridge', onClick: onScan }} />
       ) : (
@@ -811,7 +725,7 @@ function Saved({ list, onOpen, onScan }: { list: Recipe[]; onOpen: (r: Recipe) =
 const GOAL_LABEL: Record<Goal, string> = { cut: 'Lose fat', maintain: 'Maintain', bulk: 'Build muscle', glp1: 'GLP-1 mode' };
 const label = (opts: readonly (readonly [string, string])[], ids: string[]) => ids.map((id) => opts.find(([k]) => k === id)?.[1] ?? id).join(', ') || 'None';
 
-function ProfileTab({ p, storeKind, onEdit, onModel, onWipe }: { p: WebProfile; storeKind: Store['kind']; onEdit: () => void; onModel: (m: WebProfile['scan_model']) => void; onWipe: () => Promise<void> }) {
+function ProfileTab({ p, storeKind, onEdit, onModel, onWipe, onAbout }: { p: WebProfile; storeKind: Store['kind']; onEdit: () => void; onModel: (m: WebProfile['scan_model']) => void; onWipe: () => Promise<void>; onAbout: () => void }) {
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const row = (k: string, v: string) => (
@@ -822,7 +736,7 @@ function ProfileTab({ p, storeKind, onEdit, onModel, onWipe }: { p: WebProfile; 
   );
   return (
     <div class="content stack-xl">
-      <h1 class="h-title">Profile</h1>
+      <div class="page-head"><h1 class="h-display">Your <em>profile.</em></h1></div>
       <section class="card stack-lg">
         {row('Goal', GOAL_LABEL[p.goal])}
         {row('Daily protein', `${p.protein_target_g} g`)}
@@ -857,6 +771,7 @@ function ProfileTab({ p, storeKind, onEdit, onModel, onWipe }: { p: WebProfile; 
           </div>
         )}
       </section>
+      <Btn kind="ghost" size="md" onClick={onAbout}>See the Kitchen AI intro again</Btn>
       <p class="caption faint center">Kitchen AI gives food ideas and nutrition estimates. It is not medical advice.</p>
     </div>
   );
@@ -865,6 +780,14 @@ function ProfileTab({ p, storeKind, onEdit, onModel, onWipe }: { p: WebProfile; 
 const ICONS = {
   cook: <path d="M12 2c1 3.5-3 5.5-3 9a3 3 0 0 0 6 0c0-1.5-.6-2.6-1.2-3.6C16.5 8.6 18 11 18 14a6 6 0 0 1-12 0c0-5 4-7 6-12z" />,
   saved: <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" />,
+  feed: (
+    <>
+      <circle cx="9" cy="9" r="3.2" />
+      <path d="M3 19c.8-3 3.2-4.6 6-4.6s5.200 1.600 6 4.600" />
+      <circle cx="17.5" cy="8" r="2.400" />
+      <path d="M17 13.200c2.200.200 3.600 1.600 4.200 3.800" />
+    </>
+  ),
   profile: (
     <>
       <circle cx="12" cy="8" r="4" />
@@ -879,13 +802,14 @@ const Thermo = () => (
 );
 
 // ───────────────────────── the app ─────────────────────────
-type Screen = { name: 'confirm' } | { name: 'results' } | { name: 'recipe'; r: Recipe } | { name: 'cook'; r: Recipe } | { name: 'edit' };
-const TITLES: Record<string, string> = { confirm: 'Confirm ingredients', results: 'Your recipes', recipe: '', edit: '' };
+type Screen = { name: 'confirm' } | { name: 'results' } | { name: 'recipe'; r: Recipe } | { name: 'cook'; r: Recipe } | { name: 'edit' } | { name: 'import' } | { name: 'about' };
+const TITLES: Record<string, string> = { confirm: 'Confirm ingredients', results: 'Your recipes', recipe: '', edit: '', import: 'Import' };
 
 function App() {
   const [store, setStore] = useState<Store | null>(null);
   const [profile, setProfile] = useState<WebProfile | null | undefined>(undefined);
-  const [tab, setTab] = useState<'cook' | 'saved' | 'profile'>('cook');
+  const [tab, setTab] = useState<'cook' | 'feed' | 'saved' | 'profile'>('cook');
+  const [started, setStarted] = useState(false);
   const [stack, setStack] = useState<Screen[]>([]);
   const [eaten, setEaten] = useState({ kcal: 0, protein_g: 0 });
   const [saved, setSaved] = useState<Recipe[]>([]);
@@ -926,11 +850,13 @@ function App() {
   }, []);
 
   if (profile === undefined || !store) return <Loading title="Kitchen AI" sub="Getting things ready…" />;
+  if (!profile && !started) return <Landing onStart={() => (setStarted(true), window.scrollTo(0, 0))} />;
+  if (profile && top?.name === 'about') return <Landing returning onStart={() => (pop(), window.scrollTo(0, 0))} />;
   if (!profile || top?.name === 'edit')
     return (
       <ProfileForm
         initial={profile}
-        onCancel={profile ? pop : undefined}
+        onCancel={profile ? pop : () => setStarted(false)}
         onSave={async (p) => {
           await store.saveProfile(p);
           setProfile(p);
@@ -1000,6 +926,12 @@ function App() {
     await refreshToday(store);
   };
 
+  // recipes from other people get checked against YOUR allergies and diet before you open them
+  const withWarnings = (r: Recipe): Recipe => {
+    const w = conflictsFor(r, profile.allergies, profile.diet);
+    return w.length ? { ...r, warnings: w } : r;
+  };
+
   if (top?.name === 'cook') return <Cook r={top.r} onClose={pop} onLog={() => logMeal(top.r)} />;
 
   let body: preact.ComponentChildren;
@@ -1009,6 +941,17 @@ function App() {
     body = <Results flow={flow} busy={againBusy} error={againErr} onCook={(r) => push({ name: 'cook', r })} onOpen={(r) => push({ name: 'recipe', r })} onAgain={() => generate(true)} />;
   else if (top?.name === 'recipe')
     body = <RecipeView r={top.r} p={profile} saved={isSaved(top.r)} onToggleSave={() => toggleSave(top.r)} onCook={() => push({ name: 'cook', r: top.r })} onAte={() => logMeal(top.r)} />;
+  else if (top?.name === 'import')
+    body = <ImportScreen p={profile} aiOk={aiOk} onDone={(r) => setStack((st) => [...st.slice(0, -1), { name: 'recipe', r }])} />;
+  else if (tab === 'feed')
+    body = (
+      <Feed
+        savedIds={new Set(saved.map((x) => x.id))}
+        onOpen={(r) => push({ name: 'recipe', r: withWarnings(r) })}
+        onCook={(r) => push({ name: 'cook', r })}
+        onToggleSave={toggleSave}
+      />
+    );
   else if (tab === 'saved') body = <Saved list={saved} onOpen={(r) => push({ name: 'recipe', r })} onScan={() => setTab('cook')} />;
   else if (tab === 'profile')
     body = (
@@ -1016,13 +959,15 @@ function App() {
         p={profile}
         storeKind={store.kind}
         onEdit={() => push({ name: 'edit' })}
+        onAbout={() => push({ name: 'about' })}
         onModel={async (m) => {
           const p = { ...profile, scan_model: m };
           setProfile(p);
           await store.saveProfile(p).catch(() => {});
         }}
         onWipe={async () => {
-          await store.wipe().catch(() => {});
+          await Promise.all([store.wipe().catch(() => {}), wipeCommunity().catch(() => {})]);
+          setStarted(false);
           setSaved([]);
           setEaten({ kcal: 0, protein_g: 0 });
           setFlow(EMPTY_FLOW);
@@ -1044,6 +989,7 @@ function App() {
           setFlow(EMPTY_FLOW);
           push({ name: 'confirm' });
         }}
+        onImport={() => push({ name: 'import' })}
       />
     );
 
@@ -1060,10 +1006,10 @@ function App() {
       {body}
       {!top ? (
         <nav class="tabbar" aria-label="Main">
-          {(['cook', 'saved', 'profile'] as const).map((t) => (
+          {(['cook', 'feed', 'saved', 'profile'] as const).map((t) => (
             <button type="button" key={t} class={tab === t ? 'on' : ''} aria-current={tab === t ? 'page' : undefined} onClick={() => setTab(t)}>
               <svg class="tab-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true">{ICONS[t]}</svg>
-              {t === 'cook' ? 'Cook' : t === 'saved' ? 'My recipes' : 'Profile'}
+              {t === 'cook' ? 'Cook' : t === 'feed' ? 'Community' : t === 'saved' ? 'Saved' : 'Profile'}
             </button>
           ))}
         </nav>

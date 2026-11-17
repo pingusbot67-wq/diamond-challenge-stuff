@@ -5,5 +5,5 @@
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-  "exclude": ["node_modules", "supabase/functions", "scripts", "tests", "vitest.config.mts"]
+  "exclude": ["node_modules", "supabase/functions", "scripts", "tests", "vitest.config.mts", "web"]
 }

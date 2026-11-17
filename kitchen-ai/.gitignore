@@ -51,3 +51,5 @@ supabase/.temp/
 test-photos/*
 !test-photos/README.md
 reports/
+# built website (rebuild with: node web/build.mjs)
+web/dist/

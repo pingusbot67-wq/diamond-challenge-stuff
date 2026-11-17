@@ -1,0 +1,9 @@
+# Supabase project settings used by the CLI (`npx supabase ...`).
+project_id = "kitchen-ai"
+
+[functions.scan-fridge]
+verify_jwt = true
+[functions.generate-recipes]
+verify_jwt = true
+[functions.delete-account]
+verify_jwt = true

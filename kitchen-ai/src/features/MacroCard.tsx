@@ -38,15 +38,14 @@ export const MacroCard = forwardRef<ComponentRef<typeof View>, Props>(function M
         <Stat value={`${approx}${m.kcal}`} label="Calories" />
         <View style={styles.divider} />
         <Stat value={minutesLabel(recipe.minutes)} label="Time" />
-        <View style={styles.divider} />
-        <Stat value={`${m.carbs_g}g · ${m.fat_g}g`} label="Carbs · Fat" small />
       </View>
 
-      {showFit && recipe.fit_reason ? (
-        <T variant="caption" color={colors.inkSoft}>{recipe.fit_reason}{recipe.servings > 1 ? ` · per serving (makes ${recipe.servings})` : ''}</T>
-      ) : recipe.servings > 1 ? (
-        <T variant="caption" color={colors.inkSoft}>Per serving · makes {recipe.servings}</T>
-      ) : null}
+      <View style={{ gap: 2 }}>
+        <T variant="label" color={colors.inkSoft} numeric>
+          {approx}{m.carbs_g}g carbs · {approx}{m.fat_g}g fat{recipe.servings > 1 ? ` · per serving (makes ${recipe.servings})` : ''}
+        </T>
+        {showFit && recipe.fit_reason ? <T variant="caption" color={colors.inkFaint}>{recipe.fit_reason}</T> : null}
+      </View>
 
       <View style={styles.footer}>
         <T variant="overline" color={colors.inkFaint}>Kitchen AI</T>
@@ -56,10 +55,10 @@ export const MacroCard = forwardRef<ComponentRef<typeof View>, Props>(function M
   );
 });
 
-function Stat({ value, label, small }: { value: string; label: string; small?: boolean }) {
+function Stat({ value, label }: { value: string; label: string }) {
   return (
     <View style={{ flex: 1, gap: 2 }}>
-      <T variant="heading" numeric style={small ? { fontSize: 17 } : undefined} numberOfLines={1} adjustsFontSizeToFit>
+      <T variant="heading" numeric numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: 24, lineHeight: 30 }}>
         {value}
       </T>
       <T variant="caption" color={colors.inkFaint}>{label}</T>

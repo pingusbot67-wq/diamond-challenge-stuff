@@ -54,7 +54,7 @@ export function Button({ title, onPress, variant = 'primary', loading, disabled,
         }}
         style={[
           styles.base,
-          { height, backgroundColor: bg[variant], opacity: disabled ? 0.4 : 1, paddingHorizontal: size === 'sm' ? space.md : space.xl },
+          { height, backgroundColor: bg[variant], opacity: disabled ? 0.4 : 1, paddingHorizontal: size === 'lg' ? space.xl : space.lg },
         ]}
       >
         {loading ? (
@@ -62,7 +62,7 @@ export function Button({ title, onPress, variant = 'primary', loading, disabled,
         ) : (
           <View style={styles.row}>
             {icon}
-            <T variant={size === 'sm' ? 'caption' : 'label'} color={fg[variant]} style={size === 'lg' ? { fontSize: 17 } : undefined}>
+            <T variant={size === 'sm' ? 'caption' : 'label'} color={fg[variant]} style={size === 'lg' ? { fontSize: 17 } : undefined} numberOfLines={1}>
               {title}
             </T>
           </View>

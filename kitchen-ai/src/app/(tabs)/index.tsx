@@ -67,7 +67,7 @@ export default function Home() {
           </View>
           <Button title="Take a photo" variant="accent" onPress={() => start('camera')} loading={busy === 'camera'} disabled={!!busy} />
           <View style={{ flexDirection: 'row', gap: space.md }}>
-            <Button title="Choose photo" size="md" variant="secondary" onPress={() => start('library')} loading={busy === 'library'} disabled={!!busy} style={{ flex: 1 }} />
+            <Button title="Upload" size="md" variant="secondary" onPress={() => start('library')} loading={busy === 'library'} disabled={!!busy} style={{ flex: 1 }} />
             <Button
               title="Type it in"
               size="md"

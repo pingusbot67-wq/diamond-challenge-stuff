@@ -1,5 +1,6 @@
 // Draws the recipe card as a 1080×1350 PNG (Instagram/TikTok portrait size).
 import type { Recipe } from './runtime.ts';
+import { dishImage } from './dish.ts';
 
 const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, system-ui, sans-serif';
 
@@ -33,87 +34,92 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 export async function cardImage(r: Recipe): Promise<Blob> {
-  const W = 1080, H = 1350, P = 96;
+  const W = 1080, H = 1350, P = 88;
   const c = document.createElement('canvas');
   c.width = W;
   c.height = H;
   const ctx = c.getContext('2d')!;
-  const ink = '#121212', soft = '#5E5B57', faint = '#8F8C87', accent = '#F04E23', surface = '#F6F5F2';
+  const ink = '#141312', soft = '#66625C', faint = '#8C8882', accent = '#F04E23', panel = '#F7F4EE', line = '#ECE9E4';
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, W, H);
   ctx.textBaseline = 'alphabetic';
 
-  // brand + badges
+  // illustration panel
+  ctx.fillStyle = panel;
+  ctx.fillRect(0, 0, W, 610);
+  try {
+    const img = await dishImage(r);
+    ctx.drawImage(img, (W - 760) / 2, 70, 760, 522);
+  } catch {
+    /* draw the card without the picture */
+  }
   ctx.fillStyle = accent;
-  ctx.font = `800 30px ${FONT}`;
-  ctx.fillText('KITCHEN AI', P, P + 20);
-  const badges = [r.glp1_friendly ? 'GLP-1 friendly' : '', `${r.minutes} min`, r.macros_estimated ? 'Estimated' : ''].filter(Boolean);
+  ctx.beginPath();
+  ctx.arc(P + 9, P - 9, 9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = ink;
+  ctx.font = `700 32px ${FONT}`;
+  ctx.fillText('Kitchen AI', P + 30, P + 2);
+  const badges = [r.glp1_friendly ? 'GLP-1 friendly' : '', r.macros_estimated ? 'Estimated' : ''].filter(Boolean);
   let bx = W - P;
-  ctx.font = `700 28px ${FONT}`;
+  ctx.font = `650 26px ${FONT}`;
   for (const b of [...badges].reverse()) {
-    const w = ctx.measureText(b).width + 40;
+    const w = ctx.measureText(b).width + 36;
     bx -= w;
-    ctx.fillStyle = surface;
-    roundRect(ctx, bx, P - 16, w, 52, 26);
+    ctx.fillStyle = '#FFFFFF';
+    roundRect(ctx, bx, P - 34, w, 48, 24);
     ctx.fill();
     ctx.fillStyle = soft;
-    ctx.fillText(b, bx + 20, P + 20);
-    bx -= 12;
+    ctx.fillText(b, bx + 18, P - 1);
+    bx -= 10;
   }
 
   // title
   ctx.fillStyle = ink;
-  ctx.font = `800 76px ${FONT}`;
-  const lines = wrap(ctx, r.title, W - P * 2, 3);
-  let y = P + 170;
+  ctx.font = `700 64px ${FONT}`;
+  const lines = wrap(ctx, r.title, W - P * 2, 2);
+  let y = 700;
   for (const l of lines) {
     ctx.fillText(l, P, y);
-    y += 88;
+    y += 74;
   }
 
   // the hero number
   const approx = r.macros_estimated ? '≈' : '';
-  y += 230;
+  y += 170;
   ctx.fillStyle = accent;
-  ctx.font = `800 300px ${FONT}`;
+  ctx.font = `750 210px ${FONT}`;
   const big = `${approx}${r.macros.protein_g}`;
-  ctx.fillText(big, P - 12, y);
+  ctx.fillText(big, P - 8, y);
   const bw = ctx.measureText(big).width;
-  ctx.font = `800 110px ${FONT}`;
-  ctx.fillText('g', P - 12 + bw + 8, y);
   ctx.fillStyle = soft;
-  ctx.font = `800 34px ${FONT}`;
-  ctx.fillText('PROTEIN', P, y + 64);
+  ctx.font = `600 44px ${FONT}`;
+  ctx.fillText('g protein', P + bw + 10, y);
 
-  // stats
-  const sy = y + 130;
-  ctx.fillStyle = surface;
-  roundRect(ctx, P, sy, W - P * 2, 190, 36);
-  ctx.fill();
-  const cols = [
-    [`${approx}${r.macros.kcal}`, 'Calories'],
-    [`${r.macros.carbs_g}g`, 'Carbs'],
-    [`${r.macros.fat_g}g`, 'Fat'],
+  // stats row
+  const sy = Math.min(H - 190, y + 70);
+  ctx.fillStyle = line;
+  ctx.fillRect(P, sy, W - P * 2, 2);
+  const cols: [string, string][] = [
+    ['CALORIES', `${approx}${r.macros.kcal}`],
+    ['TIME', `${r.minutes} min`],
+    ['CARBS', `${r.macros.carbs_g}g`],
+    ['FAT', `${r.macros.fat_g}g`],
   ];
-  const cw = (W - P * 2) / 3;
-  cols.forEach(([v, l], i) => {
-    const x = P + cw * i + 44;
-    ctx.fillStyle = ink;
-    ctx.font = `800 64px ${FONT}`;
-    ctx.fillText(v, x, sy + 100);
+  const cw = (W - P * 2) / 4;
+  cols.forEach(([l, v], i) => {
+    const x = P + cw * i;
     ctx.fillStyle = faint;
-    ctx.font = `600 30px ${FONT}`;
-    ctx.fillText(l, x, sy + 148);
+    ctx.font = `650 24px ${FONT}`;
+    ctx.fillText(l, x, sy + 56);
+    ctx.fillStyle = ink;
+    ctx.font = `650 48px ${FONT}`;
+    ctx.fillText(v, x, sy + 114);
   });
 
-  // footer
   ctx.fillStyle = faint;
-  ctx.font = `600 30px ${FONT}`;
-  ctx.fillText('made from what’s in my fridge', P, H - P + 10);
-  if (r.servings > 1) {
-    const t = `per serving · makes ${r.servings}`;
-    ctx.fillText(t, W - P - ctx.measureText(t).width, H - P + 10);
-  }
+  ctx.font = `500 26px ${FONT}`;
+  ctx.fillText(r.servings > 1 ? `made from what’s in my fridge · per serving, makes ${r.servings}` : 'made from what’s in my fridge', P, H - 52);
 
   return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('no image'))), 'image/png'));
 }

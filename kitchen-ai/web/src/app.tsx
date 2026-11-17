@@ -4,6 +4,7 @@ import { ALLERGY_OPTIONS, DIET_OPTIONS, GLP1_NOTE, clock, grams, minutesLabel } 
 import { ftInToCm, kgToLb, lbToKg, suggestTargets } from '../../src/lib/targets.ts';
 import { FOOD_NAMES, MODEL_LABEL, aiMessage, canSendImages, getSample, makeRecipes, scanFridge, shrinkPhoto, type ScanItem, type ScanResult } from './ai.ts';
 import { cardImage } from './share.ts';
+import { dishSvg } from './dish.ts';
 import { dayKey, downloads, openStore, type Goal, type Meal, type Recipe, type Store, type WebProfile } from './runtime.ts';
 
 void Fragment;
@@ -54,68 +55,71 @@ function Field({ id, label, value, onInput, suffix, placeholder, inputMode, type
 }
 
 // ───────────────────────── the result card ─────────────────────────
+function Dish({ r, animated = true, cls = '' }: { r: Pick<Recipe, 'title' | 'ingredients' | 'steps'>; animated?: boolean; cls?: string }) {
+  const svg = useMemo(() => dishSvg(r, { animated }), [r.title, animated]);
+  return <div class={`dish ${cls}`} dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+
 function MacroCard({ r, rank, showFit = true }: { r: Recipe; rank?: number; showFit?: boolean }) {
   const a = r.macros_estimated ? '≈' : '';
   return (
     <article class="macro-card">
-      <div class="badges">
-        {rank === 0 && showFit ? <span class="badge badge-accent">Best fit</span> : null}
-        {showFit && typeof r.fit === 'number' ? <span class="badge">Fit {r.fit}</span> : null}
-        {r.glp1_friendly ? <span class="badge">GLP-1 friendly</span> : null}
-        {r.macros_estimated ? <span class="badge badge-warn">Estimated</span> : null}
+      <div class="dish-panel">
+        <Dish r={r} />
+        <div class="badges">
+          {rank === 0 && showFit ? <span class="badge badge-accent">Best fit</span> : null}
+          {r.glp1_friendly ? <span class="badge">GLP-1 friendly</span> : null}
+          {r.macros_estimated ? <span class="badge badge-warn">Estimated</span> : null}
+        </div>
       </div>
-      <h3 class="h-title">{r.title}</h3>
-      <div>
-        <p class="hero-num">
+      <div class="mc-body">
+        <h3 class="h-title">{r.title}</h3>
+        <p class="hero-num" aria-label={`${r.macros.protein_g} grams of protein`}>
           {a}
           {r.macros.protein_g}
-          <span class="hero-unit">g</span>
+          <span class="hero-unit">g protein</span>
         </p>
-        <p class="overline soft">Protein</p>
-      </div>
-      <div class="stat-box">
-        <div>
-          <p class="stat-val">{a}{r.macros.kcal}</p>
-          <p class="caption faint">Calories</p>
-        </div>
-        <div class="stat-divider" />
-        <div>
-          <p class="stat-val">{minutesLabel(r.minutes)}</p>
-          <p class="caption faint">Time</p>
-        </div>
-      </div>
-      <div>
-        <p class="label soft num">
-          {a}{r.macros.carbs_g}g carbs · {a}{r.macros.fat_g}g fat{r.servings > 1 ? ` · per serving (makes ${r.servings})` : ''}
-        </p>
-        {showFit && r.fit_reason ? <p class="caption faint">{r.fit_reason}</p> : null}
-      </div>
-      <div class="card-foot">
-        <span class="overline faint">Kitchen AI</span>
-        <span class="caption faint">made from what’s in my fridge</span>
+        <dl class="mc-stats">
+          <div><dt>Calories</dt><dd>{a}{r.macros.kcal}</dd></div>
+          <div><dt>Time</dt><dd>{minutesLabel(r.minutes)}</dd></div>
+          <div><dt>Carbs</dt><dd>{a}{r.macros.carbs_g}g</dd></div>
+          <div><dt>Fat</dt><dd>{a}{r.macros.fat_g}g</dd></div>
+        </dl>
+        {showFit && r.fit_reason ? (
+          <p class="caption soft">
+            {typeof r.fit === 'number' ? <span class="fit">{r.fit}% fit</span> : null}
+            {r.fit_reason}
+            {r.servings > 1 ? ` · per serving, makes ${r.servings}` : ''}
+          </p>
+        ) : r.servings > 1 ? (
+          <p class="caption soft">Per serving · makes {r.servings}</p>
+        ) : null}
       </div>
     </article>
   );
 }
 
 function TodayBars({ eaten, p }: { eaten: { kcal: number; protein_g: number }; p: WebProfile }) {
-  const bar = (label: string, v: number, t: number, unit: string, cls: string) => (
-    <div class="bar-row">
-      <div class="bar-head">
-        <span class="label">{label}</span>
-        <span class="caption soft num">
-          <strong class="body-strong">{Math.max(0, Math.round(t - v))}{unit}</strong> left of {t}{unit}
-        </span>
+  const col = (label: string, v: number, t: number, unit: string, cls: string) => {
+    const left = Math.max(0, Math.round(t - v));
+    return (
+      <div class="today-col">
+        <p class="overline faint">{label} left</p>
+        <p class="today-num num">
+          {left.toLocaleString()}
+          <span class="today-unit">{unit}</span>
+        </p>
+        <div class="bar thin" role="progressbar" aria-label={`${label} eaten`} aria-valuemin={0} aria-valuemax={t} aria-valuenow={Math.round(v)}>
+          <div class={`bar-fill ${cls}`} style={{ width: `${Math.min(100, (v / Math.max(1, t)) * 100)}%` }} />
+        </div>
+        <p class="caption faint num">of {t.toLocaleString()}{unit}</p>
       </div>
-      <div class="bar" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={t} aria-valuenow={Math.round(v)}>
-        <div class={`bar-fill ${cls}`} style={{ width: `${Math.min(100, (v / Math.max(1, t)) * 100)}%` }} />
-      </div>
-    </div>
-  );
+    );
+  };
   return (
-    <div class="stack-md">
-      {bar('Protein', eaten.protein_g, p.protein_target_g, 'g', 'fill-accent')}
-      {bar('Calories', eaten.kcal, p.calorie_target, '', 'fill-ink')}
+    <div class="today">
+      {col('Protein', eaten.protein_g, p.protein_target_g, 'g', 'fill-accent')}
+      {col('Calories', eaten.kcal, p.calorie_target, '', 'fill-ink')}
     </div>
   );
 }
@@ -357,6 +361,15 @@ function greeting() {
   return hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
 }
 
+const HERO_DISH = {
+  title: 'hero bowl',
+  ingredients: [
+    { name: 'white rice', grams: 150 }, { name: 'chicken breast', grams: 180 }, { name: 'broccoli', grams: 90 },
+    { name: 'carrots', grams: 60 }, { name: 'avocado', grams: 50 }, { name: 'sesame seeds', grams: 5 },
+  ] as Recipe['ingredients'],
+  steps: [{ text: 'Sear the chicken.', timer_seconds: null }],
+};
+
 function Home({ p, eaten, aiOk, imagesOk, onPhoto, onType }: { p: WebProfile; eaten: { kcal: number; protein_g: number }; aiOk: boolean | null; imagesOk: boolean; onPhoto: (f: File) => void; onType: () => void }) {
   const cam = useRef<HTMLInputElement>(null);
   const lib = useRef<HTMLInputElement>(null);
@@ -368,24 +381,21 @@ function Home({ p, eaten, aiOk, imagesOk, onPhoto, onType }: { p: WebProfile; ea
   };
   return (
     <div class="content stack-xl">
-      <div class="stack-xs">
-        <p class="caption faint">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-        <h1 class="h-title">{greeting()}</h1>
-      </div>
-      <section class="card card-white stack-lg" aria-label="Today">
-        <p class="overline soft">Today</p>
+      <header class="home-head">
+        <span class="brand"><span class="brand-dot" aria-hidden="true" />Kitchen AI</span>
+        <span class="caption faint">{new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+      </header>
+      <h1 class="h-display">{greeting()}</h1>
+      <section aria-label="Today">
         <TodayBars eaten={eaten} p={p} />
       </section>
       <section class="hero stack-lg">
-        <span class="hero-icon" aria-hidden="true">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-            <circle cx="12" cy="13" r="3.5" />
-          </svg>
-        </span>
-        <div class="stack-xs">
-          <h2 class="h-title hero-title">What can I cook?</h2>
-          <p class="hero-soft">Snap your fridge. Get 3 high-protein meals that fit what you have left today.</p>
+        <div class="hero-top">
+          <div class="stack-xs">
+            <h2 class="h-title hero-title">What can I cook?</h2>
+            <p class="hero-soft">Snap your fridge. Get 3 high-protein meals that fit what’s left today.</p>
+          </div>
+          <Dish r={HERO_DISH} cls="hero-dish" />
         </div>
         <input ref={cam} type="file" accept="image/*" capture="environment" hidden onChange={pick} />
         <input ref={lib} type="file" accept="image/*" hidden onChange={pick} />
@@ -558,9 +568,10 @@ function Results({ flow, busy, error, onCook, onOpen, onAgain }: { flow: Flow; b
   return (
     <div class="content stack-xl">
       {flow.target ? (
-        <p class="soft">
-          Ranked for this meal: about <strong class="body-strong">{flow.target.kcal} kcal</strong> and <strong class="body-strong">{flow.target.protein_g} g+ protein</strong>.
-        </p>
+        <div class="stack-xs">
+          <p class="overline faint">Ranked for this meal</p>
+          <p class="soft">About <strong class="body-strong">{flow.target.kcal} kcal</strong> and <strong class="body-strong">{flow.target.protein_g} g+ protein</strong></p>
+        </div>
       ) : null}
       {flow.recipes.map((r, i) => (
         <div key={r.id} class="stack-md rise" style={{ animationDelay: `${i * 80}ms` }}>
@@ -739,7 +750,7 @@ function Cook({ r, onClose, onLog }: { r: Recipe; onClose: () => void; onLog: ()
             );
           })}
           <section class="cook-page" aria-hidden={page !== pages - 1}>
-            <p class="state-icon" aria-hidden="true">🎉</p>
+            <Dish r={r} cls="done-dish" />
             <p class="h-display">Done. Enjoy!</p>
             <p class="soft">{r.title} · {r.macros.protein_g} g protein · {r.macros.kcal} kcal per serving</p>
             {logged === 'done' ? (
@@ -780,15 +791,14 @@ function Saved({ list, onOpen, onScan }: { list: Recipe[]; onOpen: (r: Recipe) =
           {list.map((r) => (
             <li key={r.id}>
               <button type="button" class="saved-row" onClick={() => onOpen(r)}>
-                <span class="saved-num">
-                  <span class="accent num">{r.macros.protein_g}g</span>
-                  <span class="caption faint">protein</span>
-                </span>
+                <Dish r={r} animated={false} cls="dish-thumb" />
                 <span class="saved-text">
                   <span class="body-strong">{r.title}</span>
-                  <span class="caption soft">{r.macros.kcal} kcal · {minutesLabel(r.minutes)}{r.glp1_friendly ? ' · GLP-1 friendly' : ''}</span>
+                  <span class="caption soft num">
+                    <span class="accent">{r.macros.protein_g}g protein</span> · {r.macros.kcal} kcal · {minutesLabel(r.minutes)}
+                  </span>
                 </span>
-                <span class="faint" aria-hidden="true">›</span>
+                <span class="faint chev" aria-hidden="true">›</span>
               </button>
             </li>
           ))}

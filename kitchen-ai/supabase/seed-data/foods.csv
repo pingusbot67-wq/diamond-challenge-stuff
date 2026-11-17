@@ -1,0 +1,210 @@
+name|aliases|category|kcal|protein|carbs|fat|fiber|tags|safety|source
+chicken breast|chicken;chicken breasts;chicken fillet;chicken tenders;chicken tenderloins|poultry|120|22.5|0|2.6|0|meat,poultry|poultry|USDA SR Legacy
+chicken thigh|chicken thighs|poultry|121|19.7|0|4.1|0|meat,poultry|poultry|USDA SR Legacy
+chicken drumstick|drumsticks;chicken legs;chicken leg|poultry|161|18.1|0|9.2|0|meat,poultry|poultry|USDA SR Legacy
+chicken wings|wings;chicken wing|poultry|191|17.5|0|12.8|0|meat,poultry|poultry|USDA SR Legacy
+ground chicken|minced chicken|poultry|143|17.4|0|8.1|0|meat,poultry|poultry|USDA SR Legacy
+ground turkey|minced turkey;lean ground turkey;93% lean ground turkey|poultry|150|18.7|0|8.3|0|meat,poultry|poultry|USDA SR Legacy
+turkey breast|turkey;turkey cutlets|poultry|114|23.7|0.1|1.5|0|meat,poultry|poultry|USDA SR Legacy
+deli turkey|sliced turkey;turkey slices;turkey deli meat;lunch meat turkey|poultry|104|17.1|4.2|1.7|0|meat,poultry||USDA SR Legacy
+rotisserie chicken|cooked chicken;shredded chicken;leftover chicken;grilled chicken|poultry|190|28.9|0|7.4|0|meat,poultry||USDA SR Legacy
+ground beef 90% lean|ground beef;lean ground beef;beef mince;minced beef;hamburger meat|beef|176|20|0|10|0|meat,beef|ground_meat|USDA SR Legacy
+ground beef 93% lean|extra lean ground beef|beef|152|20.9|0|7|0|meat,beef|ground_meat|USDA SR Legacy
+ground beef 80% lean|80/20 ground beef|beef|254|17.2|0|20|0|meat,beef|ground_meat|USDA SR Legacy
+sirloin steak|steak;beef steak;top sirloin|beef|150|22|0|6.5|0|meat,beef|whole_meat|USDA SR Legacy
+flank steak|skirt steak|beef|155|21|0|7|0|meat,beef|whole_meat|USDA SR Legacy
+ribeye steak|ribeye|beef|274|19|0|22|0|meat,beef|whole_meat|USDA SR Legacy
+beef chuck|stew beef;beef stew meat;chuck roast|beef|180|19.5|0|11|0|meat,beef|whole_meat|USDA SR Legacy
+beef jerky|jerky|beef|410|33.2|11|25.6|1.8|meat,beef||USDA SR Legacy
+deli roast beef|roast beef;sliced roast beef|beef|115|18.6|0.6|3.7|0|meat,beef||USDA SR Legacy
+pork tenderloin|pork loin|pork|120|21|0|3.5|0|meat,pork|whole_meat|USDA SR Legacy
+pork chop|pork chops;boneless pork chop|pork|160|21|0|8|0|meat,pork|whole_meat|USDA SR Legacy
+ground pork|minced pork|pork|263|16.9|0|21.2|0|meat,pork|ground_meat|USDA SR Legacy
+italian sausage|pork sausage;sausage;sausages|pork|346|14.3|0.7|31.3|0|meat,pork|ground_meat|USDA SR Legacy
+bacon|bacon strips|pork|417|12.6|1.3|39.7|0|meat,pork||USDA SR Legacy
+ham|deli ham;sliced ham|pork|163|16.6|3.8|8.6|0|meat,pork||USDA SR Legacy
+ground lamb|minced lamb;lamb mince|lamb|282|16.6|0|23.4|0|meat,lamb|ground_meat|USDA SR Legacy
+salmon|salmon fillet;atlantic salmon;salmon fillets|fish|208|20.4|0|13.4|0|fish|fish|USDA SR Legacy
+wild salmon|sockeye salmon;coho salmon|fish|142|19.8|0|6.3|0|fish|fish|USDA SR Legacy
+cod|cod fillet;white fish;whitefish;haddock;pollock|fish|82|17.8|0|0.7|0|fish|fish|USDA SR Legacy
+tilapia|tilapia fillet|fish|96|20.1|0|1.7|0|fish|fish|USDA SR Legacy
+tuna steak|ahi tuna;yellowfin tuna|fish|109|24.4|0|0.5|0|fish|fish|USDA SR Legacy
+canned tuna|tuna;tuna in water;light tuna|fish|116|25.5|0|0.8|0|fish||USDA SR Legacy
+canned salmon||fish|140|20|0|6|0|fish||USDA SR Legacy
+smoked salmon|lox|fish|117|18.3|0|4.3|0|fish||USDA SR Legacy
+sardines|canned sardines|fish|208|24.6|0|11.5|0|fish||USDA SR Legacy
+shrimp|prawns;raw shrimp;shrimps|shellfish|85|20.1|0|0.5|0|shellfish|fish|USDA SR Legacy
+cooked shrimp|precooked shrimp|shellfish|99|24|0.2|0.3|0|shellfish||USDA SR Legacy
+scallops|sea scallops|shellfish|69|12.1|3.2|0.5|0|shellfish|fish|USDA SR Legacy
+egg|eggs;large egg;large eggs;whole eggs|eggs|143|12.6|0.7|9.5|0|egg,animal|egg|USDA SR Legacy
+egg whites|liquid egg whites;egg white|eggs|52|10.9|0.7|0.2|0|egg,animal|egg|USDA SR Legacy
+hard-boiled egg|hard boiled eggs;boiled eggs;hard-boiled eggs|eggs|155|12.6|1.1|10.6|0|egg,animal||USDA SR Legacy
+greek yogurt nonfat|greek yogurt;plain greek yogurt;0% greek yogurt;skyr;nonfat greek yogurt|dairy|59|10.2|3.6|0.4|0|milk,animal||USDA SR Legacy
+greek yogurt 2%|2% greek yogurt;low fat greek yogurt|dairy|73|10|3.9|1.9|0|milk,animal||USDA SR Legacy
+greek yogurt whole milk|full fat greek yogurt|dairy|97|9|4|5|0|milk,animal||USDA SR Legacy
+plain yogurt|yogurt;yoghurt|dairy|61|3.5|4.7|3.3|0|milk,animal||USDA SR Legacy
+cottage cheese 2%|cottage cheese;low fat cottage cheese|dairy|81|10.5|4.8|2.3|0|milk,animal||USDA SR Legacy
+cottage cheese 4%|full fat cottage cheese|dairy|98|11.1|3.4|4.3|0|milk,animal||USDA SR Legacy
+whole milk|milk|dairy|61|3.2|4.8|3.3|0|milk,animal||USDA SR Legacy
+2% milk|reduced fat milk|dairy|50|3.3|4.8|2|0|milk,animal||USDA SR Legacy
+skim milk|nonfat milk;fat free milk|dairy|34|3.4|5|0.1|0|milk,animal||USDA SR Legacy
+ultra-filtered milk|fairlife;protein milk;ultrafiltered milk|dairy|50|5.4|2.5|1.9|0|milk,animal||Brand label (approx.)
+kefir|plain kefir|dairy|41|3.8|4.5|1|0|milk,animal||USDA SR Legacy
+cheddar cheese|cheddar;shredded cheddar|dairy|403|24.9|1.3|33.1|0|milk,animal||USDA SR Legacy
+mozzarella part-skim|mozzarella;shredded mozzarella;string cheese;mozzarella cheese|dairy|254|24.3|2.8|15.9|0|milk,animal||USDA SR Legacy
+parmesan|parmesan cheese;parmigiano;grated parmesan|dairy|392|35.8|3.2|25.8|0|milk,animal||USDA SR Legacy
+feta|feta cheese;crumbled feta|dairy|264|14.2|4.1|21.3|0|milk,animal||USDA SR Legacy
+swiss cheese|swiss|dairy|380|26.9|5.4|27.8|0|milk,animal||USDA SR Legacy
+ricotta part-skim|ricotta|dairy|138|11.4|5.1|7.9|0|milk,animal||USDA SR Legacy
+cream cheese||dairy|342|5.9|4.1|34.2|0|milk,animal||USDA SR Legacy
+butter|unsalted butter;salted butter|dairy|717|0.9|0.1|81.1|0|milk,animal||USDA SR Legacy
+heavy cream|whipping cream;heavy whipping cream|dairy|340|2.8|2.7|36.1|0|milk,animal||USDA SR Legacy
+half and half||dairy|131|3.1|4.3|11.5|0|milk,animal||USDA SR Legacy
+sour cream||dairy|198|2.4|4.6|19.4|0|milk,animal||USDA SR Legacy
+whey protein powder|protein powder;whey protein;whey isolate|supplement|390|78|8|4.5|0|milk,animal||Brand label (approx.)
+tofu firm|tofu;extra firm tofu;firm tofu|plant protein|144|15.8|4.3|8.7|2.3|soy||USDA SR Legacy
+silken tofu|soft tofu|plant protein|55|4.8|2.9|2.7|0.1|soy||USDA SR Legacy
+tempeh||plant protein|192|20.3|7.6|10.8|0|soy||USDA SR Legacy
+edamame|shelled edamame|plant protein|121|11.9|8.9|5.2|5.2|soy||USDA SR Legacy
+vital wheat gluten|seitan|plant protein|370|75.2|13.8|1.9|0.6|wheat,gluten||USDA SR Legacy
+black beans|canned black beans|legumes|132|8.9|23.7|0.5|8.7|||USDA SR Legacy
+chickpeas|garbanzo beans;canned chickpeas|legumes|164|8.9|27.4|2.6|7.6|||USDA SR Legacy
+lentils|cooked lentils;red lentils;green lentils|legumes|116|9|20.1|0.4|7.9|||USDA SR Legacy
+kidney beans|red kidney beans|legumes|127|8.7|22.8|0.5|6.4|||USDA SR Legacy
+pinto beans||legumes|143|9|26.2|0.7|9|||USDA SR Legacy
+white beans|cannellini beans;navy beans;great northern beans|legumes|140|8.2|26|0.6|10.5|||USDA SR Legacy
+hummus||legumes|166|7.9|14.3|9.6|6|sesame||USDA SR Legacy
+peanut butter|natural peanut butter|nuts and seeds|588|25.1|19.6|50.4|6|peanut||USDA SR Legacy
+peanuts|roasted peanuts|nuts and seeds|567|25.8|16.1|49.2|8.5|peanut||USDA SR Legacy
+almonds|almond;sliced almonds|nuts and seeds|579|21.2|21.6|49.9|12.5|tree_nut||USDA SR Legacy
+almond butter||nuts and seeds|614|21|18.8|55.5|10.3|tree_nut||USDA SR Legacy
+walnuts|walnut|nuts and seeds|654|15.2|13.7|65.2|6.7|tree_nut||USDA SR Legacy
+cashews|cashew|nuts and seeds|553|18.2|30.2|43.9|3.3|tree_nut||USDA SR Legacy
+pistachios|pistachio|nuts and seeds|560|20.2|27.2|45.3|10.6|tree_nut||USDA SR Legacy
+chia seeds|chia|nuts and seeds|486|16.5|42.1|30.7|34.4|||USDA SR Legacy
+pumpkin seeds|pepitas|nuts and seeds|559|30.2|10.7|49|6|||USDA SR Legacy
+sunflower seeds||nuts and seeds|584|20.8|20|51.5|8.6|||USDA SR Legacy
+sesame seeds||nuts and seeds|573|17.7|23.4|49.7|11.8|sesame||USDA SR Legacy
+flaxseed|ground flaxseed;flax seeds|nuts and seeds|534|18.3|28.9|42.2|27.3|||USDA SR Legacy
+hemp hearts|hemp seeds|nuts and seeds|553|31.6|8.7|48.8|4|||USDA SR Legacy
+tahini|sesame paste|nuts and seeds|595|17|21.2|53.8|9.3|sesame||USDA SR Legacy
+soy milk|unsweetened soy milk|dairy alternatives|33|2.9|1.7|1.6|0.6|soy||USDA SR Legacy
+almond milk|unsweetened almond milk|dairy alternatives|15|0.6|0.6|1.1|0.2|tree_nut||USDA SR Legacy
+oat milk||dairy alternatives|48|1|5.1|2.8|0.8|||Brand label (approx.)
+coconut milk|canned coconut milk;coconut cream|dairy alternatives|197|2|2.8|21.3|0|coconut||USDA SR Legacy
+white rice|rice;cooked rice;jasmine rice;basmati rice;cooked white rice|grains|130|2.7|28.2|0.3|0.4|||USDA SR Legacy
+brown rice|cooked brown rice|grains|123|2.7|25.6|1|1.6|||USDA SR Legacy
+quinoa|cooked quinoa|grains|120|4.4|21.3|1.9|2.8|||USDA SR Legacy
+rolled oats|oats;oatmeal;old fashioned oats;quick oats|grains|379|13.2|67.7|6.5|10.1|||USDA SR Legacy
+pasta dry|pasta;spaghetti;penne;dry pasta;macaroni;rotini|grains|371|13|74.7|1.5|3.2|wheat,gluten||USDA SR Legacy
+cooked pasta|cooked spaghetti|grains|158|5.8|30.9|0.9|1.8|wheat,gluten||USDA SR Legacy
+chickpea pasta|protein pasta;lentil pasta|grains|357|20.5|57|6|8|||Brand label (approx.)
+egg noodles||grains|138|4.5|25.2|2.1|1.2|wheat,gluten,egg,animal||USDA SR Legacy
+rice noodles||grains|108|1.8|24|0.2|1|||USDA SR Legacy
+whole wheat bread|wheat bread;whole grain bread|grains|247|13|41.3|3.4|6.8|wheat,gluten||USDA SR Legacy
+white bread|bread;sourdough;sourdough bread|grains|266|8.9|49.4|3.3|2.7|wheat,gluten||USDA SR Legacy
+flour tortilla|tortilla;tortillas;wrap;wraps|grains|304|8|50|7.8|3.5|wheat,gluten||USDA SR Legacy
+corn tortilla|corn tortillas|grains|218|5.7|44.6|2.9|6.3|||USDA SR Legacy
+bagel|plain bagel|grains|250|10|48.9|1.5|2.1|wheat,gluten||USDA SR Legacy
+english muffin||grains|235|8|46|1.8|2.7|wheat,gluten||USDA SR Legacy
+pita bread|pita|grains|275|9.1|55.7|1.2|2.2|wheat,gluten||USDA SR Legacy
+couscous|cooked couscous|grains|112|3.8|23.2|0.2|1.4|wheat,gluten||USDA SR Legacy
+all-purpose flour|flour;white flour|grains|364|10.3|76.3|1|2.7|wheat,gluten||USDA SR Legacy
+breadcrumbs|panko;bread crumbs|grains|395|13.4|72|5.3|4.5|wheat,gluten||USDA SR Legacy
+rice cakes|rice cake|grains|387|8.2|81.5|2.8|4.2|||USDA SR Legacy
+cornstarch|corn starch|grains|381|0.3|91.3|0.1|0.9|||USDA SR Legacy
+potato|potatoes;russet potato;yukon gold potatoes;baby potatoes|vegetables|79|2.1|18.1|0.1|1.3|||USDA SR Legacy
+sweet potato|sweet potatoes;yam|vegetables|86|1.6|20.1|0.1|3|||USDA SR Legacy
+spinach|baby spinach|vegetables|23|2.9|3.6|0.4|2.2|||USDA SR Legacy
+kale|baby kale|vegetables|35|2.9|4.4|1.5|4.1|||USDA SR Legacy
+broccoli|broccoli florets|vegetables|34|2.8|6.6|0.4|2.6|||USDA SR Legacy
+cauliflower|cauliflower rice;riced cauliflower|vegetables|25|1.9|5|0.3|2|||USDA SR Legacy
+red bell pepper|bell pepper;bell peppers;red pepper;yellow bell pepper;peppers|vegetables|31|1|6|0.3|2.1|||USDA SR Legacy
+green bell pepper|green pepper|vegetables|20|0.9|4.6|0.2|1.7|||USDA SR Legacy
+onion|onions;yellow onion;red onion;white onion;shallot|vegetables|40|1.1|9.3|0.1|1.7|||USDA SR Legacy
+green onion|scallions;spring onions;green onions;scallion|vegetables|32|1.8|7.3|0.2|2.6|||USDA SR Legacy
+garlic|garlic cloves;minced garlic|vegetables|149|6.4|33.1|0.5|2.1|||USDA SR Legacy
+tomato|tomatoes;cherry tomatoes;grape tomatoes;roma tomatoes|vegetables|18|0.9|3.9|0.2|1.2|||USDA SR Legacy
+canned diced tomatoes|diced tomatoes;canned tomatoes;crushed tomatoes|vegetables|16|0.8|3.5|0.3|1|||USDA SR Legacy
+marinara sauce|pasta sauce;tomato sauce|vegetables|50|1.4|8.1|1.5|1.8|||USDA SR Legacy
+tomato paste||vegetables|82|4.3|18.9|0.5|4.1|||USDA SR Legacy
+salsa||vegetables|36|1.5|7|0.2|1.9|||USDA SR Legacy
+cucumber|cucumbers;english cucumber|vegetables|15|0.7|3.6|0.1|0.5|||USDA SR Legacy
+carrot|carrots;baby carrots;shredded carrots|vegetables|41|0.9|9.6|0.2|2.8|||USDA SR Legacy
+celery|celery stalks|vegetables|14|0.7|3|0.2|1.6|||USDA SR Legacy
+zucchini|courgette|vegetables|17|1.2|3.1|0.3|1|||USDA SR Legacy
+mushrooms|white mushrooms;cremini mushrooms;button mushrooms;mushroom|vegetables|22|3.1|3.3|0.3|1|||USDA SR Legacy
+asparagus||vegetables|20|2.2|3.9|0.1|2.1|||USDA SR Legacy
+green beans|string beans|vegetables|31|1.8|7|0.2|2.7|||USDA SR Legacy
+peas|green peas;frozen peas|vegetables|81|5.4|14.5|0.4|5.1|||USDA SR Legacy
+corn|sweet corn;corn kernels;frozen corn|vegetables|86|3.3|18.7|1.4|2|||USDA SR Legacy
+avocado|avocados|vegetables|160|2|8.5|14.7|6.7|||USDA SR Legacy
+romaine lettuce|lettuce;romaine;mixed greens;salad greens;spring mix;iceberg lettuce|vegetables|17|1.2|3.3|0.3|2.1|||USDA SR Legacy
+arugula|rocket|vegetables|25|2.6|3.7|0.7|1.6|||USDA SR Legacy
+cabbage|coleslaw mix;red cabbage;green cabbage|vegetables|25|1.3|5.8|0.1|2.5|||USDA SR Legacy
+brussels sprouts||vegetables|43|3.4|9|0.3|3.8|||USDA SR Legacy
+eggplant|aubergine|vegetables|25|1|5.9|0.2|3|||USDA SR Legacy
+jalapeno|jalapenos;chili pepper;chili peppers|vegetables|29|0.9|6.5|0.4|2.8|||USDA SR Legacy
+ginger|fresh ginger;ginger root|vegetables|80|1.8|17.8|0.8|2|||USDA SR Legacy
+cilantro|coriander leaves|herbs|23|2.1|3.7|0.5|2.8|||USDA SR Legacy
+parsley||herbs|36|3|6.3|0.8|3.3|||USDA SR Legacy
+basil|fresh basil|herbs|23|3.2|2.7|0.6|1.6|||USDA SR Legacy
+mixed vegetables|frozen mixed vegetables;stir fry vegetables;frozen vegetables|vegetables|72|3.3|13.5|0.5|4|||USDA SR Legacy
+sauerkraut||vegetables|19|0.9|4.3|0.1|2.9|||USDA SR Legacy
+kimchi||vegetables|15|1.1|2.4|0.5|1.6|fish||USDA SR Legacy
+beets|beet;beetroot|vegetables|43|1.6|9.6|0.2|2.8|||USDA SR Legacy
+butternut squash|squash|vegetables|45|1|11.7|0.1|2|||USDA SR Legacy
+spaghetti squash||vegetables|31|0.6|6.9|0.6|1.5|||USDA SR Legacy
+pumpkin puree|canned pumpkin|vegetables|34|1.1|8.1|0.3|2.9|||USDA SR Legacy
+olives|black olives;kalamata olives;green olives|vegetables|115|0.8|6.3|10.7|3.2|||USDA SR Legacy
+banana|bananas|fruit|89|1.1|22.8|0.3|2.6|||USDA SR Legacy
+apple|apples|fruit|52|0.3|13.8|0.2|2.4|||USDA SR Legacy
+blueberries|berries;mixed berries;frozen berries;blueberry|fruit|57|0.7|14.5|0.3|2.4|||USDA SR Legacy
+strawberries|strawberry|fruit|32|0.7|7.7|0.3|2|||USDA SR Legacy
+raspberries|raspberry|fruit|52|1.2|11.9|0.7|6.5|||USDA SR Legacy
+orange|oranges;clementine;clementines;mandarin|fruit|47|0.9|11.8|0.1|2.4|||USDA SR Legacy
+grapes|grape|fruit|69|0.7|18.1|0.2|0.9|||USDA SR Legacy
+mango|mangoes;frozen mango|fruit|60|0.8|15|0.4|1.6|||USDA SR Legacy
+pineapple||fruit|50|0.5|13.1|0.1|1.4|||USDA SR Legacy
+peach|peaches;nectarine|fruit|39|0.9|9.5|0.3|1.5|||USDA SR Legacy
+pear|pears|fruit|57|0.4|15.2|0.1|3.1|||USDA SR Legacy
+watermelon|melon|fruit|30|0.6|7.6|0.2|0.4|||USDA SR Legacy
+kiwi|kiwis|fruit|61|1.1|14.7|0.5|3|||USDA SR Legacy
+cherries|cherry|fruit|63|1.1|16|0.2|2.1|||USDA SR Legacy
+dates|medjool dates|fruit|277|1.8|75|0.2|6.7|||USDA SR Legacy
+raisins||fruit|299|3.1|79.2|0.5|3.7|||USDA SR Legacy
+lemon juice|lemon;lemons|fruit|22|0.4|6.9|0.2|0.3|||USDA SR Legacy
+lime juice|lime;limes|fruit|25|0.4|8.4|0.1|0.4|||USDA SR Legacy
+olive oil|extra virgin olive oil;oil|oils|884|0|0|100|0|||USDA SR Legacy
+vegetable oil|canola oil;cooking spray;neutral oil|oils|884|0|0|100|0|||USDA SR Legacy
+avocado oil||oils|884|0|0|100|0|||USDA SR Legacy
+coconut oil||oils|892|0|0|99.1|0|coconut||USDA SR Legacy
+sesame oil|toasted sesame oil|oils|884|0|0|100|0|sesame||USDA SR Legacy
+mayonnaise|mayo|condiments|680|1|0.6|74.9|0|egg,animal||USDA SR Legacy
+ketchup||condiments|101|1|27.4|0.1|0.3|||USDA SR Legacy
+mustard|dijon mustard;yellow mustard;dijon|condiments|60|3.7|5.8|3.3|4|||USDA SR Legacy
+soy sauce|low sodium soy sauce|condiments|53|8.1|4.9|0.6|0.8|soy,wheat,gluten||USDA SR Legacy
+tamari|gluten free soy sauce|condiments|60|10.5|5.6|0.1|0.8|soy||USDA SR Legacy
+teriyaki sauce|teriyaki|condiments|89|5.9|15.6|0|0.1|soy,wheat,gluten||USDA SR Legacy
+sriracha|hot sauce;chili sauce|condiments|93|1.9|19.2|0.9|2.2|||USDA SR Legacy
+bbq sauce|barbecue sauce|condiments|172|0.8|40.8|0.6|0.9|||USDA SR Legacy
+honey||sweeteners|304|0.3|82.4|0|0.2|animal||USDA SR Legacy
+maple syrup||sweeteners|260|0|67|0.1|0|||USDA SR Legacy
+sugar|white sugar;granulated sugar|sweeteners|387|0|100|0|0|||USDA SR Legacy
+brown sugar||sweeteners|380|0.1|98.1|0|0|||USDA SR Legacy
+apple cider vinegar|vinegar;white vinegar;rice vinegar|condiments|21|0|0.9|0|0|||USDA SR Legacy
+balsamic vinegar|balsamic|condiments|88|0.5|17|0|0|||USDA SR Legacy
+chicken broth|chicken stock;bone broth|broths|7|1|0.4|0.2|0|meat,poultry||USDA SR Legacy
+vegetable broth|vegetable stock|broths|6|0.2|1.1|0.1|0|||USDA SR Legacy
+dark chocolate|dark chocolate chips|sweets|598|7.8|45.9|42.6|10.9|||USDA SR Legacy
+cocoa powder|unsweetened cocoa powder|sweets|228|19.6|57.9|13.7|37|||USDA SR Legacy
+salt|kosher salt;sea salt|spices|0|0|0|0|0|||USDA SR Legacy
+black pepper|pepper;ground black pepper|spices|251|10.4|64|3.3|25.3|||USDA SR Legacy
+paprika|smoked paprika|spices|282|14.1|54|12.9|34.9|||USDA SR Legacy
+cumin|ground cumin|spices|375|17.8|44.2|22.3|10.5|||USDA SR Legacy
+chili powder||spices|282|13.5|49.7|14.3|34.8|||USDA SR Legacy
+cinnamon|ground cinnamon|spices|247|4|80.6|1.2|53.1|||USDA SR Legacy
+garlic powder||spices|331|16.6|72.7|0.7|9|||USDA SR Legacy
+onion powder||spices|341|10.4|79.1|1|15.2|||USDA SR Legacy
+dried oregano|oregano;italian seasoning;dried herbs|spices|265|9|68.9|4.3|42.5|||USDA SR Legacy
+red pepper flakes|chili flakes;crushed red pepper|spices|318|12|56.6|17.3|27.2|||USDA SR Legacy

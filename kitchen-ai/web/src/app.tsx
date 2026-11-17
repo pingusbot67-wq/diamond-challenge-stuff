@@ -810,6 +810,23 @@ function App() {
   const [profile, setProfile] = useState<WebProfile | null | undefined>(undefined);
   const [tab, setTab] = useState<'cook' | 'feed' | 'saved' | 'profile'>('cook');
   const [started, setStarted] = useState(false);
+  // people who joined before the redesign see the new welcome page once
+  const [intro, setIntro] = useState(() => {
+    try {
+      return localStorage.getItem('kai:intro') !== '3';
+    } catch {
+      return false;
+    }
+  });
+  const seenIntro = () => {
+    setIntro(false);
+    try {
+      localStorage.setItem('kai:intro', '3');
+    } catch {
+      /* fine without it */
+    }
+    window.scrollTo(0, 0);
+  };
   const [stack, setStack] = useState<Screen[]>([]);
   const [eaten, setEaten] = useState({ kcal: 0, protein_g: 0 });
   const [saved, setSaved] = useState<Recipe[]>([]);
@@ -850,7 +867,8 @@ function App() {
   }, []);
 
   if (profile === undefined || !store) return <Loading title="Kitchen AI" sub="Getting things ready…" />;
-  if (!profile && !started) return <Landing onStart={() => (setStarted(true), window.scrollTo(0, 0))} />;
+  if (!profile && !started) return <Landing onStart={() => (setStarted(true), seenIntro())} />;
+  if (profile && intro && !top) return <Landing returning onStart={seenIntro} />;
   if (profile && top?.name === 'about') return <Landing returning onStart={() => (pop(), window.scrollTo(0, 0))} />;
   if (!profile || top?.name === 'edit')
     return (

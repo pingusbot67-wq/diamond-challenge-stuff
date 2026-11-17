@@ -34,6 +34,7 @@ create table public.profiles (
 
 alter table public.profiles enable row level security;
 create policy "read own profile" on public.profiles for select to authenticated using (id = (select auth.uid()));
+create policy "insert own profile" on public.profiles for insert to authenticated with check (id = (select auth.uid()));
 create policy "update own profile" on public.profiles for update to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
 
 -- create an empty profile automatically when someone signs up

@@ -1,11 +1,11 @@
-import { forwardRef } from 'react';
+import { forwardRef, type ComponentRef } from 'react';
 import { TextInput, View, type TextInputProps } from 'react-native';
 import { T } from './Text';
 import { colors, radius, space } from './theme';
 
 type Props = TextInputProps & { label?: string; hint?: string; error?: string | null; suffix?: string };
 
-export const Field = forwardRef<TextInput, Props>(function Field({ label, hint, error, suffix, style, ...rest }, ref) {
+export const Field = forwardRef<ComponentRef<typeof TextInput>, Props>(function Field({ label, hint, error, suffix, style, ...rest }, ref) {
   return (
     <View style={{ gap: space.xs }}>
       {label ? <T variant="label" color={colors.inkSoft}>{label}</T> : null}
